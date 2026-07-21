@@ -25,6 +25,9 @@ public interface PassphraseEntryComponent {
 		@BindsInstance
 		PassphraseEntryComponent.Builder savedPassword(@Nullable @Named("savedPassword") Passphrase savedPassword);
 
+		@BindsInstance
+		PassphraseEntryComponent.Builder wrongPassphrase(@Named("wrongPassphrase") boolean wrongPassphrase);
+
 		PassphraseEntryComponent build();
 	}
 

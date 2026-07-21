@@ -1,23 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import org.cryptomator.ui.controls.FontAwesome5IconView?>
 <?import javafx.scene.control.Hyperlink?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Text?>
-<?import javafx.scene.text.TextFlow?>
+
 <VBox xmlns:fx="http://javafx.com/fxml"
 	  xmlns="http://javafx.com/javafx"
 	  fx:controller="org.cryptomator.ui.mainwindow.WelcomeController"
 	  alignment="CENTER"
-	  spacing="9">
+	  spacing="12"
+	  styleClass="welcome-panel">
 	<children>
-		<ImageView VBox.vgrow="ALWAYS" fitHeight="128" preserveRatio="true" cache="true">
+		<Region VBox.vgrow="ALWAYS"/>
+		<ImageView fitHeight="112" preserveRatio="true" cache="true">
 			<Image url="@../img/logo128.png"/>
 		</ImageView>
 
-		<TextFlow styleClass="text-flow" prefWidth="-Infinity" visible="${controller.noVaultPresent}" managed="${controller.noVaultPresent}">
-			<Text text="%main.vaultDetail.welcomeOnboarding"/>
-			<Text text=" "/>
-			<Hyperlink text="docs.cryptomator.org" styleClass="hyperlink-underline" onAction="#visitGettingStartedGuide"/>
-		</TextFlow>
+		<VBox alignment="CENTER" spacing="8" visible="${controller.noVaultPresent}" managed="${controller.noVaultPresent}">
+			<Label text="%main.vaultDetail.welcome.title" styleClass="welcome-title"/>
+			<Label text="%main.vaultDetail.welcome.subtitle" textAlignment="CENTER" wrapText="true" styleClass="welcome-subtitle"/>
+
+			<VBox spacing="10" maxWidth="480" styleClass="welcome-benefits">
+				<HBox alignment="CENTER_LEFT" spacing="10">
+					<FontAwesome5IconView glyph="CHECK" glyphSize="13" styleClass="welcome-check"/>
+					<Label text="%main.vaultDetail.welcome.benefit.encrypted" wrapText="true" HBox.hgrow="ALWAYS"/>
+				</HBox>
+				<HBox alignment="CENTER_LEFT" spacing="10">
+					<FontAwesome5IconView glyph="CHECK" glyphSize="13" styleClass="welcome-check"/>
+					<Label text="%main.vaultDetail.welcome.benefit.cloud" wrapText="true" HBox.hgrow="ALWAYS"/>
+				</HBox>
+				<HBox alignment="CENTER_LEFT" spacing="10">
+					<FontAwesome5IconView glyph="CHECK" glyphSize="13" styleClass="welcome-check"/>
+					<Label text="%main.vaultDetail.welcome.benefit.key" wrapText="true" HBox.hgrow="ALWAYS"/>
+				</HBox>
+			</VBox>
+
+			<Hyperlink text="%main.vaultDetail.welcome.learnMore" onAction="#visitGettingStartedGuide" styleClass="welcome-learn-more"/>
+		</VBox>
+
+		<Label text="%main.vaultDetail.welcome.selectVault" textAlignment="CENTER" wrapText="true" maxWidth="420"
+			   visible="${!controller.noVaultPresent}" managed="${!controller.noVaultPresent}" styleClass="welcome-subtitle"/>
+		<Region VBox.vgrow="ALWAYS"/>
 	</children>
 </VBox>

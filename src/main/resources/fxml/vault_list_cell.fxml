@@ -12,7 +12,8 @@
 	  prefHeight="60"
 	  prefWidth="200"
 	  spacing="12"
-	  alignment="CENTER_LEFT">
+	  alignment="CENTER_LEFT"
+	  styleClass="vault-list-cell-content">
 	<!-- Remark Check the containing list view for a fixed cell size before editing height properties -->
 	<VBox alignment="CENTER" minWidth="20">
 		<FontAwesome5IconView fx:id="vaultStateView" glyph="${controller.glyph}" HBox.hgrow="NEVER" glyphSize="16"/>

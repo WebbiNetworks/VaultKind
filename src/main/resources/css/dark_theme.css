@@ -193,6 +193,23 @@
  ******************************************************************************/
 
 /* windows needs an explicit border: */
+.app-header-bar {
+	-fx-pref-height: 34px;
+	-fx-min-height: 34px;
+	-fx-background-color: GRAY_0;
+	-fx-border-color: transparent transparent GRAY_3 transparent;
+}
+
+.app-header-title {
+	-fx-padding: 0 0 0 12px;
+}
+
+.app-header-title .label {
+	-fx-text-fill: TEXT_FILL;
+	-fx-font-size: 13px;
+	-fx-font-weight: 600;
+}
+
 .main-window.os-windows {
 	-fx-border-color: TITLE_BG;
 	-fx-border-width: 1px;
@@ -230,6 +247,208 @@
 
 .main-window .button-bar .button-right:armed {
 	-fx-background-color: CONTROL_BORDER_NORMAL, CONTROL_BG_ARMED;
+}
+
+/* Dashboard shell */
+.main-window .dashboard-split {
+	-fx-background-color: MAIN_BG;
+	-fx-padding: 0;
+}
+
+.main-window .dashboard-split > .split-pane-divider {
+	-fx-background-color: CONTROL_BORDER_NORMAL;
+	-fx-padding: 0 0 0 1px;
+}
+
+.vault-sidebar {
+	-fx-background-color: CONTROL_BG_NORMAL;
+}
+
+.vault-sidebar-header {
+	-fx-padding: 22px 14px 16px 18px;
+	-fx-border-color: transparent transparent CONTROL_BORDER_NORMAL transparent;
+	-fx-border-width: 0 0 1px 0;
+}
+
+.vault-add-button {
+	-fx-padding: 0.55em 0.9em;
+}
+
+.vault-list,
+.vault-list > .virtual-flow > .corner,
+.vault-list > .virtual-flow > .clipped-container > .sheet {
+	-fx-background-color: transparent;
+}
+
+.vault-list {
+	-fx-padding: 8px 8px 0 8px;
+}
+
+.vault-list .list-cell {
+	-fx-background-color: transparent;
+	-fx-background-radius: 8px;
+	-fx-border-radius: 8px;
+}
+
+.vault-list .list-cell:hover {
+	-fx-background-color: CONTROL_BG_HOVER;
+}
+
+.vault-list .list-cell:selected,
+.vault-list:focused .list-cell:selected {
+	-fx-background-color: CONTROL_BG_SELECTED;
+	-fx-border-color: transparent transparent transparent PRIMARY;
+	-fx-border-width: 0 0 0 3px;
+}
+
+.vault-list-cell-content {
+	-fx-padding: 0 4px;
+}
+
+.vault-empty-state {
+	-fx-padding: 24px;
+}
+
+.vault-empty-state .label {
+	-fx-text-fill: TEXT_FILL_MUTED;
+}
+
+.vault-empty-state .vault-empty-title {
+	-fx-text-fill: TEXT_FILL;
+	-fx-font-size: 16px;
+	-fx-font-weight: 600;
+}
+
+.vault-empty-state .vault-empty-description {
+	-fx-text-fill: TEXT_FILL_MUTED;
+	-fx-font-size: 12px;
+	-fx-line-spacing: 2px;
+}
+
+.vault-empty-state .vault-empty-action {
+	-fx-background-color: CONTROL_PRIMARY_BG_NORMAL;
+	-fx-background-radius: 7px;
+	-fx-text-fill: GRAY_0;
+	-fx-font-weight: 600;
+	-fx-padding: 8px 12px;
+}
+
+.vault-empty-state .vault-empty-action:hover {
+	-fx-background-color: CONTROL_PRIMARY_BG_ARMED;
+}
+
+.vault-sidebar-actions {
+	-fx-padding: 10px;
+	-fx-border-color: CONTROL_BORDER_NORMAL transparent transparent transparent;
+	-fx-border-width: 1px 0 0 0;
+}
+
+.vault-sidebar-actions .sidebar-action {
+	-fx-background-color: transparent;
+	-fx-padding: 0.55em 0.7em;
+}
+
+.vault-sidebar-actions .sidebar-action:hover {
+	-fx-background-color: CONTROL_BG_HOVER;
+}
+
+.vault-dashboard {
+	-fx-background-color: MAIN_BG;
+}
+
+.vault-dashboard-header {
+	-fx-padding: 0 0 22px 0;
+	-fx-border-color: transparent transparent CONTROL_BORDER_NORMAL transparent;
+	-fx-border-width: 0 0 1px 0;
+}
+
+.welcome-panel {
+	-fx-padding: 18px 24px;
+}
+
+.welcome-title {
+	-fx-text-fill: TEXT_FILL;
+	-fx-font-size: 24px;
+	-fx-font-weight: 600;
+}
+
+.welcome-subtitle {
+	-fx-text-fill: TEXT_FILL_MUTED;
+	-fx-font-size: 14px;
+}
+
+.welcome-benefits {
+	-fx-padding: 16px 18px;
+	-fx-background-color: GRAY_2;
+	-fx-background-radius: 12px;
+	-fx-border-color: GRAY_3;
+	-fx-border-radius: 12px;
+}
+
+.welcome-benefits .label {
+	-fx-text-fill: GRAY_8;
+	-fx-font-size: 13px;
+}
+
+.welcome-check {
+	-fx-fill: PRIMARY_L1;
+}
+
+.welcome-learn-more {
+	-fx-text-fill: PRIMARY_L1;
+	-fx-font-weight: 600;
+}
+
+.vault-status-icon {
+	-fx-fill: PRIMARY;
+}
+
+.vault-state-panel {
+	-fx-padding: 22px 4px 0 4px;
+}
+
+.vault-state-symbol-background {
+	-fx-fill: PRIMARY_D2;
+}
+
+.vault-state-title {
+	-fx-font-family: 'Open Sans SemiBold';
+	-fx-font-size: 1.5em;
+}
+
+.vault-state-description {
+	-fx-text-fill: TEXT_FILL_MUTED;
+	-fx-font-size: 1.05em;
+}
+
+.vault-primary-action {
+	-fx-min-height: 48px;
+}
+
+.inline-unlock-overlay {
+	-fx-background-color: rgba(8, 12, 10, 0.68);
+	-fx-padding: 40px 40px 40px 320px;
+}
+
+.inline-unlock-card {
+	-fx-background-color: CONTROL_BG_NORMAL;
+	-fx-background-radius: 12px;
+	-fx-border-color: CONTROL_BORDER_NORMAL;
+	-fx-border-radius: 12px;
+	-fx-padding: 24px;
+	-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.48), 24, 0.16, 0, 8);
+}
+
+.unlock-inline-error {
+	-fx-background-color: #4A2B2B;
+	-fx-background-radius: 6px;
+	-fx-padding: 8px 10px;
+}
+
+.unlock-inline-error .label,
+.unlock-inline-error .glyph-icon {
+	-fx-text-fill: #FF8A80;
+	-fx-fill: #FF8A80;
 }
 
 /*******************************************************************************
@@ -391,40 +610,60 @@
  * InfoBar                                                                     *
  *                                                                             *
  ******************************************************************************/
+.notification-stack {
+	-fx-padding: 48px 14px 0 0;
+}
+
 .info-bar {
 	-fx-alignment: center;
-	-fx-min-height:24px;
-	-fx-max-height:24px;
+	-fx-min-height:38px;
+	-fx-max-height:38px;
 	-fx-background-color: -bar-bg;
+	-fx-background-radius: 10px;
+	-fx-border-color: transparent transparent transparent -bar-accent;
+	-fx-border-width: 0 0 0 3px;
+	-fx-border-radius: 10px;
+	-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 10, 0.1, 0, 2);
 }
 
 .info-bar--green {
-	-bar-bg: GREEN_5;
-	-button-bg: GREEN_5;
-	-button-bg-pressed: GREEN_3;
+	-bar-bg: GRAY_2;
+	-bar-accent: GREEN_5;
+	-button-bg: transparent;
+	-button-bg-pressed: GRAY_3;
 }
 
 .info-bar--yellow {
-	-bar-bg: YELLOW_5;
-	-button-bg: YELLOW_5;
-	-button-bg-pressed: YELLOW_4;
+	-bar-bg: GRAY_2;
+	-bar-accent: YELLOW_5;
+	-button-bg: transparent;
+	-button-bg-pressed: GRAY_3;
 }
 
 .info-bar--red {
-	-bar-bg: RED_5;
-	-button-bg: RED_5;
-	-button-bg-pressed: RED_5;
+	-bar-bg: GRAY_2;
+	-bar-accent: RED_5;
+	-button-bg: transparent;
+	-button-bg-pressed: GRAY_3;
 }
 
 .info-bar .label {
-	-fx-text-fill: GRAY_9;
-	-fx-font-weight: bold;
+	-fx-text-fill: GRAY_8;
+	-fx-font-weight: 600;
+	-fx-font-size: 13px;
+}
+
+.info-bar--green .label {
+	-fx-text-fill: PRIMARY_L1;
 }
 
 .info-bar--yellow .label {
-	-fx-text-fill: GRAY_9;
-	-fx-font-weight: bold;
-	-fx-effect: dropshadow( gaussian , rgba(0,0,0,0.45) , 2 , 0 , 0 , 1 );
+	-fx-text-fill: #F4D35E;
+	-fx-effect: none;
+}
+
+.info-bar--red .label {
+	-fx-text-fill: #FF7B70;
 }
 
 .info-bar .glyph {
@@ -432,7 +671,7 @@
 }
 
 .info-bar:hover .label {
-	-fx-underline:true;
+	-fx-text-fill: GRAY_9;
 }
 
 .info-bar .button {
@@ -443,7 +682,7 @@
 
 .info-bar .button:armed {
 	-fx-background-color: -button-bg-pressed;
-	-fx-background-radius: 8;
+	-fx-background-radius: 6;
 }
 
 /*******************************************************************************

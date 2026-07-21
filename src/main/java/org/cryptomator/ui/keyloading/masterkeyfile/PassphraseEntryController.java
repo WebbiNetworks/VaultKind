@@ -51,6 +51,7 @@ public class PassphraseEntryController implements FxController {
 	private final KeychainManager keychain;
 	private final StringBinding vaultName;
 	private final ExecutorService backgroundExecutorService;
+	private final boolean wrongPassphrase;
 	private final BooleanProperty unlockInProgress = new SimpleBooleanProperty();
 	private final ObjectBinding<ContentDisplay> unlockButtonContentDisplay = Bindings.when(unlockInProgress).then(ContentDisplay.LEFT).otherwise(ContentDisplay.TEXT_ONLY);
 	private final BooleanProperty unlockButtonDisabled = new SimpleBooleanProperty();
@@ -66,7 +67,7 @@ public class PassphraseEntryController implements FxController {
 	public Animation unlockAnimation;
 
 	@Inject
-	public PassphraseEntryController(@KeyLoading Stage window, @KeyLoading Vault vault, CompletableFuture<PassphraseEntryResult> result, @Nullable @Named("savedPassword") Passphrase savedPassword, ForgetPasswordComponent.Builder forgetPassword, KeychainManager keychain, ExecutorService backgroundExecutorService) {
+	public PassphraseEntryController(@KeyLoading Stage window, @KeyLoading Vault vault, CompletableFuture<PassphraseEntryResult> result, @Nullable @Named("savedPassword") Passphrase savedPassword, @Named("wrongPassphrase") boolean wrongPassphrase, ForgetPasswordComponent.Builder forgetPassword, KeychainManager keychain, ExecutorService backgroundExecutorService) {
 		this.window = window;
 		this.vault = vault;
 		this.result = result;
@@ -75,6 +76,7 @@ public class PassphraseEntryController implements FxController {
 		this.keychain = keychain;
 		this.vaultName = WeakBindings.bindString(vault.displayNameProperty());
 		this.backgroundExecutorService = backgroundExecutorService;
+		this.wrongPassphrase = wrongPassphrase;
 		window.setOnHiding(this::windowClosed);
 	}
 
@@ -85,6 +87,7 @@ public class PassphraseEntryController implements FxController {
 			passwordField.setPassword(savedPassword);
 		}
 		unlockButtonDisabled.bind(unlockInProgress.or(passwordField.textProperty().isEmpty()));
+		result.whenComplete((_, _) -> Platform.runLater(this::destroyPasswordFieldContents));
 
 		var leftArmTranslation = new Translate(24, 0);
 		var leftArmRotation = new Rotate(60, 16, 30, 0);
@@ -125,7 +128,11 @@ public class PassphraseEntryController implements FxController {
 
 	@FXML
 	public void cancel() {
-		window.close();
+		if (window.isShowing()) {
+			window.close();
+		} else {
+			result.cancel(true);
+		}
 	}
 
 	private void windowClosed(WindowEvent windowEvent) {
@@ -133,10 +140,14 @@ public class PassphraseEntryController implements FxController {
 			result.cancel(true);
 			LOG.debug("Unlock canceled by user.");
 		}
-		if( passwordField != null) {
+		destroyPasswordFieldContents();
+
+	}
+
+	private void destroyPasswordFieldContents() {
+		if (passwordField != null) {
 			passwordField.getCharacters().destroy();
 		}
-
 	}
 
 	@FXML
@@ -210,6 +221,10 @@ public class PassphraseEntryController implements FxController {
 
 	public boolean isKeychainAccessAvailable() {
 		return keychain.isSupported();
+	}
+
+	public boolean isWrongPassphrase() {
+		return wrongPassphrase;
 	}
 
 

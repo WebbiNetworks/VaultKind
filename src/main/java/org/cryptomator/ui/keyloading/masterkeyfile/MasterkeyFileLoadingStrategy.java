@@ -19,6 +19,9 @@ import org.cryptomator.ui.unlock.UnlockCancelledException;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javafx.application.Platform;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import java.io.IOException;
@@ -150,18 +153,22 @@ public class MasterkeyFileLoadingStrategy implements KeyLoadingStrategy {
 	}
 
 	private void askForPassphrase() throws InterruptedException {
-		var comp = passphraseEntry.savedPassword(passphrase).build();
+		var comp = passphraseEntry.savedPassword(passphrase).wrongPassphrase(wrongPassphrase).build();
 		Platform.runLater(() -> {
-			window.setScene(comp.passphraseEntryScene());
-			window.show();
 			Window owner = window.getOwner();
-			if (owner != null) {
+			if (canShowInline(owner)) {
+				showInline(comp.passphraseEntryScene(), comp.result(), (StackPane) owner.getScene().getRoot());
+			} else {
+				window.setScene(comp.passphraseEntryScene());
+				window.show();
+			}
+			if (owner != null && window.isShowing()) {
 				window.setX(owner.getX() + (owner.getWidth() - window.getWidth()) / 2);
 				window.setY(owner.getY() + (owner.getHeight() - window.getHeight()) / 2);
-			} else {
+			} else if (window.isShowing()) {
 				window.centerOnScreen();
 			}
-			if (wrongPassphrase) {
+			if (wrongPassphrase && window.isShowing()) {
 				Animations.createShakeWindowAnimation(window).play();
 			}
 		});
@@ -174,6 +181,20 @@ public class MasterkeyFileLoadingStrategy implements KeyLoadingStrategy {
 		} catch (ExecutionException e) {
 			throw new MasterkeyLoadingFailedException("Failed to ask for password.", e);
 		}
+	}
+
+	private boolean canShowInline(Window owner) {
+		return owner != null && owner.isShowing() && owner.getScene() != null && owner.getScene().getRoot() instanceof StackPane root && root.getStyleClass().contains("main-window");
+	}
+
+	private void showInline(Scene passphraseScene, java.util.concurrent.CompletableFuture<PassphraseEntryResult> result, StackPane mainRoot) {
+		Parent content = passphraseScene.getRoot();
+		passphraseScene.setRoot(new StackPane());
+		content.getStyleClass().add("inline-unlock-card");
+		StackPane overlay = new StackPane(content);
+		overlay.getStyleClass().add("inline-unlock-overlay");
+		mainRoot.getChildren().add(overlay);
+		result.whenComplete((_, _) -> Platform.runLater(() -> mainRoot.getChildren().remove(overlay)));
 	}
 
 }

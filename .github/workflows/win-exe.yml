@@ -171,6 +171,7 @@ jobs:
           --copyright "(C) 2016 - 2026 Skymatic GmbH"
           --app-version "${VERSION_NUM}.${REVISION_NUM}"
           --java-options "--enable-preview"
+          --java-options "-Djavafx.enablePreview=true"
           --java-options "--enable-native-access=javafx.graphics,org.cryptomator.jfuse.win,org.cryptomator.integrations.win"
           --java-options "-Xss5m"
           --java-options "-Xmx256m"

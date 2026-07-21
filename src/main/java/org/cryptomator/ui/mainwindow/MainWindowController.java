@@ -85,6 +85,10 @@ public class MainWindowController implements FxController {
 		settings.windowHeight.bind(window.heightProperty());
 	}
 
+	public boolean isWindows() {
+		return SystemUtils.IS_OS_WINDOWS;
+	}
+
 	private boolean windowPositionSaved(int x, int y, int width, int height) {
 		return x != 0 || y != 0 || width != 0 || height != 0;
 	}

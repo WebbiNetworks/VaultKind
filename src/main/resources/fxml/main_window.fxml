@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HeaderBar?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import org.cryptomator.ui.controls.InfoBar?>
@@ -10,24 +13,33 @@
 		   fx:id="root"
 		   fx:controller="org.cryptomator.ui.mainwindow.MainWindowController"
 		   styleClass="main-window">
-	<VBox minWidth="600">
-		<InfoBar onMouseClicked="#showUpdatePreferences"
-						 text="%main.notification.updateAvailable"
-						 dismissable="true"
-						 notify="${controller.updateAvailable}"
-						 styleClass="info-bar--yellow"/>
-		<InfoBar onMouseClicked="#showContributePreferences"
-						 text="%main.notification.support"
-						 dismissable="true"
-						 notify="${!controller.licenseValid}"
-						 styleClass="info-bar--green"/>
-		<SplitPane dividerPositions="0.33" orientation="HORIZONTAL" VBox.vgrow="ALWAYS">
+	<VBox minWidth="840">
+		<HeaderBar managed="${controller.windows}" visible="${controller.windows}" styleClass="app-header-bar">
+			<leading>
+				<HBox alignment="CENTER_LEFT" spacing="8" styleClass="app-header-title">
+					<Label text="Cryptomator"/>
+				</HBox>
+			</leading>
+		</HeaderBar>
+		<SplitPane dividerPositions="0.36" orientation="HORIZONTAL" VBox.vgrow="ALWAYS" styleClass="dashboard-split">
 			<fx:include source="vault_list.fxml" SplitPane.resizableWithParent="false"/>
 			<fx:include source="vault_detail.fxml" SplitPane.resizableWithParent="true"/>
 		</SplitPane>
+	</VBox>
+	<VBox maxWidth="340" maxHeight="210" spacing="14" mouseTransparent="false" StackPane.alignment="TOP_RIGHT" styleClass="notification-stack">
+		<InfoBar onMouseClicked="#showUpdatePreferences"
+					 text="%main.notification.updateAvailable"
+					 dismissable="true"
+					 notify="${controller.updateAvailable}"
+					 styleClass="info-bar--yellow"/>
+		<InfoBar onMouseClicked="#showContributePreferences"
+					 text="%main.notification.support"
+					 dismissable="true"
+					 notify="${!controller.licenseValid}"
+					 styleClass="info-bar--green"/>
 		<InfoBar onMouseClicked="#showGeneralPreferences"
-						 text="DEBUG MODE"
-						 styleClass="info-bar--red"
-						 notify="${controller.debugModeEnabled}"/>
+					 text="DEBUG MODE"
+					 styleClass="info-bar--red"
+					 notify="${controller.debugModeEnabled}"/>
 	</VBox>
 </StackPane>

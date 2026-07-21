@@ -14,14 +14,15 @@
 	  xmlns="http://javafx.com/javafx"
 	  fx:controller="org.cryptomator.ui.mainwindow.VaultDetailController"
 	  minWidth="300"
-	  spacing="60">
+	  spacing="28"
+	  styleClass="vault-dashboard">
 	<padding>
-		<Insets topRightBottomLeft="24"/>
+		<Insets top="28" right="36" bottom="28" left="36"/>
 	</padding>
 	<children>
-		<HBox spacing="12" visible="${controller.anyVaultSelected}" managed="${controller.anyVaultSelected}">
+		<HBox spacing="14" visible="${controller.anyVaultSelected}" managed="${controller.anyVaultSelected}" styleClass="vault-dashboard-header">
 			<StackPane alignment="CENTER">
-				<Circle styleClass="glyph-icon-primary" radius="16"/>
+				<Circle styleClass="vault-status-icon" radius="20"/>
 				<FontAwesome5IconView fx:id="vaultStateView" styleClass="glyph-icon-white" glyph="${controller.glyph}" HBox.hgrow="NEVER" glyphSize="16"/>
 			</StackPane>
 			<VBox spacing="4" HBox.hgrow="ALWAYS">

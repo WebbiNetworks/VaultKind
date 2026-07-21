@@ -11,58 +11,66 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.shape.Arc?>
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.layout.AnchorPane?>
 <StackPane xmlns:fx="http://javafx.com/fxml"
 		   xmlns="http://javafx.com/javafx"
 		   fx:id="root"
 		   fx:controller="org.cryptomator.ui.mainwindow.VaultListController"
-		   minWidth="206">
+		   minWidth="280"
+		   styleClass="vault-sidebar">
 	<VBox>
+		<HBox alignment="CENTER_LEFT" spacing="12" styleClass="vault-sidebar-header">
+			<Label text="%main.vaultlist" styleClass="label-large" HBox.hgrow="ALWAYS"/>
+			<Button fx:id="addVaultButton" onAction="#toggleMenu" text="%main.vaultlist.addVaultButton.tooltip" styleClass="vault-add-button" minWidth="110" accessibleText="%main.vaultlist.addVaultButton.tooltip">
+				<graphic>
+					<FontAwesome5IconView glyph="PLUS" glyphSize="14"/>
+				</graphic>
+				<tooltip>
+					<Tooltip text="%main.vaultlist.addVaultButton.tooltip"/>
+				</tooltip>
+			</Button>
+		</HBox>
 		<StackPane VBox.vgrow="ALWAYS">
 			<VBox>
-				<ListView fx:id="vaultList" editable="true" fixedCellSize="${controller.cellSize}" accessibleText="%main.vaultlist">
+				<ListView fx:id="vaultList" editable="true" fixedCellSize="${controller.cellSize}" accessibleText="%main.vaultlist" styleClass="vault-list">
 					<contextMenu>
 						<fx:include source="vault_list_contextmenu.fxml"/>
 					</contextMenu>
 				</ListView>
 				<Region VBox.vgrow="ALWAYS" styleClass="list-view"/>
 			</VBox>
-			<VBox visible="${controller.emptyVaultList}" spacing="6" alignment="CENTER">
+			<VBox visible="${controller.emptyVaultList}" spacing="10" alignment="CENTER" styleClass="vault-empty-state">
 				<Region VBox.vgrow="ALWAYS"/>
-				<Label VBox.vgrow="NEVER" text="%main.vaultlist.emptyList.onboardingInstruction" textAlignment="CENTER" wrapText="true"/>
-				<HBox>
-					<Arc styleClass="onboarding-overlay-arc" translateX="20" radiusY="100" radiusX="50" length="-60"/>
-				</HBox>
+				<FontAwesome5IconView glyph="LOCK" glyphSize="30" styleClass="glyph-icon-muted"/>
+				<Label VBox.vgrow="NEVER" text="%main.vaultlist.emptyList.title" textAlignment="CENTER" styleClass="vault-empty-title"/>
+				<Label VBox.vgrow="NEVER" text="%main.vaultlist.emptyList.description" textAlignment="CENTER" wrapText="true" maxWidth="230" styleClass="vault-empty-description"/>
+				<Button text="%main.vaultlist.emptyList.action" onAction="#didClickAddNewVault" styleClass="vault-empty-action">
+					<graphic>
+						<FontAwesome5IconView glyph="PLUS" glyphSize="13"/>
+					</graphic>
+				</Button>
+				<Region VBox.vgrow="ALWAYS"/>
 			</VBox>
 		</StackPane>
-		<HBox styleClass="button-bar">
-			<Button fx:id="addVaultButton" onAction="#toggleMenu" styleClass="button-left" alignment="CENTER" minWidth="20" contentDisplay="GRAPHIC_ONLY" accessibleText="%main.vaultlist.addVaultButton.tooltip">
-				<graphic>
-					<FontAwesome5IconView glyph="PLUS" glyphSize="16"/>
-				</graphic>
-				<tooltip>
-					<Tooltip text="%main.vaultlist.addVaultButton.tooltip"/>
-				</tooltip>
-			</Button>
-			<Region HBox.hgrow="ALWAYS"/>
+		<HBox styleClass="vault-sidebar-actions" alignment="CENTER_LEFT" spacing="6">
 			<StackPane>
-				<Button onAction="#showEventViewer" styleClass="button-right" minWidth="20" contentDisplay="GRAPHIC_ONLY" mnemonicParsing="false" accessibleText="%main.vaultlist.showEventsButton.tooltip">
+				<Button onAction="#showEventViewer" text="%main.vaultlist.events" styleClass="sidebar-action" mnemonicParsing="false" accessibleText="%main.vaultlist.showEventsButton.tooltip">
 					<graphic>
-						<FontAwesome5IconView glyph="BELL" glyphSize="16"/>
+						<FontAwesome5IconView glyph="BELL" glyphSize="14"/>
 					</graphic>
 					<tooltip>
 						<Tooltip text="%main.vaultlist.showEventsButton.tooltip"/>
 					</tooltip>
 				</Button>
-				<AnchorPane mouseTransparent="true" minWidth="12" maxWidth="12" minHeight="12" maxHeight="12" StackPane.alignment="CENTER">
-					<Circle radius="4" styleClass="icon-update-indicator" AnchorPane.topAnchor="-8" AnchorPane.rightAnchor="-6" visible="${controller.unreadEventsPresent}" />
+				<AnchorPane mouseTransparent="true" minWidth="12" maxWidth="12" minHeight="12" maxHeight="12" StackPane.alignment="TOP_RIGHT">
+					<Circle radius="4" styleClass="icon-update-indicator" AnchorPane.topAnchor="2" AnchorPane.rightAnchor="2" visible="${controller.unreadEventsPresent}" />
 				</AnchorPane>
 			</StackPane>
-			<Button onAction="#showPreferences" styleClass="button-right" alignment="CENTER" minWidth="20" contentDisplay="GRAPHIC_ONLY" accessibleText="%main.vaultlist.showPreferencesButton.tooltip">
+			<Region HBox.hgrow="ALWAYS"/>
+			<Button onAction="#showPreferences" text="%main.vaultlist.preferences" styleClass="sidebar-action" alignment="CENTER" accessibleText="%main.vaultlist.showPreferencesButton.tooltip">
 				<graphic>
-					<FontAwesome5IconView glyph="COG" glyphSize="16"/>
+					<FontAwesome5IconView glyph="COG" glyphSize="14"/>
 				</graphic>
 				<tooltip>
 					<Tooltip text="%main.vaultlist.showPreferencesButton.tooltip"/>

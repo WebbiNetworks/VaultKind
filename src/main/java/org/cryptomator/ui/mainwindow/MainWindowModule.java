@@ -28,6 +28,7 @@ import javax.inject.Provider;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Scene;
+import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import java.util.Map;
@@ -42,8 +43,10 @@ abstract class MainWindowModule {
 	static Stage provideMainWindow(@PrimaryStage Stage stage, StageInitializer initializer, FxApplicationTerminator terminator, Lazy<TrayMenuComponent> trayMenu) {
 		initializer.accept(stage);
 		stage.setTitle("Cryptomator");
-		stage.setMinWidth(650);
-		stage.setMinHeight(498);
+		stage.setMinWidth(920);
+		stage.setMinHeight(600);
+		stage.setWidth(1120);
+		stage.setHeight(720);
 		stage.setOnCloseRequest(e -> {
 			if (!trayMenu.get().isInitialized()) {
 				terminator.terminate();
@@ -83,7 +86,9 @@ abstract class MainWindowModule {
 	@FxmlScene(FxmlFile.MAIN_WINDOW)
 	@MainWindowScoped
 	static Scene provideMainScene(@MainWindow FxmlLoaderFactory fxmlLoaders) {
-		return fxmlLoaders.createScene(FxmlFile.MAIN_WINDOW);
+		Scene scene = fxmlLoaders.createScene(FxmlFile.MAIN_WINDOW);
+		scene.setFill(Color.web("#2B2F31"));
+		return scene;
 	}
 
 	// ------------------

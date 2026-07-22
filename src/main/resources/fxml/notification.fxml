@@ -5,6 +5,8 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
@@ -22,7 +24,9 @@
 	<top>
 		<VBox >
 			<HBox spacing="6" styleClass="dialog-header" alignment="CENTER_LEFT">
-				<FontAwesome5IconView glyph="LOCK" glyphSize="12" styleClass="welcome-brand-mark"/>
+				<ImageView fitHeight="16" fitWidth="16" preserveRatio="true" cache="true" accessibleText="VaultKind">
+					<Image url="@../img/vaultkind_app_icon_32.png"/>
+				</ImageView>
 				<Label text="%app.name" styleClass="label-window-title"/>
 				<Region HBox.hgrow="ALWAYS"/>
 				<HBox styleClass="dialog-header" alignment="CENTER_LEFT" visible="${!controller.singleEvent}">

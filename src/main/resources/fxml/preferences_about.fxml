@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import org.cryptomator.ui.controls.FormattedLabel?>
-<?import org.cryptomator.ui.controls.FontAwesome5IconView?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextArea?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <VBox xmlns:fx="http://javafx.com/fxml"
@@ -18,7 +19,9 @@
 		</VBox>
 
 		<HBox spacing="18" alignment="CENTER_LEFT" styleClass="settings-card">
-			<FontAwesome5IconView glyph="LOCK" glyphSize="48" styleClass="welcome-brand-mark"/>
+			<ImageView fitHeight="64" fitWidth="64" preserveRatio="true" cache="true" accessibleText="VaultKind">
+				<Image url="@../img/vaultkind_mark_256.png"/>
+			</ImageView>
 			<VBox spacing="5" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
 				<FormattedLabel styleClass="about-product-title" format="VaultKind %s" arg1="${controller.fullApplicationVersion}"/>
 				<Label text="%preferences.about.forkAttribution" wrapText="true" styleClass="preferences-page-description"/>

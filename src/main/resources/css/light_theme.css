@@ -27,13 +27,13 @@
  ******************************************************************************/
 
 .root {
-	PRIMARY_D2: #2D4D2E;
-	PRIMARY_D1: #407F41;
-	PRIMARY: #49B04A;
-	PRIMARY_L1: #66CC68;
-	PRIMARY_L2: #EBF5EB;
+	PRIMARY_D2: #0A2E66;
+	PRIMARY_D1: #114E9A;
+	PRIMARY: #1F78E8;
+	PRIMARY_L1: #5AA7FF;
+	PRIMARY_L2: #EAF3FF;
 
-	SECONDARY: #008A7B;
+	SECONDARY: #45B5FF;
 
 	GRAY_0: #222222;
 	GRAY_1: #3B3B3B;
@@ -46,8 +46,8 @@
 	GRAY_8: #E1E1E1;
 	GRAY_9: #F7F7F7;
 
-	GREEN_3: PRIMARY_D1;
-	GREEN_5: PRIMARY;
+	GREEN_3: #2E7D3A;
+	GREEN_5: #49B85A;
 	RED_5: #E74C3C;
 	ORANGE_5: #E67E22;
 	YELLOW_4: #C19F0E;
@@ -509,7 +509,7 @@
 }
 
 .welcome-check {
-	-fx-fill: PRIMARY_D1;
+	-fx-fill: GREEN_3;
 }
 
 .welcome-learn-more {
@@ -561,7 +561,7 @@
 	-fx-background-radius: 999px;
 	-fx-border-color: rgba(74, 181, 73, 0.42);
 	-fx-border-radius: 999px;
-	-fx-text-fill: PRIMARY_D1;
+	-fx-text-fill: GREEN_3;
 	-fx-font-weight: 600;
 }
 

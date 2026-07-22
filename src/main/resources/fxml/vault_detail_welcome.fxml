@@ -3,6 +3,8 @@
 <?import org.cryptomator.ui.controls.FontAwesome5IconView?>
 <?import javafx.scene.control.Hyperlink?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
@@ -15,7 +17,9 @@
 	  styleClass="welcome-panel">
 	<children>
 		<Region VBox.vgrow="ALWAYS"/>
-		<FontAwesome5IconView glyph="LOCK" glyphSize="88" styleClass="welcome-brand-mark"/>
+		<ImageView fitHeight="112" fitWidth="112" preserveRatio="true" cache="true" accessibleText="VaultKind">
+			<Image url="@../img/vaultkind_mark_256.png"/>
+		</ImageView>
 
 		<VBox alignment="CENTER" spacing="8" visible="${controller.noVaultPresent}" managed="${controller.noVaultPresent}">
 			<Label text="%main.vaultDetail.welcome.title" styleClass="welcome-title"/>

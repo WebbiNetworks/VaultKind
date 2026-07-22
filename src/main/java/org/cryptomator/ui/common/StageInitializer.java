@@ -20,8 +20,8 @@ public class StageInitializer implements Consumer<Stage> {
 	@Inject
 	public StageInitializer() {
 		this.windowIcons = SystemUtils.IS_OS_MAC ? List.of() : List.of( //
-				new Image(StageInitializer.class.getResource("/img/window_icon_32.png").toString()), //
-				new Image(StageInitializer.class.getResource("/img/window_icon_512.png").toString()) //
+				new Image(StageInitializer.class.getResource("/img/vaultkind_app_icon_32.png").toString()), //
+				new Image(StageInitializer.class.getResource("/img/vaultkind_app_icon_512.png").toString()) //
 		);
 	}
 

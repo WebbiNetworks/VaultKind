@@ -17,14 +17,13 @@
 	  styleClass="welcome-panel">
 	<children>
 		<Region VBox.vgrow="ALWAYS"/>
-		<ImageView fitHeight="112" fitWidth="112" preserveRatio="true" cache="true" accessibleText="VaultKind">
-			<Image url="@../img/vaultkind_mark_256.png"/>
+		<Label text="%main.vaultDetail.welcome.eyebrow" accessibleText="Welcome" styleClass="welcome-eyebrow"
+			   visible="${controller.noVaultPresent}" managed="${controller.noVaultPresent}"/>
+		<ImageView fitHeight="206" fitWidth="540" preserveRatio="true" cache="true" accessibleText="VaultKind — Your files. Your vault. Your control." styleClass="welcome-brand-lockup">
+			<Image url="@../img/vaultkind_full_lockup.png"/>
 		</ImageView>
 
-		<VBox alignment="CENTER" spacing="8" visible="${controller.noVaultPresent}" managed="${controller.noVaultPresent}">
-			<Label text="%main.vaultDetail.welcome.title" styleClass="welcome-title"/>
-			<Label text="%main.vaultDetail.welcome.subtitle" textAlignment="CENTER" wrapText="true" styleClass="welcome-subtitle"/>
-
+		<VBox alignment="CENTER" spacing="12" visible="${controller.noVaultPresent}" managed="${controller.noVaultPresent}">
 			<VBox spacing="10" maxWidth="480" styleClass="welcome-benefits">
 				<HBox alignment="CENTER_LEFT" spacing="10">
 					<FontAwesome5IconView glyph="CHECK" glyphSize="13" styleClass="welcome-check"/>

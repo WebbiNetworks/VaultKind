@@ -1,32 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import org.cryptomator.ui.controls.FontAwesome5IconView?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ButtonBar?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <VBox xmlns:fx="http://javafx.com/fxml"
 	  xmlns="http://javafx.com/javafx"
 	  fx:controller="org.cryptomator.ui.addvaultwizard.ChooseExistingVaultController"
-	  prefWidth="450"
-	  prefHeight="450"
-	  spacing="24"
-	  alignment="CENTER"
+	  prefWidth="820"
+	  prefHeight="546"
+	  spacing="26"
+	  styleClass="add-vault-page"
 	  accessibleRole="DIALOG">
 	<padding>
-		<Insets topRightBottomLeft="24"/>
+		<Insets top="38" right="42" bottom="28" left="42"/>
 	</padding>
 	<children>
-		<ImageView VBox.vgrow="ALWAYS" fitWidth="400" preserveRatio="true" smooth="true" image="${controller.screenshot}"/>
+		<VBox spacing="7">
+			<Label text="%addvaultwizard.existing.pageTitle" styleClass="add-vault-page-title"/>
+			<Label text="%addvaultwizard.existing.pageDescription" wrapText="true" styleClass="add-vault-page-description"/>
+		</VBox>
 
-		<Label text="%addvaultwizard.existing.instruction" wrapText="true" labelFor="$finishButton"/>
+		<HBox spacing="20" alignment="CENTER_LEFT" styleClass="add-vault-form-card">
+			<StackPane styleClass="add-vault-choice-icon">
+				<FontAwesome5IconView glyph="FOLDER_OPEN" glyphSize="22" styleClass="glyph-icon-primary"/>
+			</StackPane>
+			<VBox spacing="6" HBox.hgrow="ALWAYS">
+				<Label text="%addvaultwizard.existing.instructionTitle" styleClass="add-vault-choice-title"/>
+				<Label text="%addvaultwizard.existing.instruction" wrapText="true" styleClass="add-vault-choice-description"/>
+			</VBox>
+		</HBox>
+
+		<HBox spacing="10" alignment="CENTER_LEFT" styleClass="add-vault-note">
+			<FontAwesome5IconView glyph="SHIELD_ALT" glyphSize="17" styleClass="glyph-icon-primary"/>
+			<Label text="%addvaultwizard.existing.safetyNote" wrapText="true" styleClass="label-muted" HBox.hgrow="ALWAYS"/>
+		</HBox>
 
 		<Region VBox.vgrow="ALWAYS"/>
 
-		<ButtonBar buttonMinWidth="120" buttonOrder="+X">
+		<ButtonBar buttonMinWidth="120" buttonOrder="B+X">
 			<buttons>
+				<Button text="%generic.button.back" ButtonBar.buttonData="BACK_PREVIOUS" onAction="#back"/>
 				<Button fx:id="finishButton" text="%addvaultwizard.existing.chooseBtn" ButtonBar.buttonData="NEXT_FORWARD" onAction="#chooseFileAndNext" defaultButton="true"/>
 			</buttons>
 		</ButtonBar>

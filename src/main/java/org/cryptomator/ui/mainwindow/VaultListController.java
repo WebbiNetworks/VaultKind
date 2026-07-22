@@ -35,9 +35,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.geometry.Side;
 import javafx.scene.control.Button;
-import javafx.scene.control.ContextMenu;
 import javafx.scene.control.ListView;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.DragEvent;
@@ -99,8 +97,6 @@ public class VaultListController implements FxController {
 	public StackPane root;
 	@FXML
 	private Button addVaultButton;
-	@FXML
-	private ContextMenu addVaultContextMenu;
 
 	@Inject
 	VaultListController(@MainWindow Stage mainWindow, //
@@ -209,15 +205,6 @@ public class VaultListController implements FxController {
 		root.setOnDragExited(this::handleDragEvent);
 	}
 
-	@FXML
-	private void toggleMenu() {
-		if (addVaultContextMenu.isShowing()) {
-			addVaultContextMenu.hide();
-		} else {
-			addVaultContextMenu.show(addVaultButton, Side.BOTTOM, 0.0, 0.0);
-		}
-	}
-
 	private void deselect(MouseEvent released) {
 		if (released.getY() > (vaultList.getItems().size() * vaultList.fixedCellSizeProperty().get())) {
 			vaultList.getSelectionModel().clearSelection();
@@ -253,13 +240,18 @@ public class VaultListController implements FxController {
 	}
 
 	@FXML
+	public void didClickAddVault() {
+		addVaultWizard.recoveryAction(this::didClickRecoverExistingVault).build().showAddVaultWizard(resourceBundle);
+	}
+
+	@FXML
 	public void didClickAddNewVault() {
-		addVaultWizard.build().showAddNewVaultWizard(resourceBundle);
+		addVaultWizard.recoveryAction(this::didClickRecoverExistingVault).build().showAddNewVaultWizard(resourceBundle);
 	}
 
 	@FXML
 	public void didClickAddExistingVault() {
-		addVaultWizard.build().showAddExistingVaultWizard(resourceBundle);
+		addVaultWizard.recoveryAction(this::didClickRecoverExistingVault).build().showAddExistingVaultWizard(resourceBundle);
 	}
 
 	@FXML

@@ -2,10 +2,8 @@
 
 <?import org.cryptomator.ui.controls.FontAwesome5IconView?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ContextMenu?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
@@ -22,7 +20,7 @@
 	<VBox>
 		<HBox alignment="CENTER_LEFT" spacing="12" styleClass="vault-sidebar-header">
 			<Label text="%main.vaultlist" styleClass="label-large" HBox.hgrow="ALWAYS"/>
-			<Button fx:id="addVaultButton" onAction="#toggleMenu" text="%main.vaultlist.addVaultButton.tooltip" styleClass="vault-add-button" minWidth="110" accessibleText="%main.vaultlist.addVaultButton.tooltip">
+			<Button fx:id="addVaultButton" onAction="#didClickAddVault" text="%main.vaultlist.addVaultButton.tooltip" styleClass="vault-add-button" minWidth="110" accessibleText="%main.vaultlist.addVaultButton.tooltip">
 				<graphic>
 					<FontAwesome5IconView glyph="PLUS" glyphSize="14"/>
 				</graphic>
@@ -79,25 +77,4 @@
 		</HBox>
 	</VBox>
 	<Region styleClass="drag-n-drop-border" visible="${controller.draggingVaultOver}"/>
-	<fx:define>
-		<ContextMenu fx:id="addVaultContextMenu">
-			<items>
-				<MenuItem styleClass="dropdown-button-context-menu-item" text="%main.vaultlist.addVaultBtn.menuItemNew" onAction="#didClickAddNewVault">
-					<graphic>
-						<FontAwesome5IconView glyph="PLUS" textAlignment="CENTER" wrappingWidth="14"/>
-					</graphic>
-				</MenuItem>
-				<MenuItem styleClass="dropdown-button-context-menu-item" text="%main.vaultlist.addVaultBtn.menuItemExisting" onAction="#didClickAddExistingVault">
-					<graphic>
-						<FontAwesome5IconView glyph="FOLDER_OPEN" textAlignment="CENTER" wrappingWidth="14"/>
-					</graphic>
-				</MenuItem>
-				<MenuItem styleClass="dropdown-button-context-menu-item" text="%main.vaultlist.addVaultBtn.menuItemRecover" onAction="#didClickRecoverExistingVault">
-					<graphic>
-						<FontAwesome5IconView glyph="SYNC" textAlignment="CENTER" wrappingWidth="14"/>
-					</graphic>
-				</MenuItem>
-			</items>
-		</ContextMenu>
-	</fx:define>
 </StackPane>

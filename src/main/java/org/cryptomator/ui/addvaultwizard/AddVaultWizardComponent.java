@@ -6,12 +6,14 @@
 package org.cryptomator.ui.addvaultwizard;
 
 import dagger.Lazy;
+import dagger.BindsInstance;
 import dagger.Subcomponent;
 import org.cryptomator.ui.common.FxmlFile;
 import org.cryptomator.ui.common.FxmlScene;
 
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import javax.inject.Named;
 import java.util.ResourceBundle;
 
 @AddVaultWizardScoped
@@ -25,6 +27,16 @@ public interface AddVaultWizardComponent {
 	Lazy<Scene> sceneNew();
 	@FxmlScene(FxmlFile.ADDVAULT_EXISTING)
 	Lazy<Scene> sceneExisting();
+	@FxmlScene(FxmlFile.ADDVAULT_START)
+	Lazy<Scene> sceneStart();
+
+	default void showAddVaultWizard(ResourceBundle resourceBundle) {
+		Stage stage = window();
+		stage.setScene(sceneStart().get());
+		stage.setTitle(resourceBundle.getString("addvaultwizard.title"));
+		stage.sizeToScene();
+		stage.show();
+	}
 
 	default void showAddNewVaultWizard(ResourceBundle resourceBundle) {
 		Stage stage = window();
@@ -44,6 +56,8 @@ public interface AddVaultWizardComponent {
 
 	@Subcomponent.Builder
 	interface Builder {
+		@BindsInstance
+		Builder recoveryAction(@Named("recoveryAction") Runnable recoveryAction);
 
 		AddVaultWizardComponent build();
 	}

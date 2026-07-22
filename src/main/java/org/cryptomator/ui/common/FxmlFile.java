@@ -1,6 +1,7 @@
 package org.cryptomator.ui.common;
 
 public enum FxmlFile {
+	ADDVAULT_START("/fxml/addvault_start.fxml"), //
 	ADDVAULT_EXISTING("/fxml/addvault_existing.fxml"), //
 	ADDVAULT_NEW_NAME("/fxml/addvault_new_name.fxml"), //
 	ADDVAULT_NEW_LOCATION("/fxml/addvault_new_location.fxml"), //

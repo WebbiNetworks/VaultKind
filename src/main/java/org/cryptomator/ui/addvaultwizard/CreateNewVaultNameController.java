@@ -26,6 +26,7 @@ public class CreateNewVaultNameController implements FxController {
 
 	public TextField textField;
 	private final Stage window;
+	private final Lazy<Scene> startScene;
 	private final Lazy<Scene> chooseLocationScene;
 	private final ObjectProperty<Path> vaultPath;
 	private final StringProperty vaultName;
@@ -33,10 +34,12 @@ public class CreateNewVaultNameController implements FxController {
 
 	@Inject
 	CreateNewVaultNameController(@AddVaultWizardWindow Stage window, //
+								 @FxmlScene(FxmlFile.ADDVAULT_START) Lazy<Scene> startScene, //
 								 @FxmlScene(FxmlFile.ADDVAULT_NEW_LOCATION) Lazy<Scene> chooseLocationScene, //
 								 ObjectProperty<Path> vaultPath, //
 								 @Named("vaultName") StringProperty vaultName) {
 		this.window = window;
+		this.startScene = startScene;
 		this.chooseLocationScene = chooseLocationScene;
 		this.vaultPath = vaultPath;
 		this.vaultName = vaultName;
@@ -56,6 +59,11 @@ public class CreateNewVaultNameController implements FxController {
 				vaultPath.set(vaultPath.get().resolveSibling(vaultName.get()));
 			}
 		}
+	}
+
+	@FXML
+	public void back() {
+		window.setScene(startScene.get());
 	}
 
 	@FXML

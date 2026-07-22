@@ -1,32 +1,26 @@
 package org.cryptomator.ui.addvaultwizard;
 
 import dagger.Lazy;
-import org.apache.commons.lang3.SystemUtils;
 import org.cryptomator.common.vaults.NotAVaultDirectoryException;
 import org.cryptomator.common.vaults.Vault;
 import org.cryptomator.common.vaults.VaultListManager;
-import org.cryptomator.integrations.uiappearance.Theme;
 import org.cryptomator.ui.common.FxController;
 import org.cryptomator.ui.common.FxmlFile;
 import org.cryptomator.ui.common.FxmlScene;
 import org.cryptomator.ui.dialogs.Dialogs;
-import org.cryptomator.ui.fxapp.FxApplicationStyle;
 import org.cryptomator.ui.fxapp.FxApplicationWindows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
-import javafx.scene.image.Image;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Objects;
 import java.util.ResourceBundle;
 
 import static org.cryptomator.common.Constants.CRYPTOMATOR_FILENAME_GLOB;
@@ -37,6 +31,7 @@ public class ChooseExistingVaultController implements FxController {
 	private static final Logger LOG = LoggerFactory.getLogger(ChooseExistingVaultController.class);
 
 	private final Stage window;
+	private final Lazy<Scene> startScene;
 	private final Lazy<Scene> successScene;
 	private final FxApplicationWindows appWindows;
 	private final ObjectProperty<Path> vaultPath;
@@ -44,19 +39,19 @@ public class ChooseExistingVaultController implements FxController {
 	private final VaultListManager vaultListManager;
 	private final ResourceBundle resourceBundle;
 	private final Dialogs dialogs;
-	private final ObservableValue<Image> screenshot;
 
 	@Inject
 	ChooseExistingVaultController(@AddVaultWizardWindow Stage window, //
+								  @FxmlScene(FxmlFile.ADDVAULT_START) Lazy<Scene> startScene, //
 								  @FxmlScene(FxmlFile.ADDVAULT_SUCCESS) Lazy<Scene> successScene, //
 								  FxApplicationWindows appWindows, //
 								  ObjectProperty<Path> vaultPath, //
 								  @AddVaultWizardWindow ObjectProperty<Vault> vault, //
 								  VaultListManager vaultListManager, //
 								  ResourceBundle resourceBundle, //
-								  Dialogs dialogs, //
-								  FxApplicationStyle applicationStyle) {
+								  Dialogs dialogs) {
 		this.window = window;
+		this.startScene = startScene;
 		this.successScene = successScene;
 		this.appWindows = appWindows;
 		this.vaultPath = vaultPath;
@@ -64,20 +59,11 @@ public class ChooseExistingVaultController implements FxController {
 		this.vaultListManager = vaultListManager;
 		this.resourceBundle = resourceBundle;
 		this.dialogs = dialogs;
-		this.screenshot = applicationStyle.appliedAppThemeProperty().map(this::selectScreenshot);
 	}
 
-	private Image selectScreenshot(Theme theme) {
-		String imageResourcePath;
-		if (SystemUtils.IS_OS_MAC) {
-			imageResourcePath = switch (theme) {
-				case LIGHT -> "/img/select-masterkey-mac.png";
-				case DARK -> "/img/select-masterkey-mac-dark.png";
-			};
-		} else {
-			imageResourcePath = "/img/select-masterkey-win.png";
-		}
-		return new Image((Objects.requireNonNull(getClass().getResource(imageResourcePath)).toString()));
+	@FXML
+	public void back() {
+		window.setScene(startScene.get());
 	}
 
 	@FXML
@@ -101,16 +87,5 @@ public class ChooseExistingVaultController implements FxController {
 			}
 		}
 	}
-
-	/* Getter */
-
-	public ObservableValue<Image> screenshotProperty() {
-		return screenshot;
-	}
-
-	public Image getScreenshot() {
-		return screenshot.getValue();
-	}
-
 
 }

@@ -16,10 +16,10 @@
 <VBox xmlns:fx="http://javafx.com/fxml"
 	  xmlns="http://javafx.com/javafx"
 	  fx:controller="org.cryptomator.ui.addvaultwizard.CreateNewVaultLocationController"
-	  prefWidth="450"
-	  prefHeight="450"
-	  spacing="12"
-	  alignment="CENTER_LEFT"
+	  prefWidth="820"
+	  prefHeight="546"
+	  spacing="20"
+	  styleClass="add-vault-page"
 	  accessibleRole="DIALOG">
 	<fx:define>
 		<ToggleGroup fx:id="locationPresetsToggler"/>
@@ -27,41 +27,38 @@
 		<FontAwesome5IconView fx:id="goodLocation" styleClass="glyph-icon-primary" glyph="CHECK"/>
 	</fx:define>
 	<padding>
-		<Insets topRightBottomLeft="24"/>
+		<Insets top="32" right="42" bottom="26" left="42"/>
 	</padding>
 	<children>
-		<Region VBox.vgrow="ALWAYS"/>
-
-		<Label wrapText="true" text="%addvaultwizard.new.locationInstruction"/>
-		<ScrollPane hbarPolicy="NEVER">
-			<VBox fx:id="radioButtonVBox" spacing="6">
-				<!-- PLACEHOLDER, more radio buttons are added programmatically via controller -->
-				<HBox fx:id="customLocationRadioBtn" spacing="12" alignment="CENTER_LEFT">
-					<RadioButton fx:id="customRadioButton" toggleGroup="${locationPresetsToggler}" text="%addvaultwizard.new.directoryPickerLabel"/>
-					<Button contentDisplay="LEFT" text="%addvaultwizard.new.directoryPickerButton" onAction="#chooseCustomVaultPath" disable="${controller.usePresetPath}">
-						<graphic>
-							<FontAwesome5IconView glyph="FOLDER_OPEN"/>
-						</graphic>
-					</Button>
-				</HBox>
-			</VBox>
-		</ScrollPane>
-		<Region prefHeight="2"/>
-		<Label wrapText="true" text="%addvaultwizard.new.locationLoading" visible="${controller.loadingPresetLocations}" managed="${controller.loadingPresetLocations}" graphicTextGap="8">
-			<graphic>
-				<FontAwesome5Spinner/>
-			</graphic>
-		</Label>
-
-		<Region prefHeight="12" VBox.vgrow="NEVER"/>
-
-		<VBox spacing="6">
-			<Label text="%addvaultwizard.new.locationLabel" labelFor="$locationTextField"/>
-			<TextField fx:id="locationTextField" promptText="%addvaultwizard.new.locationPrompt" text="${controller.vaultPath}" editable="false" disable="${!controller.anyRadioButtonSelected}" HBox.hgrow="ALWAYS"/>
-			<Label fx:id="locationStatusLabel" alignment="CENTER_RIGHT" wrapText="true" visible="${controller.anyRadioButtonSelected}" maxWidth="Infinity" graphicTextGap="6"/>
+		<VBox spacing="7">
+			<Label text="%addvaultwizard.new.locationTitle" styleClass="add-vault-page-title"/>
+			<Label text="%addvaultwizard.new.locationInstruction" wrapText="true" maxWidth="Infinity" styleClass="add-vault-page-description"/>
 		</VBox>
 
-		<Region VBox.vgrow="ALWAYS"/>
+		<VBox spacing="10" styleClass="add-vault-form-card" VBox.vgrow="ALWAYS">
+			<HBox alignment="CENTER_LEFT">
+				<Label text="%addvaultwizard.new.locationOptionsTitle" styleClass="add-vault-field-label" HBox.hgrow="ALWAYS"/>
+				<Label text="%addvaultwizard.new.locationLoading" visible="${controller.loadingPresetLocations}" managed="${controller.loadingPresetLocations}" styleClass="label-muted" graphicTextGap="7">
+					<graphic><FontAwesome5Spinner/></graphic>
+				</Label>
+			</HBox>
+			<ScrollPane hbarPolicy="NEVER" fitToWidth="true" styleClass="add-vault-location-list" VBox.vgrow="ALWAYS">
+				<VBox fx:id="radioButtonVBox" spacing="10">
+					<HBox fx:id="customLocationRadioBtn" spacing="12" alignment="CENTER_LEFT" styleClass="add-vault-location-row">
+						<RadioButton fx:id="customRadioButton" toggleGroup="${locationPresetsToggler}" text="%addvaultwizard.new.directoryPickerLabel" HBox.hgrow="ALWAYS"/>
+						<Button contentDisplay="LEFT" text="%addvaultwizard.new.directoryPickerButton" onAction="#chooseCustomVaultPath" disable="${controller.usePresetPath}">
+							<graphic><FontAwesome5IconView glyph="FOLDER_OPEN"/></graphic>
+						</Button>
+					</HBox>
+				</VBox>
+			</ScrollPane>
+		</VBox>
+
+		<VBox spacing="7">
+			<Label text="%addvaultwizard.new.locationLabel" labelFor="$locationTextField" styleClass="add-vault-field-label"/>
+			<TextField fx:id="locationTextField" promptText="%addvaultwizard.new.locationPrompt" text="${controller.vaultPath}" editable="false" disable="${!controller.anyRadioButtonSelected}" prefHeight="42"/>
+			<Label fx:id="locationStatusLabel" alignment="CENTER_RIGHT" wrapText="true" visible="${controller.anyRadioButtonSelected}" maxWidth="Infinity" graphicTextGap="6"/>
+		</VBox>
 
 		<ButtonBar buttonMinWidth="120" buttonOrder="B+X">
 			<buttons>

@@ -48,6 +48,10 @@ abstract class PreferencesModule {
 			stage.initStyle(StageStyle.EXTENDED);
 		}
 		stage.setTitle(resourceBundle.getString("preferences.title"));
+		stage.setMinWidth(820);
+		stage.setMinHeight(580);
+		stage.setWidth(920);
+		stage.setHeight(650);
 		return stage;
 	}
 

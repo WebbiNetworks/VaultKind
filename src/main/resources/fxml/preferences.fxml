@@ -2,15 +2,22 @@
 
 <?import org.cryptomator.ui.controls.FontAwesome5IconView?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.Tab?>
-<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.HeaderBar?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <VBox xmlns:fx="http://javafx.com/fxml"
 	  xmlns="http://javafx.com/javafx"
 	  fx:controller="org.cryptomator.ui.preferences.PreferencesController"
-	  prefWidth="650">
+	  prefWidth="920"
+	  prefHeight="650"
+	  styleClass="preferences-window">
+	<fx:define>
+		<ToggleGroup fx:id="navigationGroup"/>
+	</fx:define>
 	<HeaderBar managed="${controller.windows}" visible="${controller.windows}" styleClass="app-header-bar">
 		<leading>
 			<HBox alignment="CENTER_LEFT" spacing="8" styleClass="app-header-title">
@@ -18,32 +25,34 @@
 			</HBox>
 		</leading>
 	</HeaderBar>
-	<TabPane fx:id="tabPane"
-			 VBox.vgrow="ALWAYS"
-			 tabMinWidth="60"
-			 tabClosingPolicy="UNAVAILABLE"
-			 tabDragPolicy="FIXED">
-		<tabs>
-			<Tab fx:id="generalTab" id="GENERAL" text="%preferences.general">
+	<HBox VBox.vgrow="ALWAYS" styleClass="preferences-layout">
+		<VBox minWidth="230" prefWidth="230" maxWidth="230" spacing="6" styleClass="preferences-navigation">
+			<Label text="%preferences.title" styleClass="preferences-navigation-title"/>
+			<Label text="%preferences.navigation.subtitle" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+			<Region minHeight="16"/>
+			<ToggleButton fx:id="generalNavigation" text="%preferences.general" toggleGroup="${navigationGroup}" maxWidth="Infinity" contentDisplay="LEFT" alignment="CENTER_LEFT" styleClass="preferences-navigation-item">
 				<graphic><FontAwesome5IconView glyph="WRENCH"/></graphic>
-				<content><fx:include source="preferences_general.fxml"/></content>
-			</Tab>
-			<Tab fx:id="interfaceTab" id="INTERFACE" text="%preferences.interface">
+			</ToggleButton>
+			<ToggleButton fx:id="interfaceNavigation" text="%preferences.interface" toggleGroup="${navigationGroup}" maxWidth="Infinity" contentDisplay="LEFT" alignment="CENTER_LEFT" styleClass="preferences-navigation-item">
 				<graphic><FontAwesome5IconView glyph="EYE"/></graphic>
-				<content><fx:include source="preferences_interface.fxml"/></content>
-			</Tab>
-			<Tab fx:id="volumeTab" id="VOLUME" text="%preferences.volume">
+			</ToggleButton>
+			<ToggleButton fx:id="volumeNavigation" text="%preferences.volume" toggleGroup="${navigationGroup}" maxWidth="Infinity" contentDisplay="LEFT" alignment="CENTER_LEFT" styleClass="preferences-navigation-item">
 				<graphic><FontAwesome5IconView glyph="HDD"/></graphic>
-				<content><fx:include source="preferences_volume.fxml"/></content>
-			</Tab>
-			<Tab fx:id="contributeTab" id="CONTRIBUTE" text="%preferences.contribute">
+			</ToggleButton>
+			<Region VBox.vgrow="ALWAYS"/>
+			<ToggleButton fx:id="contributeNavigation" text="%preferences.contribute" toggleGroup="${navigationGroup}" maxWidth="Infinity" contentDisplay="LEFT" alignment="CENTER_LEFT" styleClass="preferences-navigation-item">
 				<graphic><FontAwesome5IconView glyph="HEART"/></graphic>
-				<content><fx:include source="preferences_contribute.fxml"/></content>
-			</Tab>
-			<Tab fx:id="aboutTab" id="ABOUT" text="%preferences.about">
+			</ToggleButton>
+			<ToggleButton fx:id="aboutNavigation" text="%preferences.about" toggleGroup="${navigationGroup}" maxWidth="Infinity" contentDisplay="LEFT" alignment="CENTER_LEFT" styleClass="preferences-navigation-item">
 				<graphic><FontAwesome5IconView glyph="INFO_CIRCLE"/></graphic>
-				<content><fx:include source="preferences_about.fxml"/></content>
-			</Tab>
-		</tabs>
-	</TabPane>
+			</ToggleButton>
+		</VBox>
+		<StackPane fx:id="contentPane" HBox.hgrow="ALWAYS" styleClass="preferences-content">
+			<fx:include fx:id="generalPage" source="preferences_general.fxml"/>
+			<fx:include fx:id="interfacePage" source="preferences_interface.fxml"/>
+			<fx:include fx:id="volumePage" source="preferences_volume.fxml"/>
+			<fx:include fx:id="contributePage" source="preferences_contribute.fxml"/>
+			<fx:include fx:id="aboutPage" source="preferences_about.fxml"/>
+		</StackPane>
+	</HBox>
 </VBox>

@@ -1,7 +1,6 @@
 package org.cryptomator.ui.vaultoptions;
 
 import com.google.common.base.Strings;
-import dagger.Lazy;
 import org.cryptomator.common.ObservableUtil;
 import org.cryptomator.common.mount.Mounter;
 import org.cryptomator.common.mount.WindowsDriveLetters;
@@ -15,7 +14,6 @@ import org.cryptomator.ui.preferences.SelectedPreferencesTab;
 import org.cryptomator.ui.preferences.VolumePreferencesController;
 
 import javax.inject.Inject;
-import javafx.application.Application;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.value.ObservableBooleanValue;
@@ -47,8 +45,6 @@ public class MountOptionsController implements FxController {
 	private final VaultSettings vaultSettings;
 	private final WindowsDriveLetters windowsDriveLetters;
 	private final ResourceBundle resourceBundle;
-	private final Lazy<Application> application;
-
 	private final ObservableValue<String> defaultMountFlags;
 	private final ObservableValue<Boolean> mountpointDirSupported;
 	private final ObservableValue<Boolean> mountpointDriveLetterSupported;
@@ -85,7 +81,6 @@ public class MountOptionsController implements FxController {
 						   WindowsDriveLetters windowsDriveLetters, //
 						   ResourceBundle resourceBundle, //
 						   FxApplicationWindows applicationWindows, //
-						   Lazy<Application> application, //
 						   List<MountService> mountProviders, //
 						   Mounter mounter, //
 						   ObservableValue<MountService> defaultMountService) {
@@ -95,7 +90,6 @@ public class MountOptionsController implements FxController {
 		this.resourceBundle = resourceBundle;
 		this.applicationWindows = applicationWindows;
 		this.directoryPath = vault.getVaultSettings().mountPoint.map(p -> isDriveLetter(p) ? null : p.toString());
-		this.application = application;
 		this.mountProviders = mountProviders;
 		this.defaultMountService = defaultMountService;
 		this.selectedMountService = Bindings.createObjectBinding(this::reselectMountService, defaultMountService, vaultSettings.mountService);
@@ -288,11 +282,6 @@ public class MountOptionsController implements FxController {
 		}
 
 	}
-
-	public void openDocs() {
-		application.get().getHostServices().showDocument(VolumePreferencesController.DOCS_MOUNTING_URL);
-	}
-
 	private boolean validateLoopbackPort() {
 		try {
 			int port = Integer.parseInt(vaultLoopbackPortField.getText());

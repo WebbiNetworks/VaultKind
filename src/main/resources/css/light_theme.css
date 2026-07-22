@@ -210,6 +210,124 @@
 	-fx-font-weight: 600;
 }
 
+/* Preferences shell */
+.preferences-window {
+	-fx-background-color: MAIN_BG;
+}
+
+.preferences-layout,
+.preferences-content {
+	-fx-background-color: MAIN_BG;
+}
+
+.preferences-navigation {
+	-fx-padding: 28px 18px 22px;
+	-fx-background-color: white;
+	-fx-border-color: transparent GRAY_7 transparent transparent;
+}
+
+.preferences-navigation-title {
+	-fx-font-size: 24px;
+	-fx-font-weight: 600;
+	-fx-text-fill: TEXT_FILL;
+}
+
+.preferences-navigation-subtitle {
+	-fx-font-size: 12px;
+	-fx-line-spacing: 2px;
+	-fx-text-fill: GRAY_4;
+}
+
+.preferences-navigation-item {
+	-fx-padding: 12px 14px;
+	-fx-background-color: transparent;
+	-fx-background-radius: 8px;
+	-fx-border-color: transparent;
+	-fx-border-radius: 8px;
+	-fx-text-fill: GRAY_3;
+	-fx-font-size: 14px;
+	-fx-graphic-text-gap: 12px;
+	-fx-cursor: hand;
+}
+
+.preferences-navigation-item .glyph-icon {
+	-fx-fill: GRAY_4;
+}
+
+.preferences-navigation-item:hover {
+	-fx-background-color: GRAY_9;
+	-fx-text-fill: TEXT_FILL;
+}
+
+.preferences-navigation-item:selected {
+	-fx-background-color: PRIMARY_L2;
+	-fx-border-color: transparent transparent transparent PRIMARY;
+	-fx-border-width: 0 0 0 3px;
+	-fx-text-fill: PRIMARY_D1;
+	-fx-font-weight: 600;
+}
+
+.preferences-navigation-item:selected .glyph-icon {
+	-fx-fill: PRIMARY_D1;
+}
+
+.preferences-page-scroll,
+.preferences-page-scroll > .viewport {
+	-fx-background-color: MAIN_BG;
+	-fx-border-color: transparent;
+}
+
+.preferences-page {
+	-fx-padding: 36px 42px 42px;
+	-fx-background-color: MAIN_BG;
+}
+
+.preferences-page-title {
+	-fx-font-size: 28px;
+	-fx-font-weight: 600;
+	-fx-text-fill: TEXT_FILL;
+}
+
+.preferences-page-description {
+	-fx-font-size: 14px;
+	-fx-text-fill: GRAY_4;
+}
+
+.settings-card {
+	-fx-padding: 22px;
+	-fx-background-color: white;
+	-fx-background-radius: 12px;
+	-fx-border-color: GRAY_7;
+	-fx-border-radius: 12px;
+}
+
+.settings-section-title {
+	-fx-padding: 0 0 8px;
+	-fx-font-size: 13px;
+	-fx-font-weight: 600;
+	-fx-text-fill: GRAY_4;
+}
+
+.settings-row {
+	-fx-padding: 9px 0;
+}
+
+.settings-row > .label {
+	-fx-text-fill: TEXT_FILL;
+}
+
+.about-product-title {
+	-fx-font-size: 24px;
+	-fx-font-weight: 600;
+	-fx-text-fill: TEXT_FILL;
+}
+
+.about-license-text {
+	-fx-font-size: 13px;
+	-fx-background-radius: 10px;
+	-fx-border-radius: 10px;
+}
+
 .main-window.os-windows {
 	-fx-border-color: CONTROL_BORDER_NORMAL;
 	-fx-border-width: 1px 0 0 0;

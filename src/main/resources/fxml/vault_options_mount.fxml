@@ -39,14 +39,6 @@
 						<Tooltip text="%vaultOptions.mount.info" showDelay="100ms"/>
 					</tooltip>
 				</Hyperlink>
-				<Hyperlink contentDisplay="GRAPHIC_ONLY" onAction="#openDocs" visible="${!controller.defaultMountServiceSelected}" managed="${!controller.defaultMountServiceSelected}" accessibleText="%preferences.volume.docsTooltip">
-					<graphic>
-						<FontAwesome5IconView glyph="QUESTION_CIRCLE" styleClass="glyph-icon-muted"/>
-					</graphic>
-					<tooltip>
-						<Tooltip text="%preferences.volume.docsTooltip" showDelay="100ms"/>
-					</tooltip>
-				</Hyperlink>
 			</HBox>
 
 			<Label styleClass="label-red" text="%vaultOptions.mount.volumeType.restartRequired" visible="${controller.selectedMountServiceRequiresRestart}" managed="${controller.selectedMountServiceRequiresRestart}"/>

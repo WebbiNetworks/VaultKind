@@ -1,6 +1,5 @@
 package org.cryptomator.ui.preferences;
 
-import dagger.Lazy;
 import org.cryptomator.common.ObservableUtil;
 import org.cryptomator.common.settings.Settings;
 import org.cryptomator.integrations.mount.MountCapability;
@@ -8,7 +7,6 @@ import org.cryptomator.integrations.mount.MountService;
 import org.cryptomator.ui.common.FxController;
 
 import javax.inject.Inject;
-import javafx.application.Application;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.Button;
@@ -22,7 +20,6 @@ import java.util.ResourceBundle;
 @PreferencesScoped
 public class VolumePreferencesController implements FxController {
 
-	public static final String DOCS_MOUNTING_URL = "https://docs.cryptomator.org/desktop/volume-type/";
 	public static final int MIN_PORT = 1024;
 	public static final int MAX_PORT = 65535;
 
@@ -34,7 +31,6 @@ public class VolumePreferencesController implements FxController {
 	private final ObservableValue<Boolean> mountToDriveLetterSupported;
 	private final ObservableValue<Boolean> mountFlagsSupported;
 	private final ObservableValue<Boolean> readonlySupported;
-	private final Lazy<Application> application;
 	private final List<MountService> mountProviders;
 	public ChoiceBox<MountService> volumeTypeChoiceBox;
 	public TextField loopbackPortField;
@@ -42,11 +38,9 @@ public class VolumePreferencesController implements FxController {
 
 	@Inject
 	VolumePreferencesController(Settings settings, //
-								Lazy<Application> application, //
 								List<MountService> mountProviders, //
 								ResourceBundle resourceBundle) {
 		this.settings = settings;
-		this.application = application;
 		this.mountProviders = mountProviders;
 		this.resourceBundle = resourceBundle;
 
@@ -150,9 +144,5 @@ public class VolumePreferencesController implements FxController {
 		public MountService fromString(String string) {
 			throw new UnsupportedOperationException();
 		}
-	}
-
-	public void openDocs() {
-		application.get().getHostServices().showDocument(DOCS_MOUNTING_URL);
 	}
 }

@@ -2,7 +2,6 @@
 
 <?import org.cryptomator.ui.controls.FormattedLabel?>
 <?import org.cryptomator.ui.controls.FontAwesome5IconView?>
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.layout.HBox?>
@@ -10,19 +9,26 @@
 <VBox xmlns:fx="http://javafx.com/fxml"
 	  xmlns="http://javafx.com/javafx"
 	  fx:controller="org.cryptomator.ui.preferences.AboutController"
-	  spacing="24">
-	<padding>
-		<Insets topRightBottomLeft="24"/>
-	</padding>
+	  spacing="24"
+	  styleClass="preferences-page">
 	<children>
-		<HBox spacing="12" VBox.vgrow="NEVER">
-			<FontAwesome5IconView glyph="LOCK" glyphSize="54" styleClass="welcome-brand-mark"/>
-			<VBox spacing="3" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
-				<FormattedLabel styleClass="label-extra-large" format="VaultKind %s" arg1="${controller.fullApplicationVersion}"/>
-				<Label text="%preferences.about.forkAttribution" wrapText="true"/>
+		<VBox spacing="6">
+			<Label text="%preferences.about.pageTitle" styleClass="preferences-page-title"/>
+			<Label text="%preferences.about.pageDescription" wrapText="true" styleClass="preferences-page-description"/>
+		</VBox>
+
+		<HBox spacing="18" alignment="CENTER_LEFT" styleClass="settings-card">
+			<FontAwesome5IconView glyph="LOCK" glyphSize="48" styleClass="welcome-brand-mark"/>
+			<VBox spacing="5" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
+				<FormattedLabel styleClass="about-product-title" format="VaultKind %s" arg1="${controller.fullApplicationVersion}"/>
+				<Label text="%preferences.about.forkAttribution" wrapText="true" styleClass="preferences-page-description"/>
 			</VBox>
 		</HBox>
 
-		<TextArea text="${controller.thirdPartyLicenseText}" editable="false" accessibleText="%preferences.about.thirdPartyLicenses"/>
+		<VBox spacing="10" VBox.vgrow="ALWAYS">
+			<Label text="%preferences.about.thirdPartyLicenses" styleClass="settings-section-title"/>
+			<Label text="%preferences.about.licensesDescription" wrapText="true" styleClass="preferences-page-description"/>
+			<TextArea text="${controller.thirdPartyLicenseText}" editable="false" wrapText="true" accessibleText="%preferences.about.thirdPartyLicenses" VBox.vgrow="ALWAYS" styleClass="about-license-text"/>
+		</VBox>
 	</children>
 </VBox>

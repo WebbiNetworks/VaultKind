@@ -2,30 +2,33 @@ package org.cryptomator.ui.preferences;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.cryptomator.ui.common.FxController;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javafx.beans.property.ObjectProperty;
 import javafx.fxml.FXML;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
+import javafx.scene.Node;
+import javafx.scene.control.Toggle;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
 @PreferencesScoped
 public class PreferencesController implements FxController {
 
-	private static final Logger LOG = LoggerFactory.getLogger(PreferencesController.class);
-
 	private final Stage window;
 	private final ObjectProperty<SelectedPreferencesTab> selectedTabProperty;
-	public TabPane tabPane;
-	public Tab generalTab;
-	public Tab interfaceTab;
-	public Tab volumeTab;
-	public Tab contributeTab;
-	public Tab aboutTab;
+	public ToggleGroup navigationGroup;
+	public ToggleButton generalNavigation;
+	public ToggleButton interfaceNavigation;
+	public ToggleButton volumeNavigation;
+	public ToggleButton contributeNavigation;
+	public ToggleButton aboutNavigation;
+	public Node generalPage;
+	public Node interfacePage;
+	public Node volumePage;
+	public Node contributePage;
+	public Node aboutPage;
 
 	@Inject
 	public PreferencesController(@PreferencesWindow Stage window, ObjectProperty<SelectedPreferencesTab> selectedTabProperty) {
@@ -36,39 +39,86 @@ public class PreferencesController implements FxController {
 	@FXML
 	public void initialize() {
 		window.setOnShowing(this::windowWillAppear);
-		selectedTabProperty.addListener(observable -> this.selectChosenTab());
-		tabPane.getSelectionModel().selectedItemProperty().addListener(observable -> this.selectedTabChanged());
+		selectedTabProperty.addListener(observable -> this.selectChosenPage());
+		navigationGroup.selectedToggleProperty().addListener((observable, oldToggle, newToggle) -> navigationChanged(oldToggle, newToggle));
+		selectChosenPage();
 	}
 
-	private void selectChosenTab() {
-		Tab toBeSelected = getTabToSelect(selectedTabProperty.get());
-		tabPane.getSelectionModel().select(toBeSelected);
+	private void selectChosenPage() {
+		SelectedPreferencesTab selectedTab = normalizeSelection(selectedTabProperty.get());
+		ToggleButton navigation = navigationFor(selectedTab);
+		navigationGroup.selectToggle(navigation);
+		showOnly(pageFor(selectedTab));
 	}
 
-	private Tab getTabToSelect(SelectedPreferencesTab selectedTab) {
+	private SelectedPreferencesTab normalizeSelection(SelectedPreferencesTab selectedTab) {
 		return switch (selectedTab) {
-			case GENERAL -> generalTab;
-			case INTERFACE -> interfaceTab;
-			case VOLUME -> volumeTab;
-			case UPDATES -> generalTab;
-			case CONTRIBUTE -> contributeTab;
-			case ABOUT -> aboutTab;
-			case ANY -> generalTab;
+			case GENERAL, INTERFACE, VOLUME, CONTRIBUTE, ABOUT -> selectedTab;
+			case UPDATES, ANY -> SelectedPreferencesTab.GENERAL;
 		};
 	}
 
-	private void selectedTabChanged() {
-		Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-		try {
-			SelectedPreferencesTab selectedPreferencesTab = SelectedPreferencesTab.valueOf(selectedTab.getId());
-			selectedTabProperty.set(selectedPreferencesTab);
-		} catch (IllegalArgumentException e) {
-			LOG.error("Unknown preferences tab id: {}", selectedTab.getId());
+	private ToggleButton navigationFor(SelectedPreferencesTab selectedTab) {
+		return switch (selectedTab) {
+			case GENERAL -> generalNavigation;
+			case INTERFACE -> interfaceNavigation;
+			case VOLUME -> volumeNavigation;
+			case CONTRIBUTE -> contributeNavigation;
+			case ABOUT -> aboutNavigation;
+			case UPDATES, ANY -> generalNavigation;
+		};
+	}
+
+	private Node pageFor(SelectedPreferencesTab selectedTab) {
+		return switch (selectedTab) {
+			case GENERAL -> generalPage;
+			case INTERFACE -> interfacePage;
+			case VOLUME -> volumePage;
+			case CONTRIBUTE -> contributePage;
+			case ABOUT -> aboutPage;
+			case UPDATES, ANY -> generalPage;
+		};
+	}
+
+	private void navigationChanged(Toggle oldToggle, Toggle newToggle) {
+		if (newToggle == null) {
+			if (oldToggle != null) {
+				navigationGroup.selectToggle(oldToggle);
+			}
+			return;
+		}
+		SelectedPreferencesTab selectedTab = selectionFor(newToggle);
+		if (selectedTabProperty.get() != selectedTab) {
+			selectedTabProperty.set(selectedTab);
+		} else {
+			showOnly(pageFor(selectedTab));
+		}
+	}
+
+	private SelectedPreferencesTab selectionFor(Toggle navigation) {
+		if (navigation == interfaceNavigation) {
+			return SelectedPreferencesTab.INTERFACE;
+		} else if (navigation == volumeNavigation) {
+			return SelectedPreferencesTab.VOLUME;
+		} else if (navigation == contributeNavigation) {
+			return SelectedPreferencesTab.CONTRIBUTE;
+		} else if (navigation == aboutNavigation) {
+			return SelectedPreferencesTab.ABOUT;
+		} else {
+			return SelectedPreferencesTab.GENERAL;
+		}
+	}
+
+	private void showOnly(Node selectedPage) {
+		for (Node page : new Node[]{generalPage, interfacePage, volumePage, contributePage, aboutPage}) {
+			boolean selected = page == selectedPage;
+			page.setVisible(selected);
+			page.setManaged(selected);
 		}
 	}
 
 	private void windowWillAppear(@SuppressWarnings("unused") WindowEvent windowEvent) {
-		selectChosenTab();
+		selectChosenPage();
 	}
 
 	public boolean isWindows() {

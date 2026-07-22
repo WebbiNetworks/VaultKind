@@ -89,11 +89,6 @@ abstract class PreferencesModule {
 
 	@Binds
 	@IntoMap
-	@FxControllerKey(SupporterCertificateController.class)
-	abstract FxController bindSupporterCertificatePreferencesController(SupporterCertificateController controller);
-
-	@Binds
-	@IntoMap
 	@FxControllerKey(AboutController.class)
 	abstract FxController bindAboutController(AboutController controller);
 

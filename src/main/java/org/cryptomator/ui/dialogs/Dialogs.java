@@ -1,6 +1,5 @@
 package org.cryptomator.ui.dialogs;
 
-import org.cryptomator.common.settings.Settings;
 import org.cryptomator.common.vaults.NotAVaultDirectoryException;
 import org.cryptomator.common.vaults.Vault;
 import org.cryptomator.ui.common.DefaultSceneFactory;
@@ -97,21 +96,6 @@ public class Dialogs {
 				.setIcon(FontAwesome5Icon.CHECK)
 				.setOkAction(Stage::close)
 				.setOkButtonKey(BUTTON_KEY_CLOSE);
-	}
-
-	public SimpleDialog.Builder prepareRemoveCertDialog(Stage window, Settings settings) {
-		return createDialogBuilder() //
-				.setOwner(window) //
-				.setTitleKey("removeCert.title") //
-				.setMessageKey("removeCert.message") //
-				.setDescriptionKey("removeCert.description") //
-				.setIcon(FontAwesome5Icon.QUESTION) //
-				.setOkButtonKey("generic.button.remove") //
-				.setCancelButtonKey("generic.button.cancel") //
-				.setOkAction(stage -> {
-					settings.licenseKey.set(null);
-					stage.close();
-				});
 	}
 
 	public SimpleDialog.Builder prepareDokanySupportEndDialog(Stage window, Consumer<Stage> cancelAction) {

@@ -403,6 +403,55 @@
 	-fx-fill: PRIMARY;
 }
 
+.support-shell {
+	-fx-padding: 42px;
+	-fx-background-color: MAIN_BG;
+}
+
+.support-card {
+	-fx-padding: 38px 44px;
+	-fx-background-color: WHITE;
+	-fx-background-radius: 16px;
+	-fx-border-color: GRAY_7;
+	-fx-border-radius: 16px;
+	-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.10), 14, 0.12, 0, 5);
+}
+
+.support-card-icon-background {
+	-fx-fill: PRIMARY;
+}
+
+.support-card-icon {
+	-fx-fill: WHITE;
+}
+
+.support-card-title {
+	-fx-font-size: 24px;
+	-fx-font-weight: 600;
+	-fx-text-fill: TEXT_FILL;
+}
+
+.support-card-copy {
+	-fx-font-size: 15px;
+	-fx-line-spacing: 3px;
+	-fx-text-fill: GRAY_3;
+}
+
+.support-status-pill {
+	-fx-padding: 8px 16px;
+	-fx-background-color: rgba(74, 181, 73, 0.12);
+	-fx-background-radius: 999px;
+	-fx-border-color: rgba(74, 181, 73, 0.42);
+	-fx-border-radius: 999px;
+	-fx-text-fill: PRIMARY_D1;
+	-fx-font-weight: 600;
+}
+
+.support-card-note {
+	-fx-font-size: 13px;
+	-fx-text-fill: GRAY_4;
+}
+
 .vault-status-icon {
 	-fx-fill: PRIMARY;
 }

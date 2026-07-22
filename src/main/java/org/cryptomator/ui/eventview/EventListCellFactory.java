@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Map;
 
-@EventViewScoped
 public class EventListCellFactory implements Callback<ListView<Map.Entry<FSEventBucket, FSEventBucketContent>>, ListCell<Map.Entry<FSEventBucket, FSEventBucketContent>>> {
 
 	private static final String FXML_PATH = "/fxml/eventview_cell.fxml";

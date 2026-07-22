@@ -21,7 +21,6 @@ import javafx.util.StringConverter;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-@EventViewScoped
 public class EventViewController implements FxController {
 
 	private final FilteredList<Map.Entry<FSEventBucket, FSEventBucketContent>> filteredEventList;

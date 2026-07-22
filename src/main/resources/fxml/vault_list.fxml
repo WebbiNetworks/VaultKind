@@ -20,8 +20,14 @@
 		   minWidth="280"
 		   styleClass="vault-sidebar">
 	<VBox>
+		<ToggleButton fx:id="homeButton" text="%main.home" onAction="#showHome" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="vault-home-button" accessibleText="%main.home.accessible">
+			<VBox.margin><Insets top="12" right="10" bottom="8" left="10"/></VBox.margin>
+			<graphic>
+				<FontAwesome5IconView glyph="HOME" glyphSize="15"/>
+			</graphic>
+		</ToggleButton>
 		<HBox alignment="CENTER_LEFT" spacing="12" styleClass="vault-sidebar-header">
-			<Label text="%main.vaultlist" styleClass="label-large" HBox.hgrow="ALWAYS"/>
+			<Label text="%main.vaultlist" styleClass="vault-section-title" HBox.hgrow="ALWAYS"/>
 			<Button fx:id="addVaultButton" onAction="#didClickAddVault" text="%main.vaultlist.addVaultButton.tooltip" styleClass="vault-add-button" minWidth="110" accessibleText="%main.vaultlist.addVaultButton.tooltip">
 				<graphic>
 					<FontAwesome5IconView glyph="PLUS" glyphSize="14"/>
@@ -31,12 +37,6 @@
 				</tooltip>
 			</Button>
 		</HBox>
-		<ToggleButton fx:id="homeButton" text="%main.home" onAction="#showHome" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="vault-home-button" accessibleText="%main.home.accessible">
-			<VBox.margin><Insets top="10" right="10" bottom="2" left="10"/></VBox.margin>
-			<graphic>
-				<FontAwesome5IconView glyph="HOME" glyphSize="15"/>
-			</graphic>
-		</ToggleButton>
 		<StackPane VBox.vgrow="ALWAYS">
 			<VBox>
 				<ListView fx:id="vaultList" editable="true" fixedCellSize="${controller.cellSize}" accessibleText="%main.vaultlist" styleClass="vault-list">
@@ -59,9 +59,9 @@
 				<Region VBox.vgrow="ALWAYS"/>
 			</VBox>
 		</StackPane>
-		<HBox styleClass="vault-sidebar-actions" alignment="CENTER_LEFT" spacing="6">
-			<StackPane>
-				<Button onAction="#showEventViewer" text="%main.vaultlist.events" styleClass="sidebar-action" mnemonicParsing="false" accessibleText="%main.vaultlist.showEventsButton.tooltip">
+		<VBox styleClass="vault-sidebar-actions" spacing="4">
+			<StackPane maxWidth="Infinity">
+				<Button onAction="#showEventViewer" text="%main.vaultlist.events" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="sidebar-action" mnemonicParsing="false" accessibleText="%main.vaultlist.showEventsButton.tooltip">
 					<graphic>
 						<FontAwesome5IconView glyph="BELL" glyphSize="14"/>
 					</graphic>
@@ -73,8 +73,7 @@
 					<Circle radius="4" styleClass="icon-update-indicator" AnchorPane.topAnchor="2" AnchorPane.rightAnchor="2" visible="${controller.unreadEventsPresent}" />
 				</AnchorPane>
 			</StackPane>
-			<Region HBox.hgrow="ALWAYS"/>
-			<Button onAction="#showPreferences" text="%main.vaultlist.preferences" styleClass="sidebar-action" alignment="CENTER" accessibleText="%main.vaultlist.showPreferencesButton.tooltip">
+			<Button onAction="#showPreferences" text="%main.vaultlist.preferences" maxWidth="Infinity" styleClass="sidebar-action" alignment="CENTER_LEFT" accessibleText="%main.vaultlist.showPreferencesButton.tooltip">
 				<graphic>
 					<FontAwesome5IconView glyph="COG" glyphSize="14"/>
 				</graphic>
@@ -82,7 +81,15 @@
 					<Tooltip text="%main.vaultlist.showPreferencesButton.tooltip"/>
 				</tooltip>
 			</Button>
-		</HBox>
+			<Button onAction="#showHelp" text="%main.vaultlist.help" maxWidth="Infinity" styleClass="sidebar-action" alignment="CENTER_LEFT" accessibleText="%main.vaultlist.showHelpButton.tooltip">
+				<graphic>
+					<FontAwesome5IconView glyph="QUESTION_CIRCLE" glyphSize="14"/>
+				</graphic>
+				<tooltip>
+					<Tooltip text="%main.vaultlist.showHelpButton.tooltip"/>
+				</tooltip>
+			</Button>
+		</VBox>
 	</VBox>
 	<Region styleClass="drag-n-drop-border" visible="${controller.draggingVaultOver}"/>
 </StackPane>

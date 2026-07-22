@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
-@PreferencesScoped
 public class VolumePreferencesController implements FxController {
 
 	public static final int MIN_PORT = 1024;

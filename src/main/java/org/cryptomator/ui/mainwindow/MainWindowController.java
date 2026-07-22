@@ -5,7 +5,6 @@ import org.cryptomator.common.settings.Settings;
 import org.cryptomator.common.vaults.Vault;
 import org.cryptomator.common.vaults.VaultListManager;
 import org.cryptomator.ui.common.FxController;
-import org.cryptomator.ui.fxapp.FxApplicationWindows;
 import org.cryptomator.ui.preferences.SelectedPreferencesTab;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +16,7 @@ import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.fxml.FXML;
 import javafx.geometry.Rectangle2D;
+import javafx.scene.Node;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -30,20 +30,30 @@ public class MainWindowController implements FxController {
 	private final Stage window;
 	private final ReadOnlyObjectProperty<Vault> selectedVault;
 	private final Settings settings;
-	private final FxApplicationWindows appWindows;
+	private final MainWindowNavigation navigation;
 
 	@FXML
 	private StackPane root;
+	@FXML
+	private Node workspacePane;
+	@FXML
+	private Node settingsPane;
+	@FXML
+	private Node activityPane;
+	@FXML
+	private Node addVaultPane;
+	@FXML
+	private StackPane addVaultContentHost;
 
 	@Inject
 	public MainWindowController(@MainWindow Stage window, //
 								ObjectProperty<Vault> selectedVault, //
 								Settings settings, //
-								FxApplicationWindows appWindows) {
+								MainWindowNavigation navigation) {
 		this.window = window;
 		this.selectedVault = selectedVault;
 		this.settings = settings;
-		this.appWindows = appWindows;
+		this.navigation = navigation;
 	}
 
 	@FXML
@@ -54,6 +64,10 @@ public class MainWindowController implements FxController {
 			root.getStyleClass().add("os-windows");
 		}
 		window.focusedProperty().addListener(this::mainWindowFocusChanged);
+		navigation.destinationProperty().addListener((_, _, destination) -> showDestination(destination));
+		navigation.addVaultContentProperty().addListener((_, _, content) -> showAddVaultContent(content));
+		showAddVaultContent(navigation.addVaultContentProperty().get());
+		showDestination(navigation.destinationProperty().get());
 
 		int x = settings.windowXPosition.get();
 		int y = settings.windowYPosition.get();
@@ -72,6 +86,33 @@ public class MainWindowController implements FxController {
 		settings.windowYPosition.bind(window.yProperty());
 		settings.windowWidth.bind(window.widthProperty());
 		settings.windowHeight.bind(window.heightProperty());
+	}
+
+	private void showDestination(MainWindowNavigation.Destination destination) {
+		showOnly(destination == MainWindowNavigation.Destination.SETTINGS ? settingsPane
+				: destination == MainWindowNavigation.Destination.ACTIVITY ? activityPane
+				: destination == MainWindowNavigation.Destination.ADD_VAULT ? addVaultPane
+				: workspacePane);
+	}
+
+	private void showAddVaultContent(Node content) {
+		addVaultContentHost.getChildren().clear();
+		if (content != null) {
+			addVaultContentHost.getChildren().add(content);
+		}
+	}
+
+	private void showOnly(Node selectedPane) {
+		for (Node pane : new Node[]{workspacePane, settingsPane, activityPane, addVaultPane}) {
+			boolean selected = pane == selectedPane;
+			pane.setVisible(selected);
+			pane.setManaged(selected);
+		}
+	}
+
+	@FXML
+	public void showDashboard() {
+		navigation.showHome();
 	}
 
 	public boolean isWindows() {
@@ -130,7 +171,7 @@ public class MainWindowController implements FxController {
 
 	@FXML
 	public void showGeneralPreferences() {
-		appWindows.showPreferencesWindow(SelectedPreferencesTab.GENERAL);
+		navigation.showSettings(SelectedPreferencesTab.GENERAL);
 	}
 
 	public ReadOnlyBooleanProperty debugModeEnabledProperty() {

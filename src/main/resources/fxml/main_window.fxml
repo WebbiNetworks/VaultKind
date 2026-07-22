@@ -6,6 +6,10 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import org.cryptomator.ui.controls.FontAwesome5IconView?>
 <?import org.cryptomator.ui.controls.InfoBar?>
 
 <StackPane xmlns:fx="http://javafx.com/fxml"
@@ -21,10 +25,26 @@
 				</HBox>
 			</leading>
 		</HeaderBar>
-		<SplitPane dividerPositions="0.36" orientation="HORIZONTAL" VBox.vgrow="ALWAYS" styleClass="dashboard-split">
-			<fx:include source="vault_list.fxml" SplitPane.resizableWithParent="false"/>
-			<fx:include source="vault_detail.fxml" SplitPane.resizableWithParent="true"/>
-		</SplitPane>
+		<StackPane VBox.vgrow="ALWAYS">
+			<SplitPane fx:id="workspacePane" dividerPositions="0.30" orientation="HORIZONTAL" styleClass="dashboard-split">
+				<fx:include source="vault_list.fxml" SplitPane.resizableWithParent="false"/>
+				<fx:include source="vault_detail.fxml" SplitPane.resizableWithParent="true"/>
+			</SplitPane>
+			<fx:include fx:id="settingsPane" source="preferences_embedded.fxml" visible="false" managed="false"/>
+			<fx:include fx:id="activityPane" source="activity_embedded.fxml" visible="false" managed="false"/>
+			<HBox fx:id="addVaultPane" visible="false" managed="false" styleClass="embedded-add-vault">
+				<VBox minWidth="300" prefWidth="300" maxWidth="300" spacing="6" styleClass="preferences-navigation,embedded-preferences-navigation">
+					<Button text="%main.home" onAction="#showDashboard" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="vault-home-button">
+						<VBox.margin><Insets top="12" right="0" bottom="10" left="0"/></VBox.margin>
+						<graphic><FontAwesome5IconView glyph="HOME" glyphSize="15"/></graphic>
+					</Button>
+					<Label text="%addvaultwizard.title" styleClass="preferences-navigation-title"/>
+					<Label text="%addvaultwizard.embedded.description" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+					<Region VBox.vgrow="ALWAYS"/>
+				</VBox>
+				<StackPane fx:id="addVaultContentHost" HBox.hgrow="ALWAYS" styleClass="embedded-add-vault-content"/>
+			</HBox>
+		</StackPane>
 	</VBox>
 	<VBox maxWidth="340" maxHeight="210" spacing="14" mouseTransparent="false" StackPane.alignment="TOP_RIGHT" styleClass="notification-stack">
 		<InfoBar onMouseClicked="#showGeneralPreferences"

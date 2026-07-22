@@ -2,6 +2,7 @@ package org.cryptomator.ui.preferences;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.cryptomator.ui.common.FxController;
+import org.cryptomator.ui.mainwindow.MainWindowNavigation;
 
 import javax.inject.Inject;
 import javafx.beans.property.ObjectProperty;
@@ -13,11 +14,11 @@ import javafx.scene.control.ToggleGroup;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
-@PreferencesScoped
 public class PreferencesController implements FxController {
 
 	private final Stage window;
 	private final ObjectProperty<SelectedPreferencesTab> selectedTabProperty;
+	private final MainWindowNavigation mainWindowNavigation;
 	public ToggleGroup navigationGroup;
 	public ToggleButton generalNavigation;
 	public ToggleButton interfaceNavigation;
@@ -31,17 +32,23 @@ public class PreferencesController implements FxController {
 	public Node aboutPage;
 
 	@Inject
-	public PreferencesController(@PreferencesWindow Stage window, ObjectProperty<SelectedPreferencesTab> selectedTabProperty) {
+	public PreferencesController(@PreferencesWindow Stage window, ObjectProperty<SelectedPreferencesTab> selectedTabProperty, MainWindowNavigation mainWindowNavigation) {
 		this.window = window;
 		this.selectedTabProperty = selectedTabProperty;
+		this.mainWindowNavigation = mainWindowNavigation;
 	}
 
 	@FXML
 	public void initialize() {
-		window.setOnShowing(this::windowWillAppear);
+		window.addEventHandler(WindowEvent.WINDOW_SHOWING, this::windowWillAppear);
 		selectedTabProperty.addListener(observable -> this.selectChosenPage());
 		navigationGroup.selectedToggleProperty().addListener((observable, oldToggle, newToggle) -> navigationChanged(oldToggle, newToggle));
 		selectChosenPage();
+	}
+
+	@FXML
+	public void showHome() {
+		mainWindowNavigation.showHome();
 	}
 
 	private void selectChosenPage() {

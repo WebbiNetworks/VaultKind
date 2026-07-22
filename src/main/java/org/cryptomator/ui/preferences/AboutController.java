@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-@PreferencesScoped
 public class AboutController implements FxController {
 
 	private static final Logger LOG = LoggerFactory.getLogger(AboutController.class);

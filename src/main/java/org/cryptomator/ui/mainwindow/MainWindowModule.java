@@ -15,9 +15,19 @@ import org.cryptomator.ui.common.FxmlScene;
 import org.cryptomator.ui.common.StageFactory;
 import org.cryptomator.ui.common.StageInitializer;
 import org.cryptomator.ui.error.ErrorComponent;
+import org.cryptomator.ui.eventview.EventListCellController;
+import org.cryptomator.ui.eventview.EventViewController;
+import org.cryptomator.ui.eventview.EventViewWindow;
 import org.cryptomator.ui.fxapp.FxApplicationTerminator;
 import org.cryptomator.ui.fxapp.PrimaryStage;
 import org.cryptomator.ui.migration.MigrationComponent;
+import org.cryptomator.ui.preferences.AboutController;
+import org.cryptomator.ui.preferences.GeneralPreferencesController;
+import org.cryptomator.ui.preferences.InterfacePreferencesController;
+import org.cryptomator.ui.preferences.PreferencesController;
+import org.cryptomator.ui.preferences.PreferencesWindow;
+import org.cryptomator.ui.preferences.SelectedPreferencesTab;
+import org.cryptomator.ui.preferences.VolumePreferencesController;
 import org.cryptomator.ui.recoverykey.RecoveryKeyComponent;
 import org.cryptomator.ui.stats.VaultStatisticsComponent;
 import org.cryptomator.ui.traymenu.TrayMenuComponent;
@@ -43,10 +53,10 @@ abstract class MainWindowModule {
 	static Stage provideMainWindow(@PrimaryStage Stage stage, StageInitializer initializer, FxApplicationTerminator terminator, Lazy<TrayMenuComponent> trayMenu) {
 		initializer.accept(stage);
 		stage.setTitle("VaultKind");
-		stage.setMinWidth(920);
-		stage.setMinHeight(600);
-		stage.setWidth(1120);
-		stage.setHeight(720);
+		stage.setMinWidth(1040);
+		stage.setMinHeight(680);
+		stage.setWidth(1200);
+		stage.setHeight(800);
 		stage.setOnCloseRequest(e -> {
 			if (!trayMenu.get().isInitialized()) {
 				terminator.terminate();
@@ -65,10 +75,30 @@ abstract class MainWindowModule {
 	}
 
 	@Provides
+	@MainWindowScoped
+	static ObjectProperty<SelectedPreferencesTab> provideSelectedPreferencesTab(MainWindowNavigation navigation) {
+		return navigation.selectedPreferencesTabProperty();
+	}
+
+	@Provides
+	@PreferencesWindow
+	@MainWindowScoped
+	static Stage provideEmbeddedPreferencesWindow(@MainWindow Stage stage) {
+		return stage;
+	}
+
+	@Provides
 	@MainWindow
 	@MainWindowScoped
 	static FxmlLoaderFactory provideFxmlLoaderFactory(Map<Class<? extends FxController>, Provider<FxController>> factories, MainWindowSceneFactory sceneFactory, ResourceBundle resourceBundle) {
 		return new FxmlLoaderFactory(factories, sceneFactory, resourceBundle);
+	}
+
+	@Provides
+	@EventViewWindow
+	@MainWindowScoped
+	static FxmlLoaderFactory provideEmbeddedEventFxmlLoaderFactory(@MainWindow FxmlLoaderFactory fxmlLoaderFactory) {
+		return fxmlLoaderFactory;
 	}
 
 	@Provides
@@ -97,6 +127,11 @@ abstract class MainWindowModule {
 	@IntoMap
 	@FxControllerKey(MainWindowController.class)
 	abstract FxController bindMainWindowController(MainWindowController controller);
+
+	@Binds
+	@IntoMap
+	@FxControllerKey(ActivityController.class)
+	abstract FxController bindActivityController(ActivityController controller);
 
 	@Binds
 	@IntoMap
@@ -147,6 +182,41 @@ abstract class MainWindowModule {
 	@IntoMap
 	@FxControllerKey(VaultListCellController.class)
 	abstract FxController bindVaultListCellController(VaultListCellController controller);
+
+	@Binds
+	@IntoMap
+	@FxControllerKey(PreferencesController.class)
+	abstract FxController bindEmbeddedPreferencesController(PreferencesController controller);
+
+	@Binds
+	@IntoMap
+	@FxControllerKey(GeneralPreferencesController.class)
+	abstract FxController bindEmbeddedGeneralPreferencesController(GeneralPreferencesController controller);
+
+	@Binds
+	@IntoMap
+	@FxControllerKey(InterfacePreferencesController.class)
+	abstract FxController bindEmbeddedInterfacePreferencesController(InterfacePreferencesController controller);
+
+	@Binds
+	@IntoMap
+	@FxControllerKey(VolumePreferencesController.class)
+	abstract FxController bindEmbeddedVolumePreferencesController(VolumePreferencesController controller);
+
+	@Binds
+	@IntoMap
+	@FxControllerKey(AboutController.class)
+	abstract FxController bindEmbeddedAboutController(AboutController controller);
+
+	@Binds
+	@IntoMap
+	@FxControllerKey(EventViewController.class)
+	abstract FxController bindEmbeddedEventViewController(EventViewController controller);
+
+	@Binds
+	@IntoMap
+	@FxControllerKey(EventListCellController.class)
+	abstract FxController bindEmbeddedEventListCellController(EventListCellController controller);
 
 
 }

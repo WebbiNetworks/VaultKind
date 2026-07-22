@@ -21,7 +21,6 @@ import javafx.util.StringConverter;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-@PreferencesScoped
 public class InterfacePreferencesController implements FxController {
 
 	private static final Logger LOG = LoggerFactory.getLogger(InterfacePreferencesController.class);

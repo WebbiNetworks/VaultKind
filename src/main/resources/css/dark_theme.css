@@ -283,6 +283,11 @@
 	-fx-border-color: transparent GRAY_3 transparent transparent;
 }
 
+.embedded-preferences-navigation {
+	-fx-border-width: 0 1 0 0;
+	-fx-border-color: #4A5054;
+}
+
 .preferences-navigation-title {
 	-fx-font-size: 24px;
 	-fx-font-weight: 600;
@@ -587,9 +592,15 @@
 }
 
 .vault-sidebar-header {
-	-fx-padding: 22px 14px 16px 18px;
+	-fx-padding: 11px 14px 11px 18px;
 	-fx-border-color: transparent transparent CONTROL_BORDER_NORMAL transparent;
 	-fx-border-width: 0 0 1px 0;
+}
+
+.vault-section-title {
+	-fx-font-size: 12px;
+	-fx-font-weight: 600;
+	-fx-text-fill: TEXT_FILL_MUTED;
 }
 
 .vault-add-button {
@@ -686,18 +697,21 @@
 }
 
 .vault-sidebar-actions {
-	-fx-padding: 10px;
+	-fx-padding: 8px 10px 10px;
 	-fx-border-color: CONTROL_BORDER_NORMAL transparent transparent transparent;
 	-fx-border-width: 1px 0 0 0;
 }
 
 .vault-sidebar-actions .sidebar-action {
 	-fx-background-color: transparent;
-	-fx-padding: 0.55em 0.7em;
+	-fx-background-radius: 8px;
+	-fx-padding: 0.65em 0.8em;
+	-fx-text-fill: TEXT_FILL_MUTED;
 }
 
 .vault-sidebar-actions .sidebar-action:hover {
 	-fx-background-color: CONTROL_BG_HOVER;
+	-fx-text-fill: TEXT_FILL;
 }
 
 .vault-dashboard {

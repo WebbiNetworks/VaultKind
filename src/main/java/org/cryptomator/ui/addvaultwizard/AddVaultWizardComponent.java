@@ -31,27 +31,42 @@ public interface AddVaultWizardComponent {
 	Lazy<Scene> sceneStart();
 
 	default void showAddVaultWizard(ResourceBundle resourceBundle) {
+		Stage stage = prepareAddVaultWizard(resourceBundle);
+		stage.sizeToScene();
+		stage.show();
+	}
+
+	default Stage prepareAddVaultWizard(ResourceBundle resourceBundle) {
 		Stage stage = window();
 		stage.setScene(sceneStart().get());
 		stage.setTitle(resourceBundle.getString("addvaultwizard.title"));
-		stage.sizeToScene();
-		stage.show();
+		return stage;
 	}
 
 	default void showAddNewVaultWizard(ResourceBundle resourceBundle) {
-		Stage stage = window();
-		stage.setScene(sceneNew().get());
-		stage.setTitle(resourceBundle.getString("addvaultwizard.new.title"));
+		Stage stage = prepareAddNewVaultWizard(resourceBundle);
 		stage.sizeToScene();
 		stage.show();
 	}
 
+	default Stage prepareAddNewVaultWizard(ResourceBundle resourceBundle) {
+		Stage stage = window();
+		stage.setScene(sceneNew().get());
+		stage.setTitle(resourceBundle.getString("addvaultwizard.new.title"));
+		return stage;
+	}
+
 	default void showAddExistingVaultWizard(ResourceBundle resourceBundle) {
+		Stage stage = prepareAddExistingVaultWizard(resourceBundle);
+		stage.sizeToScene();
+		stage.show();
+	}
+
+	default Stage prepareAddExistingVaultWizard(ResourceBundle resourceBundle) {
 		Stage stage = window();
 		stage.setScene(sceneExisting().get());
 		stage.setTitle(resourceBundle.getString("addvaultwizard.existing.title"));
-		stage.sizeToScene();
-		stage.show();
+		return stage;
 	}
 
 	@Subcomponent.Builder

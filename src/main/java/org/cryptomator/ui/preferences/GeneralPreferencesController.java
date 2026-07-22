@@ -34,7 +34,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
-@PreferencesScoped
 public class GeneralPreferencesController implements FxController {
 
 	private static final Logger LOG = LoggerFactory.getLogger(GeneralPreferencesController.class);

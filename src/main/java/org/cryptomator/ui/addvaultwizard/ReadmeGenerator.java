@@ -52,7 +52,9 @@ public class ReadmeGenerator {
 				EMPTY_PAR, //
 				resourceBundle.getString("addvault.new.readme.accessLocation.3"), //
 				EMPTY_PAR, //
-				resourceBundle.getString("addvault.new.readme.accessLocation.4")));
+				resourceBundle.getString("addvault.new.readme.accessLocation.4"), //
+				EMPTY_PAR, //
+				resourceBundle.getString("addvault.new.readme.accessLocation.5")));
 	}
 
 	@VisibleForTesting

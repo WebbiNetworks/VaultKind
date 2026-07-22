@@ -47,6 +47,15 @@ public interface DecryptNameComponent {
 		}
 	}
 
+	default Scene prepareEmbeddedView(List<Path> pathsToDecrypt) {
+		Scene scene = decryptNamesView().get();
+		if (vault().isUnlocked()) {
+			controller().decrypt(pathsToDecrypt);
+			return scene;
+		}
+		throw new IllegalStateException("Vault must be unlocked to decrypt file names.");
+	}
+
 	@Subcomponent.Factory
 	interface Factory {
 

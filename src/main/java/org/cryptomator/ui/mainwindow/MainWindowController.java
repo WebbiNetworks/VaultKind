@@ -71,6 +71,10 @@ public class MainWindowController implements FxController {
 	private Node vaultOptionsPane;
 	@FXML
 	private StackPane vaultOptionsContentHost;
+	@FXML
+	private Node vaultToolPane;
+	@FXML
+	private StackPane vaultToolContentHost;
 
 	@Inject
 	public MainWindowController(@MainWindow Stage window, //
@@ -102,8 +106,10 @@ public class MainWindowController implements FxController {
 		selectedVault.addListener((_, _, _) -> updateContextTitle());
 		navigation.addVaultContentProperty().addListener((_, _, content) -> showAddVaultContent(content));
 		navigation.vaultOptionsContentProperty().addListener((_, _, content) -> showVaultOptionsContent(content));
+		navigation.vaultToolContentProperty().addListener((_, _, content) -> showVaultToolContent(content));
 		showAddVaultContent(navigation.addVaultContentProperty().get());
 		showVaultOptionsContent(navigation.vaultOptionsContentProperty().get());
+		showVaultToolContent(navigation.vaultToolContentProperty().get());
 		showDestination(navigation.destinationProperty().get());
 		updateContextTitle();
 
@@ -138,9 +144,12 @@ public class MainWindowController implements FxController {
 			case ADD_VAULT -> resourceBundle.getString("addvaultwizard.title");
 			case UNLOCK -> resourceBundle.getString("main.content.unlock.title");
 			case VAULT_OPTIONS -> resourceBundle.getString("main.content.vaultOptions.title");
+			case VAULT_TOOL -> navigation.vaultToolTitleProperty().get();
 			case SETTINGS -> resourceBundle.getString("main.context.settings").formatted(preferencesTabTitle());
 		});
-		contentTitle.set(resourceBundle.getString(switch (destination) {
+		contentTitle.set(destination == MainWindowNavigation.Destination.VAULT_TOOL
+				? navigation.vaultToolTitleProperty().get()
+				: resourceBundle.getString(switch (destination) {
 			case HOME -> "main.content.dashboard.title";
 			case VAULTS -> "main.content.vaults.title";
 			case ACTIVITY -> "main.content.activity.title";
@@ -148,9 +157,12 @@ public class MainWindowController implements FxController {
 			case ADD_VAULT -> "main.content.addVault.title";
 			case UNLOCK -> "main.content.unlock.title";
 			case VAULT_OPTIONS -> "main.content.vaultOptions.title";
+			case VAULT_TOOL -> throw new IllegalStateException();
 			case SETTINGS -> "main.content.settings.title";
 		}));
-		contentSubtitle.set(resourceBundle.getString(switch (destination) {
+		contentSubtitle.set(destination == MainWindowNavigation.Destination.VAULT_TOOL
+				? navigation.vaultToolSubtitleProperty().get()
+				: resourceBundle.getString(switch (destination) {
 			case HOME -> "main.content.dashboard.subtitle";
 			case VAULTS -> "main.content.vaults.subtitle";
 			case ACTIVITY -> "main.content.activity.subtitle";
@@ -158,6 +170,7 @@ public class MainWindowController implements FxController {
 			case ADD_VAULT -> "main.content.addVault.subtitle";
 			case UNLOCK -> "main.content.unlock.subtitle";
 			case VAULT_OPTIONS -> "main.content.vaultOptions.subtitle";
+			case VAULT_TOOL -> throw new IllegalStateException();
 			case SETTINGS -> "main.content.settings.subtitle";
 		}));
 	}
@@ -179,6 +192,7 @@ public class MainWindowController implements FxController {
 				: destination == MainWindowNavigation.Destination.ADD_VAULT ? addVaultPane
 				: destination == MainWindowNavigation.Destination.UNLOCK ? unlockPane
 				: destination == MainWindowNavigation.Destination.VAULT_OPTIONS ? vaultOptionsPane
+				: destination == MainWindowNavigation.Destination.VAULT_TOOL ? vaultToolPane
 				: workspacePane);
 	}
 
@@ -186,6 +200,13 @@ public class MainWindowController implements FxController {
 		vaultOptionsContentHost.getChildren().clear();
 		if (content != null) {
 			vaultOptionsContentHost.getChildren().add(content);
+		}
+	}
+
+	private void showVaultToolContent(Node content) {
+		vaultToolContentHost.getChildren().clear();
+		if (content != null) {
+			vaultToolContentHost.getChildren().add(content);
 		}
 	}
 
@@ -197,7 +218,7 @@ public class MainWindowController implements FxController {
 	}
 
 	private void showOnly(Node selectedPane) {
-		for (Node pane : new Node[]{workspacePane, settingsPane, activityPane, howItWorksPane, addVaultPane, unlockPane, vaultOptionsPane}) {
+		for (Node pane : new Node[]{workspacePane, settingsPane, activityPane, howItWorksPane, addVaultPane, unlockPane, vaultOptionsPane, vaultToolPane}) {
 			boolean selected = pane == selectedPane;
 			pane.setVisible(selected);
 			pane.setManaged(selected);
@@ -357,6 +378,30 @@ public class MainWindowController implements FxController {
 
 	public String getVaultOptionsVaultName() {
 		return vaultOptionsVaultNameProperty().get();
+	}
+
+	public ReadOnlyObjectProperty<String> vaultToolTitleProperty() {
+		return navigation.vaultToolTitleProperty();
+	}
+
+	public String getVaultToolTitle() {
+		return vaultToolTitleProperty().get();
+	}
+
+	public ReadOnlyObjectProperty<String> vaultToolSubtitleProperty() {
+		return navigation.vaultToolSubtitleProperty();
+	}
+
+	public String getVaultToolSubtitle() {
+		return vaultToolSubtitleProperty().get();
+	}
+
+	public ReadOnlyObjectProperty<String> vaultToolVaultNameProperty() {
+		return navigation.vaultToolVaultNameProperty();
+	}
+
+	public String getVaultToolVaultName() {
+		return vaultToolVaultNameProperty().get();
 	}
 
 }

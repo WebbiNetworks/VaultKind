@@ -7,6 +7,7 @@ import org.cryptomator.ui.keyloading.masterkeyfile.PassphraseEntryResult;
 import org.cryptomator.ui.fxapp.FxApplicationScoped;
 
 import javax.inject.Inject;
+import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -35,6 +36,7 @@ public class MainWindowNavigation {
 		ADD_VAULT,
 		UNLOCK,
 		VAULT_OPTIONS,
+		VAULT_TOOL,
 		SETTINGS
 	}
 
@@ -46,10 +48,17 @@ public class MainWindowNavigation {
 	private final ReadOnlyBooleanWrapper unlockSavePasswordAvailable = new ReadOnlyBooleanWrapper(false);
 	private final ReadOnlyObjectWrapper<Node> vaultOptionsContent = new ReadOnlyObjectWrapper<>();
 	private final ReadOnlyObjectWrapper<String> vaultOptionsVaultName = new ReadOnlyObjectWrapper<>("");
+	private final ReadOnlyObjectWrapper<Node> vaultToolContent = new ReadOnlyObjectWrapper<>();
+	private final ReadOnlyObjectWrapper<String> vaultToolTitle = new ReadOnlyObjectWrapper<>("");
+	private final ReadOnlyObjectWrapper<String> vaultToolSubtitle = new ReadOnlyObjectWrapper<>("");
+	private final ReadOnlyObjectWrapper<String> vaultToolVaultName = new ReadOnlyObjectWrapper<>("");
 	private final Map<Scene, Parent> addVaultRoots = new IdentityHashMap<>();
 	private Stage addVaultStage;
 	private ChangeListener<Scene> addVaultSceneListener;
 	private CompletableFuture<?> unlockResult;
+	private Runnable vaultToolOnClose;
+	private Scene vaultToolScene;
+	private Parent vaultToolRoot;
 
 	@Inject
 	MainWindowNavigation() {
@@ -59,6 +68,7 @@ public class MainWindowNavigation {
 		leaveAddVault();
 		leaveUnlock();
 		leaveVaultOptions();
+		leaveVaultTool();
 		destination.set(Destination.HOME);
 	}
 
@@ -66,6 +76,7 @@ public class MainWindowNavigation {
 		leaveAddVault();
 		leaveUnlock();
 		leaveVaultOptions();
+		leaveVaultTool();
 		destination.set(Destination.VAULTS);
 	}
 
@@ -73,6 +84,7 @@ public class MainWindowNavigation {
 		leaveAddVault();
 		leaveUnlock();
 		leaveVaultOptions();
+		leaveVaultTool();
 		selectedPreferencesTab.set(tab == SelectedPreferencesTab.ANY ? SelectedPreferencesTab.GENERAL : tab);
 		destination.set(Destination.SETTINGS);
 	}
@@ -81,6 +93,7 @@ public class MainWindowNavigation {
 		leaveAddVault();
 		leaveUnlock();
 		leaveVaultOptions();
+		leaveVaultTool();
 		destination.set(Destination.ACTIVITY);
 	}
 
@@ -88,6 +101,7 @@ public class MainWindowNavigation {
 		leaveAddVault();
 		leaveUnlock();
 		leaveVaultOptions();
+		leaveVaultTool();
 		destination.set(Destination.HOW_IT_WORKS);
 	}
 
@@ -95,6 +109,7 @@ public class MainWindowNavigation {
 		leaveAddVault();
 		leaveUnlock();
 		leaveVaultOptions();
+		leaveVaultTool();
 		this.addVaultStage = wizardStage;
 		this.addVaultSceneListener = (_, _, scene) -> mountAddVaultScene(scene);
 		wizardStage.sceneProperty().addListener(addVaultSceneListener);
@@ -106,6 +121,7 @@ public class MainWindowNavigation {
 		leaveAddVault();
 		leaveUnlock();
 		leaveVaultOptions();
+		leaveVaultTool();
 		unlockVaultName.set(vaultName);
 		unlockWrongPassword.set(wrongPassword);
 		unlockSavePasswordAvailable.set(savePasswordAvailable);
@@ -125,6 +141,7 @@ public class MainWindowNavigation {
 		leaveAddVault();
 		leaveUnlock();
 		leaveVaultOptions();
+		leaveVaultTool();
 		Scene scene = component.scene().get();
 		Parent content = scene.getRoot();
 		scene.setRoot(new StackPane());
@@ -133,6 +150,30 @@ public class MainWindowNavigation {
 		vaultOptionsVaultName.set(vaultName);
 		component.selectedTabProperty().set(selectedTab);
 		destination.set(Destination.VAULT_OPTIONS);
+	}
+
+	public void showVaultTool(Scene scene, String title, String subtitle, String vaultName, Runnable onClose) {
+		leaveAddVault();
+		leaveUnlock();
+		leaveVaultOptions();
+		leaveVaultTool();
+		Parent content = scene.getRoot();
+		scene.setRoot(new StackPane());
+		content.getStyleClass().add("embedded-vault-tool-card");
+		vaultToolTitle.set(title);
+		vaultToolSubtitle.set(subtitle);
+		vaultToolVaultName.set(vaultName);
+		vaultToolOnClose = onClose;
+		vaultToolScene = scene;
+		vaultToolRoot = content;
+		destination.set(Destination.VAULT_TOOL);
+		Platform.runLater(() -> {
+			if (destination.get() == Destination.VAULT_TOOL && vaultToolRoot == content) {
+				vaultToolContent.set(content);
+				content.applyCss();
+				content.layout();
+			}
+		});
 	}
 
 	private void leaveUnlock() {
@@ -163,6 +204,22 @@ public class MainWindowNavigation {
 	private void leaveVaultOptions() {
 		vaultOptionsContent.set(null);
 		vaultOptionsVaultName.set("");
+	}
+
+	private void leaveVaultTool() {
+		if (vaultToolOnClose != null) {
+			vaultToolOnClose.run();
+		}
+		vaultToolOnClose = null;
+		vaultToolContent.set(null);
+		if (vaultToolScene != null && vaultToolRoot != null) {
+			vaultToolScene.setRoot(vaultToolRoot);
+		}
+		vaultToolScene = null;
+		vaultToolRoot = null;
+		vaultToolTitle.set("");
+		vaultToolSubtitle.set("");
+		vaultToolVaultName.set("");
 	}
 
 	private void mountAddVaultScene(Scene scene) {
@@ -222,6 +279,22 @@ public class MainWindowNavigation {
 
 	public ReadOnlyObjectProperty<String> vaultOptionsVaultNameProperty() {
 		return vaultOptionsVaultName.getReadOnlyProperty();
+	}
+
+	public ReadOnlyObjectProperty<Node> vaultToolContentProperty() {
+		return vaultToolContent.getReadOnlyProperty();
+	}
+
+	public ReadOnlyObjectProperty<String> vaultToolTitleProperty() {
+		return vaultToolTitle.getReadOnlyProperty();
+	}
+
+	public ReadOnlyObjectProperty<String> vaultToolSubtitleProperty() {
+		return vaultToolSubtitle.getReadOnlyProperty();
+	}
+
+	public ReadOnlyObjectProperty<String> vaultToolVaultNameProperty() {
+		return vaultToolVaultName.getReadOnlyProperty();
 	}
 
 	public ObjectProperty<SelectedPreferencesTab> selectedPreferencesTabProperty() {

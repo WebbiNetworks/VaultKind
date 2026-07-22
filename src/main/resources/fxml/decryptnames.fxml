@@ -14,9 +14,10 @@
 	  xmlns:fx="http://javafx.com/fxml"
 	  fx:controller="org.cryptomator.ui.decryptname.DecryptFileNamesViewController"
 	  styleClass="decrypt-name-window"
-	  minWidth="400"
-	  maxWidth="400"
-	  minHeight="145">
+	  minWidth="560"
+	  prefWidth="820"
+	  minHeight="420"
+	  prefHeight="560">
 	<HBox styleClass="button-bar" alignment="CENTER">
 		<padding>
 			<Insets left="6"/>

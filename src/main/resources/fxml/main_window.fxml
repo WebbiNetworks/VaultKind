@@ -102,6 +102,19 @@
 				</VBox>
 				<StackPane fx:id="vaultOptionsContentHost" HBox.hgrow="ALWAYS" styleClass="embedded-vault-options-content"/>
 			</HBox>
+			<HBox fx:id="vaultToolPane" visible="false" managed="false" styleClass="embedded-vault-tool">
+				<VBox minWidth="300" prefWidth="300" maxWidth="300" spacing="6" styleClass="preferences-navigation,embedded-preferences-navigation">
+					<Button text="%main.content.vaults.title" onAction="#showVaults" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="vault-home-button">
+						<VBox.margin><Insets top="12" right="0" bottom="10" left="0"/></VBox.margin>
+						<graphic><FontAwesome5IconView glyph="CHEVRON_LEFT" glyphSize="15"/></graphic>
+					</Button>
+					<Label text="${controller.vaultToolTitle}" wrapText="true" styleClass="preferences-navigation-title"/>
+					<Label text="${controller.vaultToolVaultName}" wrapText="true" styleClass="unlock-navigation-vault"/>
+					<Label text="${controller.vaultToolSubtitle}" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+					<Region VBox.vgrow="ALWAYS"/>
+				</VBox>
+				<StackPane fx:id="vaultToolContentHost" HBox.hgrow="ALWAYS" styleClass="embedded-vault-tool-content"/>
+			</HBox>
 		</StackPane>
 	</VBox>
 	<VBox maxWidth="340" maxHeight="210" spacing="14" mouseTransparent="false" StackPane.alignment="TOP_RIGHT" styleClass="notification-stack">

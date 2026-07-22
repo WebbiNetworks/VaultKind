@@ -11,6 +11,7 @@ public enum FontAwesome5Icon {
 	BUG("\uF188"), //
 	CARET_DOWN("\uF0D7"), //
 	CARET_RIGHT("\uF0Da"), //
+	CHART_BAR("\uF080"), //
 	CHECK("\uF00C"), //
 	CHEVRON_LEFT("\uF053"), //
 	CHEVRON_RIGHT("\uF054"), //

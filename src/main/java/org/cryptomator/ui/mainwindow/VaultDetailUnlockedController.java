@@ -56,6 +56,7 @@ public class VaultDetailUnlockedController implements FxController {
 	private final RevealPathService revealPathService;
 	private final DecryptNameComponent.Factory decryptNameWindowFactory;
 	private final ResourceBundle resourceBundle;
+	private final MainWindowNavigation navigation;
 	private final LoadingCache<Vault, VaultStatisticsComponent> vaultStats;
 	private final LoadingCache<Vault, DecryptNameComponent> decryptNameWindows;
 	private final VaultStatisticsComponent.Builder vaultStatsBuilder;
@@ -80,6 +81,7 @@ public class VaultDetailUnlockedController implements FxController {
 										 @MainWindow Stage mainWindow, //
 										 RevealPathService revealPathService, //
 										 DecryptNameComponent.Factory decryptNameWindowFactory, //
+										 MainWindowNavigation navigation, //
 										 ResourceBundle resourceBundle) {
 		this.vault = vault;
 		this.appWindows = appWindows;
@@ -89,6 +91,7 @@ public class VaultDetailUnlockedController implements FxController {
 		this.revealPathService = revealPathService;
 		this.decryptNameWindowFactory = decryptNameWindowFactory;
 		this.resourceBundle = resourceBundle;
+		this.navigation = navigation;
 		this.vaultStats = Caffeine.newBuilder().weakValues().build(this::buildVaultStats);
 		this.decryptNameWindows = Caffeine.newBuilder().weakValues().build(this::buildDecryptNameWindow);
 		this.vaultStatsBuilder = vaultStatsBuilder;
@@ -162,7 +165,12 @@ public class VaultDetailUnlockedController implements FxController {
 	}
 
 	private void showDecryptNameWindow(List<Path> pathsToDecrypt) {
-		decryptNameWindows.get(vault.get()).showDecryptFileNameWindow(pathsToDecrypt);
+		DecryptNameComponent component = decryptNameWindows.get(vault.get());
+		navigation.showVaultTool(component.prepareEmbeddedView(pathsToDecrypt), //
+				resourceBundle.getString("decryptNames.title"), //
+				resourceBundle.getString("main.content.decryptNames.subtitle"), //
+				vault.get().getDisplayName(), //
+				component.controller()::clearTable);
 	}
 
 	private boolean startsWithVaultAccessPoint(Path path) {
@@ -222,7 +230,13 @@ public class VaultDetailUnlockedController implements FxController {
 
 	@FXML
 	public void showVaultStatistics() {
-		vaultStats.get(vault.get()).showVaultStatisticsWindow();
+		VaultStatisticsComponent component = vaultStats.get(vault.get());
+		component.controller().startSampling();
+		navigation.showVaultTool(component.scene().get(), //
+				resourceBundle.getString("main.vaultDetail.stats"), //
+				resourceBundle.getString("main.content.vaultStatistics.subtitle"), //
+				vault.get().getDisplayName(), //
+				component.controller()::stopSampling);
 	}
 
 	/* Getter/Setter */

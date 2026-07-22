@@ -226,6 +226,14 @@ public class VaultStatisticsController implements FxController {
 		return bpsDecrypted.get();
 	}
 
+	public void startSampling() {
+		ioAnimation.play();
+	}
+
+	public void stopSampling() {
+		ioAnimation.stop();
+	}
+
 	public LongBinding filesReadProperty() { return filesRead;}
 
 	public long getFilesRead() { return filesRead.get();}

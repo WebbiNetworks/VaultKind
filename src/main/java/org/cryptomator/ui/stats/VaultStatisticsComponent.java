@@ -29,6 +29,8 @@ public interface VaultStatisticsComponent {
 	@FxmlScene(FxmlFile.VAULT_STATISTICS)
 	Lazy<Scene> scene();
 
+	VaultStatisticsController controller();
+
 	default void showVaultStatisticsWindow() {
 		Stage stage = window();
 		stage.setScene(scene().get());

@@ -17,13 +17,13 @@
 <HBox xmlns="http://javafx.com/javafx"
 	  xmlns:fx="http://javafx.com/fxml"
 	  fx:controller="org.cryptomator.ui.stats.VaultStatisticsController"
-	  prefWidth="800.0" spacing="12">
+	  minWidth="640" prefWidth="820" maxWidth="Infinity" minHeight="420" prefHeight="520" spacing="12">
 	<padding>
 		<Insets topRightBottomLeft="12"/>
 	</padding>
 
 	<!-- Caching -->
-	<StackPane prefWidth="200" prefHeight="200">
+	<StackPane minWidth="0" prefWidth="180" maxWidth="Infinity" prefHeight="200" HBox.hgrow="ALWAYS">
 		<Group>
 			<Circle centerX="100" centerY="100" radius="100" opacity="0"/> <!-- for alignment. visible=false does not yield the desired result -->
 			<Arc styleClass="cache-arc-background" centerX="100" centerY="100" radiusX="100" radiusY="100" startAngle="225" length="-270"/>
@@ -36,7 +36,7 @@
 	</StackPane>
 
 	<!-- Read -->
-	<VBox prefWidth="300" prefHeight="300" spacing="6" alignment="CENTER">
+	<VBox minWidth="0" prefWidth="190" maxWidth="Infinity" prefHeight="300" spacing="6" alignment="CENTER" HBox.hgrow="ALWAYS">
 		<ThroughputLabel styleClass="label-large" idleFormat="%stats.read.throughput.idle" kibsFormat="%stats.read.throughput.kibs" mibsFormat="%stats.read.throughput.mibs" bytesPerSecond="${controller.bpsRead}"/>
 		<AreaChart fx:id="readChart" styleClass="io-stats" createSymbols="false" animated="false">
 			<xAxis>
@@ -55,7 +55,7 @@
 	</VBox>
 
 	<!-- Write -->
-	<VBox prefWidth="300" prefHeight="300" spacing="6" alignment="CENTER">
+	<VBox minWidth="0" prefWidth="190" maxWidth="Infinity" prefHeight="300" spacing="6" alignment="CENTER" HBox.hgrow="ALWAYS">
 		<ThroughputLabel styleClass="label-large" idleFormat="%stats.write.throughput.idle" kibsFormat="%stats.write.throughput.kibs" mibsFormat="%stats.write.throughput.mibs" bytesPerSecond="${controller.bpsWritten}"/>
 		<AreaChart fx:id="writeChart" styleClass="io-stats" createSymbols="false" animated="false">
 			<xAxis>
@@ -73,7 +73,7 @@
 		<FormattedLabel format="%stats.write.accessCount" arg1="${controller.filesWritten}"/>
 	</VBox>
 	<!-- Access -->
-	<VBox prefWidth="300" prefHeight="300" spacing="6" alignment="CENTER">
+	<VBox minWidth="0" prefWidth="190" maxWidth="Infinity" prefHeight="300" spacing="6" alignment="CENTER" HBox.hgrow="ALWAYS">
 		<FormattedLabel styleClass="label-large" format="%stats.access.current" arg1="${controller.filesAccessed}"/>
 		<AreaChart fx:id="accessChart" styleClass="io-stats" createSymbols="false" animated="false">
 			<xAxis>

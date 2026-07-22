@@ -626,6 +626,11 @@
 	-fx-text-fill: linear-gradient(to right, GRAY_4 0%, GRAY_1 42%, PRIMARY_D1 72%, PRIMARY 100%);
 }
 
+.welcome-intro {
+	-fx-font-size: 14px;
+	-fx-text-fill: GRAY_4;
+}
+
 .welcome-title {
 	-fx-text-fill: TEXT_FILL;
 	-fx-font-size: 24px;
@@ -650,8 +655,22 @@
 	-fx-font-size: 13px;
 }
 
-.welcome-check {
-	-fx-fill: GREEN_3;
+.welcome-trust-icon {
+	-fx-fill: transparent;
+	-fx-stroke: PRIMARY_D1;
+	-fx-stroke-width: 2.2px;
+	-fx-stroke-line-cap: round;
+	-fx-stroke-line-join: round;
+}
+
+.welcome-trust-badge {
+	-fx-min-width: 30px;
+	-fx-pref-width: 30px;
+	-fx-max-width: 30px;
+	-fx-min-height: 30px;
+	-fx-pref-height: 30px;
+	-fx-max-height: 30px;
+	-fx-background-color: transparent;
 }
 
 .welcome-learn-more {

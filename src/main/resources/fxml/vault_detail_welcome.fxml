@@ -7,7 +7,9 @@
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.SVGPath?>
 
 <VBox xmlns:fx="http://javafx.com/fxml"
 	  xmlns="http://javafx.com/javafx"
@@ -17,8 +19,10 @@
 	  styleClass="welcome-panel">
 	<children>
 		<Region VBox.vgrow="ALWAYS"/>
-		<Label text="%main.vaultDetail.welcome.eyebrow" accessibleText="Welcome" styleClass="welcome-eyebrow"
-			   visible="${controller.noVaultPresent}" managed="${controller.noVaultPresent}"/>
+		<VBox alignment="CENTER" spacing="5" visible="${controller.noVaultPresent}" managed="${controller.noVaultPresent}">
+			<Label text="%main.vaultDetail.welcome.eyebrow" accessibleText="Welcome" styleClass="welcome-eyebrow"/>
+			<Label text="%main.vaultDetail.welcome.intro" styleClass="welcome-intro"/>
+		</VBox>
 		<ImageView fitHeight="206" fitWidth="540" preserveRatio="true" cache="true" accessibleText="VaultKind — Your files. Your vault. Your control." styleClass="welcome-brand-lockup">
 			<Image url="@../img/vaultkind_full_lockup.png"/>
 		</ImageView>
@@ -26,15 +30,21 @@
 		<VBox alignment="CENTER" spacing="12" visible="${controller.noVaultPresent}" managed="${controller.noVaultPresent}">
 			<VBox spacing="10" maxWidth="480" styleClass="welcome-benefits">
 				<HBox alignment="CENTER_LEFT" spacing="10">
-					<FontAwesome5IconView glyph="CHECK" glyphSize="13" styleClass="welcome-check"/>
+					<StackPane styleClass="welcome-trust-badge">
+						<SVGPath content="M 7 11 V 7 A 5 5 0 0 1 17 7 V 11 M 5 11 H 19 V 21 H 5 Z" styleClass="welcome-trust-icon"/>
+					</StackPane>
 					<Label text="%main.vaultDetail.welcome.benefit.encrypted" wrapText="true" HBox.hgrow="ALWAYS"/>
 				</HBox>
 				<HBox alignment="CENTER_LEFT" spacing="10">
-					<FontAwesome5IconView glyph="CHECK" glyphSize="13" styleClass="welcome-check"/>
+					<StackPane styleClass="welcome-trust-badge">
+						<SVGPath content="M 17.5 19 H 9 A 7 7 0 1 1 15.71 10 H 17.5 A 4.5 4.5 0 1 1 17.5 19" styleClass="welcome-trust-icon"/>
+					</StackPane>
 					<Label text="%main.vaultDetail.welcome.benefit.cloud" wrapText="true" HBox.hgrow="ALWAYS"/>
 				</HBox>
 				<HBox alignment="CENTER_LEFT" spacing="10">
-					<FontAwesome5IconView glyph="CHECK" glyphSize="13" styleClass="welcome-check"/>
+					<StackPane styleClass="welcome-trust-badge">
+						<SVGPath content="M 13 9 A 4 4 0 1 1 5 9 A 4 4 0 1 1 13 9 M 13 9 H 22 M 19 9 V 12 M 16 9 V 11" styleClass="welcome-trust-icon"/>
+					</StackPane>
 					<Label text="%main.vaultDetail.welcome.benefit.key" wrapText="true" HBox.hgrow="ALWAYS"/>
 				</HBox>
 			</VBox>

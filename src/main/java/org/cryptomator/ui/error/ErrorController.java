@@ -1,13 +1,10 @@
 package org.cryptomator.ui.error;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.cryptomator.common.Environment;
 import org.cryptomator.common.ErrorCode;
 import org.cryptomator.common.Nullable;
 import org.cryptomator.ui.common.FxController;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.cryptomator.ui.common.VaultKindUrls;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -23,30 +20,16 @@ import javafx.scene.Scene;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.stage.Stage;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
 import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class ErrorController implements FxController {
 
-	private static final ObjectMapper JSON = new ObjectMapper();
-	private static final Logger LOG = LoggerFactory.getLogger(ErrorController.class);
-	private static final String USER_AGENT_FORMAT = "Cryptomator/%s (Build %s) (%s %s %s)";
-	private static final String ERROR_CODES_URL_FORMAT = "https://api.cryptomator.org/desktop/error-codes.json?error-code=%s";
-	private static final String SEARCH_URL_FORMAT = "https://github.com/cryptomator/cryptomator/discussions/categories/errors?discussions_q=category:Errors+%s";
-	private static final String REPORT_URL_FORMAT = "https://github.com/cryptomator/cryptomator/discussions/new?category=Errors&title=Error+%s&body=%s";
+	private static final String SEARCH_URL_FORMAT = VaultKindUrls.GITHUB_ISSUES + "?q=%s";
+	private static final String REPORT_URL_FORMAT = VaultKindUrls.GITHUB_ISSUES + "/new?title=Error+%s&body=%s";
 	private static final String SEARCH_ERRORCODE_DELIM = " OR ";
 	private static final String REPORT_BODY_TEMPLATE = """
 			<!-- 💚 Thank you for reporting this error. -->
@@ -68,7 +51,6 @@ public class ErrorController implements FxController {
 	private final Scene previousScene;
 	private final Stage window;
 	private final Environment environment;
-	private final ExecutorService executorService;
 
 	private final BooleanProperty copiedDetails = new SimpleBooleanProperty();
 	private final ObjectProperty<ErrorDiscussion> matchingErrorDiscussion = new SimpleObjectProperty<>();
@@ -85,7 +67,6 @@ public class ErrorController implements FxController {
 		this.previousScene = previousScene;
 		this.window = window;
 		this.environment = environment;
-		this.executorService = executorService;
 		this.formerSceneWasResizable = window.isResizable();
 	}
 
@@ -147,48 +128,9 @@ public class ErrorController implements FxController {
 
 	@FXML
 	public void lookUpSolution() {
-		String userAgent = USER_AGENT_FORMAT.formatted( //
-				environment.getAppVersion(), //
-				environment.getBuildNumber().orElse("undefined"), //
-				System.getProperty("os.name"), //
-				System.getProperty("os.version"), //
-				System.getProperty("os.arch"));
-		isLoadingHttpResponse.set(true);
 		askedForLookupDatabasePermission.set(true);
-		HttpClient httpClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
-		HttpRequest httpRequest = HttpRequest.newBuilder()//
-				.header("User-Agent", userAgent)
-				.timeout(Duration.ofSeconds(10))
-				.uri(URI.create(ERROR_CODES_URL_FORMAT.formatted(URLEncoder.encode(errorCode.toString(),StandardCharsets.UTF_8))))//
-				.build();
-		httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofInputStream())//
-				.thenAcceptAsync(this::loadHttpResponse, executorService)//
-				.whenCompleteAsync((r, e) -> isLoadingHttpResponse.set(false), Platform::runLater);
-	}
-
-	private void loadHttpResponse(HttpResponse<InputStream> response) {
-		if (response.statusCode() != 200) {
-			LOG.error("Status code {} when trying to load {} ", response.statusCode(), response.uri());
-		}
-		try {
-			var typeRef = new TypeReference<Map<String, ErrorDiscussion>>() {};
-			Map<String, ErrorDiscussion> errorDiscussionMap = JSON.reader().forType(typeRef).readValue(response.body());
-
-			if (errorDiscussionMap.values().stream().anyMatch(this::containsMethodCode)) {
-				Comparator<ErrorDiscussion> comp = this::compareByFullErrorCode;
-				Optional<ErrorDiscussion> value = errorDiscussionMap.values().stream().filter(this::containsMethodCode)//
-						.min(comp//
-								.thenComparing(this::compareByRootCauseCode)//
-								.thenComparing(this::compareIsAnswered)//
-								.thenComparing(this::compareUpvoteCount));
-
-				if (value.isPresent()) {
-					matchingErrorDiscussion.set(value.get());
-				}
-			}
-		} catch (IOException e) {
-			LOG.error("Failed to load or parse JSON from " + response.uri(), e);
-		}
+		matchingErrorDiscussion.set(null);
+		isLoadingHttpResponse.set(false);
 	}
 
 	/**

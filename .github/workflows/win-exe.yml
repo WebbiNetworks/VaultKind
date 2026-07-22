@@ -297,7 +297,7 @@ jobs:
           --win-menu
           --win-dir-chooser
           --win-shortcut-prompt
-          --win-update-url "https://cryptomator.org/downloads"
+          --win-update-url "https://vaultkind.dev"
           --win-menu-group Cryptomator
           --resource-dir dist/win/resources
           --license-file dist/win/resources/license.rtf
@@ -409,9 +409,9 @@ jobs:
           -define BundleVersion="${VERSION_NUM}.${REVISION_NUM}"
           -define BundleVendor="Skymatic GmbH"
           -define BundleCopyright="(C) 2016 - 2026 Skymatic GmbH"
-          -define AboutUrl="https://cryptomator.org"
-          -define HelpUrl="https://cryptomator.org/contact"
-          -define UpdateUrl="https://cryptomator.org/downloads/"
+          -define AboutUrl="https://vaultkind.dev"
+          -define HelpUrl="https://vaultkind.dev"
+          -define UpdateUrl="https://vaultkind.dev"
           -ext "WixToolset.Util.wixext"
           -ext "WixToolset.BootstrapperApplications.wixext"
           ./bundle/bundleWithWinfsp.wxs

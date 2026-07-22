@@ -18,6 +18,7 @@ import org.cryptomator.common.vaults.Vault;
 import org.cryptomator.common.vaults.VaultState;
 import org.cryptomator.ui.addvaultwizard.CreateNewVaultExpertSettingsController;
 import org.cryptomator.ui.common.FxController;
+import org.cryptomator.ui.common.VaultKindUrls;
 import org.cryptomator.ui.common.FxmlFile;
 import org.cryptomator.ui.common.FxmlScene;
 import org.cryptomator.ui.controls.NumericTextField;
@@ -27,7 +28,7 @@ public class RecoveryKeyExpertSettingsController implements FxController {
 
 	public static final int MAX_SHORTENING_THRESHOLD = 220;
 	public static final int MIN_SHORTENING_THRESHOLD = 36;
-	private static final String DOCS_NAME_SHORTENING_URL = "https://docs.cryptomator.org/security/vault/#name-shortening";
+	private static final String DOCS_NAME_SHORTENING_URL = VaultKindUrls.DOCUMENTATION;
 
 	private final Stage window;
 	private final Lazy<Application> application;

@@ -1,4 +1,4 @@
-name: Draft a Cryptomator Release
+name: Draft a VaultKind Release
 
 on:
   push:
@@ -51,7 +51,7 @@ jobs:
           body_path: .github/release-body.md.template
       - name: Download source tarball
         run: |
-          curl --silent --fail-with-body --proto "=https" -L -H "Accept: application/vnd.github+json" https://github.com/cryptomator/cryptomator/archive/${{ github.ref }}.tar.gz --output cryptomator-${{ github.ref_name }}.tar.gz
+          curl --silent --fail-with-body --proto "=https" -L -H "Accept: application/vnd.github+json" https://github.com/${{ github.repository }}/archive/${{ github.ref }}.tar.gz --output cryptomator-${{ github.ref_name }}.tar.gz
       - name: Sign source tarball with key 615D449FE6E6A235
         run: |
           echo "${GPG_PRIVATE_KEY}" | gpg --batch --quiet --import
@@ -118,7 +118,7 @@ jobs:
         run: |
           curl --silent --fail-with-body --proto "=https" -L \
             -H "Accept: application/vnd.github+json" \
-            "https://github.com/cryptomator/cryptomator/archive/refs/tags/${TAG}.tar.gz" \
+            "https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${TAG}.tar.gz" \
             --output "cryptomator-${SEMVER}.tar.gz"
           read -ra CMD_OUTPUT < <(sha256sum "cryptomator-${SEMVER}.tar.gz")
           echo "value=${CMD_OUTPUT[0]}" >> $GITHUB_OUTPUT

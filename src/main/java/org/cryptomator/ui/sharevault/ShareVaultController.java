@@ -3,6 +3,7 @@ package org.cryptomator.ui.sharevault;
 import dagger.Lazy;
 import org.cryptomator.common.vaults.Vault;
 import org.cryptomator.ui.common.FxController;
+import org.cryptomator.ui.common.VaultKindUrls;
 import org.cryptomator.ui.keyloading.KeyLoadingStrategy;
 
 import javax.inject.Inject;
@@ -18,11 +19,7 @@ import java.net.URISyntaxException;
 public class ShareVaultController implements FxController {
 
 	private static final String SCHEME_PREFIX = "hub+";
-	private static final String VISIT_HUB_URL = "https://cryptomator.org/hub/" //
-			+ "?utm_source=cryptomator-desktop" //
-			+ "&utm_medium=app" //
-			+ "&utm_campaign=share-vault";
-	private static final String BEST_PRACTICES_URL = "https://docs.cryptomator.org/security/best-practices/#sharing-of-vaults";
+	private static final String BEST_PRACTICES_URL = VaultKindUrls.DOCUMENTATION;
 
 	private final Stage window;
 	private final Lazy<Application> application;
@@ -42,11 +39,6 @@ public class ShareVaultController implements FxController {
 	@FXML
 	public void close() {
 		window.close();
-	}
-
-	@FXML
-	public void visitHub() {
-		application.get().getHostServices().showDocument(VISIT_HUB_URL);
 	}
 
 	@FXML

@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import org.cryptomator.ui.controls.FontAwesome5IconView?>
-<?import org.cryptomator.ui.controls.FormattedLabel?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ButtonBar?>
-<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.text.TextFlow?>
 <VBox xmlns:fx="http://javafx.com/fxml"
 	  xmlns="http://javafx.com/javafx"
 	  fx:controller="org.cryptomator.ui.addvaultwizard.AddVaultSuccessController"
@@ -24,14 +27,27 @@
 	<children>
 		<Region VBox.vgrow="ALWAYS"/>
 
-		<StackPane alignment="CENTER" HBox.hgrow="NEVER">
-			<Circle styleClass="glyph-icon-primary" radius="36"/>
-			<FontAwesome5IconView styleClass="glyph-icon-white" glyph="CHECK" glyphSize="36"/>
+		<StackPane alignment="CENTER" prefWidth="168" prefHeight="146" maxWidth="168" maxHeight="146">
+			<ImageView fitWidth="150" preserveRatio="true" smooth="true" cache="true">
+				<Image url="@../img/vaultkind_mark_256.png"/>
+			</ImageView>
+			<StackPane alignment="CENTER" maxWidth="38" maxHeight="38" StackPane.alignment="BOTTOM_RIGHT">
+				<Circle styleClass="glyph-icon-primary" radius="19"/>
+				<FontAwesome5IconView styleClass="glyph-icon-white" glyph="CHECK" glyphSize="18"/>
+			</StackPane>
 		</StackPane>
 
 		<Region VBox.vgrow="ALWAYS"/>
 
-		<FormattedLabel format="%addvaultwizard.success.nextStepsInstructions" arg1="${controller.vault.displayName}" wrapText="true" HBox.hgrow="ALWAYS"/>
+		<VBox alignment="CENTER" spacing="8">
+			<Label text="%addvaultwizard.success.title" styleClass="label-extra-large"/>
+			<TextFlow styleClass="text-flow" textAlignment="CENTER">
+				<Text text="${controller.vault.displayName}" style="-fx-font-weight: bold;"/>
+				<Text text=" "/>
+				<Text text="%addvaultwizard.success.addedSuccessfully"/>
+			</TextFlow>
+			<Label text="%addvaultwizard.success.nextStep" wrapText="true" textAlignment="CENTER"/>
+		</VBox>
 
 		<Region VBox.vgrow="ALWAYS"/>
 

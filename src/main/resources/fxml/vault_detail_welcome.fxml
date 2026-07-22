@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import org.cryptomator.ui.controls.FontAwesome5IconView?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Hyperlink?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.image.Image?>
@@ -11,49 +12,85 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.SVGPath?>
 
-<VBox xmlns:fx="http://javafx.com/fxml"
-	  xmlns="http://javafx.com/javafx"
-	  fx:controller="org.cryptomator.ui.mainwindow.WelcomeController"
-	  alignment="CENTER"
-	  spacing="12"
-	  styleClass="welcome-panel">
-	<children>
+<StackPane xmlns:fx="http://javafx.com/fxml"
+		   xmlns="http://javafx.com/javafx"
+		   fx:controller="org.cryptomator.ui.mainwindow.WelcomeController"
+		   styleClass="welcome-panel">
+	<VBox alignment="CENTER" spacing="12" visible="${controller.noVaultPresent}" managed="${controller.noVaultPresent}">
 		<Region VBox.vgrow="ALWAYS"/>
-		<VBox alignment="CENTER" spacing="5" visible="${controller.noVaultPresent}" managed="${controller.noVaultPresent}">
+		<VBox alignment="CENTER" spacing="5">
 			<Label text="%main.vaultDetail.welcome.eyebrow" accessibleText="Welcome" styleClass="welcome-eyebrow"/>
 			<Label text="%main.vaultDetail.welcome.intro" styleClass="welcome-intro"/>
 		</VBox>
 		<ImageView fitHeight="206" fitWidth="540" preserveRatio="true" cache="true" accessibleText="VaultKind — Your files. Your vault. Your control." styleClass="welcome-brand-lockup">
 			<Image url="@../img/vaultkind_full_lockup.png"/>
 		</ImageView>
-
-		<VBox alignment="CENTER" spacing="12" visible="${controller.noVaultPresent}" managed="${controller.noVaultPresent}">
+		<VBox alignment="CENTER" spacing="12">
 			<VBox spacing="10" maxWidth="480" styleClass="welcome-benefits">
 				<HBox alignment="CENTER_LEFT" spacing="10">
-					<StackPane styleClass="welcome-trust-badge">
-						<SVGPath content="M 7 11 V 7 A 5 5 0 0 1 17 7 V 11 M 5 11 H 19 V 21 H 5 Z" styleClass="welcome-trust-icon"/>
-					</StackPane>
+					<StackPane styleClass="welcome-trust-badge"><SVGPath content="M 7 11 V 7 A 5 5 0 0 1 17 7 V 11 M 5 11 H 19 V 21 H 5 Z" styleClass="welcome-trust-icon"/></StackPane>
 					<Label text="%main.vaultDetail.welcome.benefit.encrypted" wrapText="true" HBox.hgrow="ALWAYS"/>
 				</HBox>
 				<HBox alignment="CENTER_LEFT" spacing="10">
-					<StackPane styleClass="welcome-trust-badge">
-						<SVGPath content="M 17.5 19 H 9 A 7 7 0 1 1 15.71 10 H 17.5 A 4.5 4.5 0 1 1 17.5 19" styleClass="welcome-trust-icon"/>
-					</StackPane>
+					<StackPane styleClass="welcome-trust-badge"><SVGPath content="M 17.5 19 H 9 A 7 7 0 1 1 15.71 10 H 17.5 A 4.5 4.5 0 1 1 17.5 19" styleClass="welcome-trust-icon"/></StackPane>
 					<Label text="%main.vaultDetail.welcome.benefit.cloud" wrapText="true" HBox.hgrow="ALWAYS"/>
 				</HBox>
 				<HBox alignment="CENTER_LEFT" spacing="10">
-					<StackPane styleClass="welcome-trust-badge">
-						<SVGPath content="M 13 9 A 4 4 0 1 1 5 9 A 4 4 0 1 1 13 9 M 13 9 H 22 M 19 9 V 12 M 16 9 V 11" styleClass="welcome-trust-icon"/>
-					</StackPane>
+					<StackPane styleClass="welcome-trust-badge"><SVGPath content="M 13 9 A 4 4 0 1 1 5 9 A 4 4 0 1 1 13 9 M 13 9 H 22 M 19 9 V 12 M 16 9 V 11" styleClass="welcome-trust-icon"/></StackPane>
 					<Label text="%main.vaultDetail.welcome.benefit.key" wrapText="true" HBox.hgrow="ALWAYS"/>
 				</HBox>
 			</VBox>
-
 			<Hyperlink text="%main.vaultDetail.welcome.learnMore" onAction="#visitGettingStartedGuide" styleClass="welcome-learn-more"/>
 		</VBox>
-
-		<Label text="%main.vaultDetail.welcome.selectVault" textAlignment="CENTER" wrapText="true" maxWidth="420"
-			   visible="${!controller.noVaultPresent}" managed="${!controller.noVaultPresent}" styleClass="welcome-subtitle"/>
 		<Region VBox.vgrow="ALWAYS"/>
-	</children>
-</VBox>
+	</VBox>
+
+	<VBox alignment="TOP_CENTER" spacing="18" visible="${!controller.noVaultPresent}" managed="${!controller.noVaultPresent}" styleClass="home-dashboard">
+		<padding><Insets top="12" right="12" bottom="12" left="12"/></padding>
+		<ImageView fitWidth="92" preserveRatio="true" cache="true" accessibleText="VaultKind">
+			<Image url="@../img/vaultkind_mark_256.png"/>
+		</ImageView>
+		<VBox alignment="CENTER" spacing="5">
+			<Label text="%main.home.dashboard.title" styleClass="home-dashboard-title"/>
+			<Label text="%main.home.dashboard.subtitle" styleClass="home-dashboard-subtitle" textAlignment="CENTER" wrapText="true"/>
+		</VBox>
+		<HBox alignment="CENTER" spacing="12" maxWidth="650">
+			<VBox alignment="CENTER" spacing="6" styleClass="home-stat-card" HBox.hgrow="ALWAYS">
+				<FontAwesome5IconView glyph="HDD" glyphSize="19" styleClass="home-stat-icon"/>
+				<Label text="${controller.totalVaultCount}" styleClass="home-stat-value"/>
+				<Label text="%main.home.dashboard.total" styleClass="home-stat-label"/>
+			</VBox>
+			<VBox alignment="CENTER" spacing="6" styleClass="home-stat-card" HBox.hgrow="ALWAYS">
+				<FontAwesome5IconView glyph="LOCK_OPEN" glyphSize="19" styleClass="home-stat-icon,home-stat-icon-success"/>
+				<Label text="${controller.unlockedVaultCount}" styleClass="home-stat-value"/>
+				<Label text="%main.home.dashboard.unlocked" styleClass="home-stat-label"/>
+			</VBox>
+			<VBox alignment="CENTER" spacing="6" styleClass="home-stat-card" HBox.hgrow="ALWAYS">
+				<FontAwesome5IconView glyph="LOCK" glyphSize="19" styleClass="home-stat-icon"/>
+				<Label text="${controller.lockedVaultCount}" styleClass="home-stat-value"/>
+				<Label text="%main.home.dashboard.locked" styleClass="home-stat-label"/>
+			</VBox>
+			<VBox alignment="CENTER" spacing="6" styleClass="home-stat-card" HBox.hgrow="ALWAYS">
+				<FontAwesome5IconView glyph="EXCLAMATION_TRIANGLE" glyphSize="19" styleClass="home-stat-icon,home-stat-icon-warning"/>
+				<Label text="${controller.attentionVaultCount}" styleClass="home-stat-value"/>
+				<Label text="%main.home.dashboard.attention" styleClass="home-stat-label"/>
+			</VBox>
+		</HBox>
+		<HBox alignment="CENTER_LEFT" spacing="12" maxWidth="650" styleClass="home-health-card,home-health-card-success" visible="${controller.allVaultsHealthy}" managed="${controller.allVaultsHealthy}">
+			<FontAwesome5IconView glyph="CHECK" glyphSize="18" styleClass="glyph-icon-success"/>
+			<VBox spacing="2">
+				<Label text="%main.home.dashboard.healthy.title" styleClass="home-health-title"/>
+				<Label text="%main.home.dashboard.healthy.description" styleClass="home-health-description" wrapText="true"/>
+			</VBox>
+		</HBox>
+		<HBox alignment="CENTER_LEFT" spacing="12" maxWidth="650" styleClass="home-health-card,home-health-card-warning" visible="${!controller.allVaultsHealthy}" managed="${!controller.allVaultsHealthy}">
+			<FontAwesome5IconView glyph="EXCLAMATION_TRIANGLE" glyphSize="18" styleClass="glyph-icon-red"/>
+			<VBox spacing="2">
+				<Label text="%main.home.dashboard.attention.title" styleClass="home-health-title"/>
+				<Label text="%main.home.dashboard.attention.description" styleClass="home-health-description" wrapText="true"/>
+			</VBox>
+		</HBox>
+		<Label text="%main.home.dashboard.selectVault" textAlignment="CENTER" wrapText="true" styleClass="home-dashboard-hint"/>
+		<Region VBox.vgrow="ALWAYS"/>
+	</VBox>
+</StackPane>

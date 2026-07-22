@@ -1,5 +1,7 @@
 package org.cryptomator.ui.addvaultwizard;
 
+import org.cryptomator.ui.common.VaultKindUrls;
+
 import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.inject.Inject;
@@ -16,7 +18,7 @@ public class ReadmeGenerator {
 	private static final String EMPTY_PAR = "";
 	private static final String DONT_PAR = "\\b %s";
 	private static final String IDENT_PAR = "    %s";
-	private static final String HELP_URL = "{\\field{\\*\\fldinst HYPERLINK \"http://docs.cryptomator.org/\"}{\\fldrslt http://docs.cryptomator.org}}";
+	private static final String HELP_URL = "{\\field{\\*\\fldinst HYPERLINK \"" + VaultKindUrls.DOCUMENTATION + "\"}{\\fldrslt " + VaultKindUrls.DOCUMENTATION + "}}";
 
 	private final ResourceBundle resourceBundle;
 

@@ -37,6 +37,7 @@ public class DefaultSceneFactory implements Function<Parent, Scene> {
 
 	protected void configureRoot(Parent root) {
 		root.nodeOrientationProperty().bind(settings.userInterfaceOrientation);
+		MicroInteractionSupport.install(root);
 	}
 
 	protected void configureScene(Scene scene) {

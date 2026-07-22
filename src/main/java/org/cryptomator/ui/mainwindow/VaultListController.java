@@ -14,6 +14,7 @@ import org.cryptomator.cryptofs.common.Constants;
 import org.cryptomator.integrations.mount.MountService;
 import org.cryptomator.ui.addvaultwizard.AddVaultWizardComponent;
 import org.cryptomator.ui.common.FxController;
+import org.cryptomator.ui.common.MicroInteractionSupport;
 import org.cryptomator.ui.common.VaultService;
 import org.cryptomator.ui.dialogs.Dialogs;
 import org.cryptomator.ui.fxapp.FxApplicationWindows;
@@ -32,11 +33,11 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.KeyCode;
@@ -97,6 +98,8 @@ public class VaultListController implements FxController {
 	public StackPane root;
 	@FXML
 	private Button addVaultButton;
+	@FXML
+	private ToggleButton homeButton;
 
 	@Inject
 	VaultListController(@MainWindow Stage mainWindow, //
@@ -138,6 +141,7 @@ public class VaultListController implements FxController {
 	}
 
 	public void initialize() {
+		MicroInteractionSupport.install(addVaultButton);
 		vaultList.setItems(vaults);
 		vaultList.setCellFactory(cellFactory);
 
@@ -146,14 +150,15 @@ public class VaultListController implements FxController {
 		);
 
 		selectedVault.bind(vaultList.getSelectionModel().selectedItemProperty());
-		vaults.addListener((ListChangeListener.Change<? extends Vault> c) -> {
+		vaults.addListener((javafx.collections.ListChangeListener.Change<? extends Vault> c) -> {
 			while (c.next()) {
 				if (c.wasAdded()) {
-					Vault anyAddedVault = c.getAddedSubList().get(0);
-					vaultList.getSelectionModel().select(anyAddedVault);
+					vaultList.getSelectionModel().clearSelection();
 				}
 			}
 		});
+		homeButton.setSelected(selectedVault.get() == null);
+		selectedVault.addListener((observable, oldValue, newValue) -> homeButton.setSelected(newValue == null));
 		vaultList.addEventFilter(MouseEvent.MOUSE_RELEASED, this::deselect);
 
 		//unlock vault on double click
@@ -242,6 +247,12 @@ public class VaultListController implements FxController {
 	@FXML
 	public void didClickAddVault() {
 		addVaultWizard.recoveryAction(this::didClickRecoverExistingVault).build().showAddVaultWizard(resourceBundle);
+	}
+
+	@FXML
+	public void showHome() {
+		vaultList.getSelectionModel().clearSelection();
+		homeButton.setSelected(true);
 	}
 
 	@FXML

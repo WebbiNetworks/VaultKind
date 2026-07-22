@@ -131,6 +131,15 @@
 	-fx-text-fill: RED_5;
 }
 
+.label-success {
+	-fx-text-fill: GREEN_3;
+}
+
+.glyph-icon-success,
+.glyph-icon.glyph-icon-success {
+	-fx-fill: GREEN_3;
+}
+
 .text-flow > * {
 	-fx-fill: TEXT_FILL;
 }
@@ -587,6 +596,32 @@
 	-fx-padding: 0.55em 0.9em;
 }
 
+.vault-home-button {
+	-fx-padding: 10px 14px;
+	-fx-background-color: transparent;
+	-fx-background-radius: 8px;
+	-fx-border-color: transparent;
+	-fx-border-width: 0 0 0 3px;
+	-fx-border-radius: 8px;
+	-fx-text-fill: TEXT_FILL_MUTED;
+	-fx-font-weight: 600;
+}
+
+.vault-home-button:hover {
+	-fx-background-color: CONTROL_BG_HOVER;
+	-fx-text-fill: TEXT_FILL;
+}
+
+.vault-home-button:selected {
+	-fx-background-color: CONTROL_BG_SELECTED;
+	-fx-border-color: transparent transparent transparent PRIMARY;
+	-fx-text-fill: PRIMARY_D1;
+}
+
+.vault-home-button:selected .glyph-icon {
+	-fx-fill: PRIMARY_D1;
+}
+
 .vault-list,
 .vault-list > .virtual-flow > .corner,
 .vault-list > .virtual-flow > .clipped-container > .sheet {
@@ -740,10 +775,98 @@
 .welcome-learn-more {
 	-fx-text-fill: PRIMARY_D1;
 	-fx-font-weight: 600;
+	-fx-padding: 7px 12px;
+	-fx-background-color: transparent;
+	-fx-background-radius: 8px;
+	-fx-border-color: transparent;
+	-fx-border-width: 1px;
+	-fx-border-radius: 8px;
+}
+
+.welcome-learn-more:hover {
+	-fx-text-fill: PRIMARY_D2;
+	-fx-background-color: PRIMARY_L2;
+	-fx-border-color: PRIMARY;
+	-fx-effect: dropshadow(gaussian, rgba(31, 120, 232, 0.28), 12px, 0.16, 0, 2px);
+	-fx-underline: false;
 }
 
 .welcome-brand-mark {
 	-fx-fill: PRIMARY;
+}
+
+.home-dashboard {
+	-fx-padding: 8px 18px 18px;
+}
+
+.home-dashboard-title {
+	-fx-font-size: 25px;
+	-fx-font-weight: 600;
+	-fx-text-fill: TEXT_FILL;
+}
+
+.home-dashboard-subtitle,
+.home-dashboard-hint {
+	-fx-font-size: 14px;
+	-fx-text-fill: TEXT_FILL_MUTED;
+}
+
+.home-stat-card {
+	-fx-min-width: 130px;
+	-fx-padding: 16px 12px;
+	-fx-background-color: GRAY_8;
+	-fx-background-radius: 12px;
+	-fx-border-color: GRAY_7;
+	-fx-border-radius: 12px;
+}
+
+.home-stat-icon {
+	-fx-fill: PRIMARY_D1;
+}
+
+.home-stat-icon-success {
+	-fx-fill: GREEN_3;
+}
+
+.home-stat-icon-warning {
+	-fx-fill: RED_5;
+}
+
+.home-stat-value {
+	-fx-font-size: 24px;
+	-fx-font-weight: 600;
+	-fx-text-fill: TEXT_FILL;
+}
+
+.home-stat-label {
+	-fx-font-size: 12px;
+	-fx-text-fill: TEXT_FILL_MUTED;
+}
+
+.home-health-card {
+	-fx-padding: 14px 16px;
+	-fx-background-radius: 10px;
+	-fx-border-radius: 10px;
+}
+
+.home-health-card-success {
+	-fx-background-color: rgba(46, 125, 58, 0.10);
+	-fx-border-color: rgba(46, 125, 58, 0.38);
+}
+
+.home-health-card-warning {
+	-fx-background-color: rgba(200, 45, 45, 0.08);
+	-fx-border-color: rgba(200, 45, 45, 0.32);
+}
+
+.home-health-title {
+	-fx-font-weight: 600;
+	-fx-text-fill: TEXT_FILL;
+}
+
+.home-health-description {
+	-fx-font-size: 12px;
+	-fx-text-fill: TEXT_FILL_MUTED;
 }
 
 .support-shell {
@@ -1305,6 +1428,43 @@
 	-fx-fill: TEXT_FILL_MUTED;
 }
 
+.micro-interaction:hover {
+	-fx-background-color: CONTROL_BORDER_FOCUSED, CONTROL_BG_HOVER;
+}
+
+.micro-interaction:hover .glyph-icon {
+	-fx-fill: PRIMARY_D1;
+}
+
+.micro-interaction:default:hover {
+	-fx-background-color: SECONDARY, CONTROL_PRIMARY_BG_NORMAL;
+}
+
+.micro-interaction:default:hover .glyph-icon {
+	-fx-fill: white;
+}
+
+.micro-interaction.add-vault-choice:hover,
+.micro-interaction.add-vault-choice:focused {
+	-fx-background-color: PRIMARY_L2;
+	-fx-border-color: PRIMARY;
+	-fx-effect: dropshadow(gaussian, rgba(31, 120, 232, 0.18), 10px, 0.12, 0, 3px);
+}
+
+.micro-interaction.add-vault-choice:hover .glyph-icon-primary {
+	-fx-fill: PRIMARY_D1;
+}
+
+.micro-link-interaction:hover {
+	-fx-text-fill: PRIMARY_D1;
+	-fx-underline: true;
+}
+
+.micro-link-interaction.welcome-learn-more:hover {
+	-fx-text-fill: PRIMARY_D2;
+	-fx-underline: false;
+}
+
 .button:default .label {
 	-fx-text-fill: white;
 }
@@ -1493,9 +1653,9 @@
 .context-menu {
 	-fx-background-color: CONTROL_BORDER_NORMAL, CONTROL_BG_NORMAL;
 	-fx-background-insets: 0, 1px;
-	-fx-background-radius: 4px;
-	-fx-padding: 0.2em 0 0.2em 0;
-	-fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 8, 0, 0, 0);
+	-fx-background-radius: 8px;
+	-fx-padding: 0.35em;
+	-fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.22), 12, 0.1, 0, 3px);
 }
 
 /*******************************************************************************
@@ -1505,12 +1665,19 @@
  ******************************************************************************/
 
 .menu-item {
-	-fx-padding: 0.2em 0.4em 0.2em 0.4em;
+	-fx-padding: 0.3em 0.5em;
+	-fx-background-radius: 6px;
 }
 
 .menu-item:focused {
-	-fx-background-color: transparent, CONTROL_BG_ARMED;
-	-fx-background-insets: 0, 0 1px 0 1px;
+	-fx-background-color: PRIMARY_L2;
+	-fx-border-color: transparent transparent transparent PRIMARY;
+	-fx-border-width: 0 0 0 2px;
+	-fx-border-radius: 6px;
+}
+
+.menu-item:focused > .label {
+	-fx-text-fill: PRIMARY_D1;
 }
 
 .menu-item:disabled {

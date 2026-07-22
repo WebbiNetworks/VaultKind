@@ -101,7 +101,7 @@ jobs:
       - name: Download source tarball and compute checksum
         id: sha256
         run: |
-          URL="https://github.com/cryptomator/cryptomator/archive/refs/tags/${TAG}.tar.gz"
+          URL="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${TAG}.tar.gz"
           curl --silent --fail-with-body --proto "=https" -L -H "Accept: application/vnd.github+json" ${URL} --output cryptomator.tar.gz
           TARBALL_SHA256=$(sha256sum cryptomator.tar.gz | cut -d ' ' -f1)
           echo "value=${TARBALL_SHA256}" >> "$GITHUB_OUTPUT"
@@ -157,8 +157,8 @@ jobs:
           PKG_VERSION: ${{ needs.get-version.outputs.semVerNum }}
           PKG_RELEASE: ${{ steps.pkgrel.outputs.value }}
           SOURCES: |-
-            "cryptomator-${pkgver//_/-}.tar.gz::https://github.com/cryptomator/cryptomator/archive/refs/tags/${pkgver//_/-}.tar.gz"
-                    "cryptomator-${pkgver//_/-}.tar.gz.asc::https://github.com/cryptomator/cryptomator/releases/download/${pkgver//_/-}/cryptomator-${pkgver//_/-}.tar.gz.asc"
+            "cryptomator-${pkgver//_/-}.tar.gz::https://github.com/WebbiNetworks/VaultKind/archive/refs/tags/${pkgver//_/-}.tar.gz"
+                    "cryptomator-${pkgver//_/-}.tar.gz.asc::https://github.com/WebbiNetworks/VaultKind/releases/download/${pkgver//_/-}/cryptomator-${pkgver//_/-}.tar.gz.asc"
           SOURCES_SHA: |-
             '${{steps.sha256.outputs.value}}'
                         'SKIP'

@@ -61,7 +61,7 @@
 				<TextFlow styleClass="text-flow">
 					<Text text="%wrongFileAlert.link"/>
 					<Text text=" "/>
-					<Hyperlink styleClass="hyperlink-underline" text="docs.cryptomator.org" onAction="#openDocumentation"/>
+					<Hyperlink styleClass="hyperlink-underline" text="vaultkind.dev" onAction="#openDocumentation"/>
 					<Text text="."/>
 				</TextFlow>
 			</VBox>

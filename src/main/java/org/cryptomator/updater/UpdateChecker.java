@@ -57,14 +57,9 @@ public class UpdateChecker extends ScheduledService<UpdateInfo<?>> {
 		this.lastSuccessfulUpdateCheck = settings.lastSuccessfulUpdateCheck;
 		this.fallbackUpdateMechanism = fallbackUpdateMechanism;
 
-		// Prefer the safer fallback mechanism if the last update attempt was already made by this app version
-		var currentVersion = env.getAppVersionWithBuildNumber();
-		var lastAttemptedBy = settings.lastUpdateAttemptedByVersion.get();
-		if (currentVersion != null && currentVersion.equals(lastAttemptedBy)) {
-			this.updateMechanism = fallbackUpdateMechanism; // immediately use fallback mechanism
-		} else {
-			this.updateMechanism = UpdateMechanism.get().orElse(fallbackUpdateMechanism);
-		}
+		// Never use an upstream integration update channel for the fork. The fallback is intentionally
+		// inert until VaultKind has its own signed release metadata and download infrastructure.
+		this.updateMechanism = fallbackUpdateMechanism;
 
 		setExecutor(Executors.newVirtualThreadPerTaskExecutor());
 		periodProperty().bind(Bindings.when(settings.checkForUpdates).then(UPDATE_CHECK_INTERVAL).otherwise(DISABLED_UPDATE_CHECK_INTERVAL));

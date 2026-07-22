@@ -1,35 +1,19 @@
-# Contributing to Cryptomator
+# Contributing to VaultKind
 
-## Did you find a bug?
+VaultKind is an independent desktop application derived from Cryptomator. Contributions should be filed and discussed in this repository, not in Cryptomator's support channels.
 
-- Ensure you're running the latest version of Cryptomator.
-- Ensure the bug is related to the desktop version of Cryptomator. Bugs concerning the Cryptomator iOS and Android app can be reported on the [Cryptomator for iOS issues list](https://github.com/cryptomator/ios/issues) and [Cryptomator for Android issues list](https://github.com/cryptomator/android/issues) respectively.
-- Ensure the bug was not [already reported](https://github.com/cryptomator/cryptomator/issues). You can also check out our [FAQ](https://community.cryptomator.org/c/kb/faq).
-- If you're unable to find an open issue addressing the problem, [submit a new one](https://github.com/cryptomator/cryptomator/issues/new/choose).
+## Reporting bugs
 
-## Did you write a patch that fixes a bug?
+- Search [existing VaultKind issues](https://github.com/WebbiNetworks/VaultKind/issues) first.
+- If the problem has not been reported, open a [VaultKind bug report](https://github.com/WebbiNetworks/VaultKind/issues/new/choose).
+- Include the VaultKind version, operating system, reproduction steps, expected behavior, actual behavior, and relevant logs.
+- Never post vault passwords, recovery keys, or sensitive file names.
 
-- Open a new pull request with the patch.
-- Ensure the PR description clearly describes the problem and solution. Include the relevant issue number if applicable.
+## Proposing changes
 
-## Do you intend to add a new feature or change an existing one?
+- Open an issue before substantial work so the scope and UX can be discussed.
+- Keep changes focused and include tests where practical.
+- Preserve Cryptomator vault-format compatibility unless a change has been explicitly approved and documented.
+- Follow the project's [Code of Conduct](https://github.com/WebbiNetworks/VaultKind/blob/main/.github/CODE_OF_CONDUCT.md).
 
-- Suggest your change by [submitting a new issue](https://github.com/cryptomator/cryptomator/issues/new/choose) and start writing code.
-
-## Do you intend to add a new translation or change an existing one?
-
-Translations are not managed directly in this repository. Instead, we use [Crowdin](https://translate.cryptomator.org/), which automatically synchronizes translations with this repository. If you want to help us with translations, please visit our translation project on Crowdin.
-
-## Use of Generative AI
-
-AI tools may assist your work, but every contribution must be fully understood, reviewed, and tested by you. Only submit changes you can clearly explain and justify. Unverified or low-quality AI output that wastes our time and resources will be closed without further review.
-
-## Code of Conduct
-
-Help us keep Cryptomator open and inclusive. Please read and follow our [Code of Conduct](https://github.com/cryptomator/cryptomator/blob/develop/.github/CODE_OF_CONDUCT.md).
-
-## Above all, thank you for your contributions
-
-Thank you for taking the time to contribute to the project! :+1:
-
-Cryptomator Team
+Translation infrastructure for VaultKind has not yet been established. Do not submit translations through Cryptomator's translation service on VaultKind's behalf.

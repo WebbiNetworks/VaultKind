@@ -165,7 +165,7 @@ jobs:
     permissions:
       contents: write
     env:
-      TARBALL_URL: 'https://github.com/cryptomator/cryptomator/archive/refs/tags/${{ github.event.release.tag_name || inputs.src-tag }}.tar.gz'
+      TARBALL_URL: 'https://github.com/${{ github.repository }}/archive/refs/tags/${{ github.event.release.tag_name || inputs.src-tag }}.tar.gz'
     steps:
       - name: Check that input "src-tag" is actually a tag
         if: github.event_name == 'workflow_dispatch'

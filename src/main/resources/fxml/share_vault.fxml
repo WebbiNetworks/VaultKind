@@ -10,8 +10,6 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.shape.Circle?>
 <?import org.cryptomator.ui.controls.FontAwesome5IconView?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.image.Image?>
 <?import javafx.scene.control.Hyperlink?>
 <?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.Group?>
@@ -78,34 +76,12 @@
 					</tooltip>
 				</Hyperlink>
 			</TextFlow>
-			<Region minHeight="12"/>
-			<HBox alignment="CENTER_LEFT" spacing="6" styleClass="ad-box">
-				<VBox spacing="6" alignment="CENTER_LEFT">
-					<ImageView HBox.hgrow="ALWAYS" fitWidth="180" preserveRatio="true" cache="true">
-						<Image url="@../img/hub_logo.png"/>
-					</ImageView>
-					<Label text="%shareVault.hubAd.description" style="-fx-font-weight: bold;" wrapText="true"/>
-					<VBox spacing="6" alignment="CENTER_LEFT">
-						<padding>
-							<Insets left="6"/>
-						</padding>
-						<Label text="%shareVault.hubAd.keyManagement" wrapText="true"/>
-						<Label text="%shareVault.hubAd.authentication" wrapText="true"/>
-						<Label text="%shareVault.hubAd.encryption" wrapText="true"/>
-					</VBox>
-				</VBox>
-				<Region HBox.hgrow="ALWAYS"/>
-				<ImageView HBox.hgrow="ALWAYS" fitWidth="180" preserveRatio="true" cache="true">
-					<Image url="@../img/group-magic.png"/>
-				</ImageView>
-			</HBox>
 		</VBox>
 		<Region VBox.vgrow="ALWAYS" minHeight="18"/>
 		<ButtonBar buttonMinWidth="120" buttonOrder="+CX">
 			<buttons>
 				<Button text="%generic.button.close" ButtonBar.buttonData="CANCEL_CLOSE" onAction="#close"/>
 				<Button text="%shareVault.hub.openHub" ButtonBar.buttonData="NEXT_FORWARD" defaultButton="true" onAction="#openHub" visible="${controller.hubVault}" managed="${controller.hubVault}"/>
-				<Button text="%shareVault.visitHub" ButtonBar.buttonData="NEXT_FORWARD" defaultButton="true" onAction="#visitHub" visible="${!controller.hubVault}" managed="${!controller.hubVault}"/>
 			</buttons>
 		</ButtonBar>
 	</VBox>

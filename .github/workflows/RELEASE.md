@@ -177,7 +177,7 @@ These steps are triggered by team members after Slack notifications:
 
 - **Debian package** -- Run the [`debian.yml`](debian.yml) workflow to build `.deb` and optionally upload to the PPA.
 - **winget** -- Run the [`winget.yml`](winget.yml) workflow to submit to the Windows Package Manager.
-- **latest-version.json** -- Update the version-check file on S3 (`static.cryptomator.org/desktop/latest-version.json`).
+- **Update feed** -- VaultKind automatic updates remain disabled until a signed VaultKind-owned release feed is available.
 
 ## Signing & Security
 

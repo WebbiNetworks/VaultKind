@@ -2,6 +2,7 @@ package org.cryptomator.ui.wrongfilealert;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.cryptomator.ui.common.FxController;
+import org.cryptomator.ui.common.VaultKindUrls;
 
 import javax.inject.Inject;
 import javafx.application.Application;
@@ -15,7 +16,7 @@ import java.io.UncheckedIOException;
 @WrongFileAlertScoped
 public class WrongFileAlertController implements FxController {
 
-	private static final String DOCUMENTATION_URI = "https://docs.cryptomator.org/desktop/accessing-vaults/";
+	private static final String DOCUMENTATION_URI = VaultKindUrls.DOCUMENTATION;
 
 	private final Application app;
 	private final Stage window;

@@ -38,6 +38,7 @@ public enum FontAwesome5Icon {
 	FUNNEL("\uF0B0"), //
 	HAND_HOLDING_HEART("\uF4BE"), //
 	HEART("\uF004"), //
+	HOME("\uF015"), //
 	HDD("\uF0A0"), //
 	INFO("\uF129"), //
 	INFO_CIRCLE("\uF05A"), //

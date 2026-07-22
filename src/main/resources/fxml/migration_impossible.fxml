@@ -36,7 +36,7 @@
 			<TextFlow>
 				<Text text="%migration.impossible.moreInfo"/>
 				<Text text=" "/>
-				<Hyperlink styleClass="hyperlink-underline" text="docs.cryptomator.org" wrapText="true" onAction="#getMigrationHelp"/>
+				<Hyperlink styleClass="hyperlink-underline" text="vaultkind.dev" wrapText="true" onAction="#getMigrationHelp"/>
 				<Text text="."/>
 			</TextFlow>
 		</VBox>

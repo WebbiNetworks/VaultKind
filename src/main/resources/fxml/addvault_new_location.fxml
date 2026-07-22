@@ -24,7 +24,7 @@
 	<fx:define>
 		<ToggleGroup fx:id="locationPresetsToggler"/>
 		<FontAwesome5IconView fx:id="badLocation" styleClass="glyph-icon-red" glyph="TIMES"/>
-		<FontAwesome5IconView fx:id="goodLocation" styleClass="glyph-icon-primary" glyph="CHECK"/>
+		<FontAwesome5IconView fx:id="goodLocation" styleClass="glyph-icon-success" glyph="CHECK"/>
 	</fx:define>
 	<padding>
 		<Insets top="28" right="42" bottom="24" left="42"/>

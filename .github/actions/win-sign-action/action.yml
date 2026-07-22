@@ -19,7 +19,7 @@ inputs:
   url:
     description: 'Signature URL'
     required: false
-    default: 'https://cryptomator.org'
+    default: 'https://vaultkind.dev'
   append-signature:
     description: 'Whether to append the signature to existing signatures'
     required: false

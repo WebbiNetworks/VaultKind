@@ -2,7 +2,7 @@
 > [!WARN]
 > 🚧 DO NOT EDIT 🚧
 >
-> The [builds are still running](https://github.com/cryptomator/cryptomator/actions/workflows/create-release.yml).
+> The [builds are still running](https://github.com/WebbiNetworks/VaultKind/actions).
 > This banner will be replaced after the builds are finished.
 <!-- /HEADER -->
 
@@ -12,7 +12,7 @@
 ### Other Changes 📎
 END REPLACE-->
 
-For a comprehensive view of changes, read the [CHANGELOG](https://github.com/cryptomator/cryptomator/blob/$VERSION/CHANGELOG.md).
+For a comprehensive view of changes, read the [CHANGELOG](https://github.com/WebbiNetworks/VaultKind/blob/$VERSION/CHANGELOG.md).
 
 ---
 

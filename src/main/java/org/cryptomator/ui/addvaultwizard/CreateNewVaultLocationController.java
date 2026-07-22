@@ -127,13 +127,12 @@ public class CreateNewVaultLocationController implements FxController {
 	}
 
 	private void updateStatusLabel(ObservableValue<? extends VaultPathStatus> observable, VaultPathStatus oldValue, VaultPathStatus newValue) {
+		locationStatusLabel.getStyleClass().removeAll("label-muted", "label-red", "label-success");
 		if (newValue.valid()) {
 			locationStatusLabel.setGraphic(goodLocation);
-			locationStatusLabel.getStyleClass().remove("label-red");
-			locationStatusLabel.getStyleClass().add("label-muted");
+			locationStatusLabel.getStyleClass().add("label-success");
 		} else {
 			locationStatusLabel.setGraphic(badLocation);
-			locationStatusLabel.getStyleClass().remove("label-muted");
 			locationStatusLabel.getStyleClass().add("label-red");
 		}
 		this.locationStatusLabel.setText(resourceBundle.getString(newValue.localizationKey()));

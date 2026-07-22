@@ -2,6 +2,7 @@ package org.cryptomator.ui.migration;
 
 import org.cryptomator.common.vaults.Vault;
 import org.cryptomator.ui.common.FxController;
+import org.cryptomator.ui.common.VaultKindUrls;
 
 import javax.inject.Inject;
 import javafx.application.Application;
@@ -10,7 +11,7 @@ import javafx.stage.Stage;
 
 public class MigrationImpossibleController implements FxController {
 
-	private static final String HELP_URI = "https://docs.cryptomator.org/help/manual-migration/";
+	private static final String HELP_URI = VaultKindUrls.DOCUMENTATION;
 
 	private final Application application;
 	private final Stage window;

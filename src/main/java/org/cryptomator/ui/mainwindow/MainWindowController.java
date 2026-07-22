@@ -14,6 +14,9 @@ import javafx.beans.Observable;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.fxml.FXML;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
@@ -21,6 +24,7 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import java.util.ResourceBundle;
 
 @MainWindowScoped
 public class MainWindowController implements FxController {
@@ -31,6 +35,10 @@ public class MainWindowController implements FxController {
 	private final ReadOnlyObjectProperty<Vault> selectedVault;
 	private final Settings settings;
 	private final MainWindowNavigation navigation;
+	private final ResourceBundle resourceBundle;
+	private final StringProperty contextTitle = new SimpleStringProperty();
+	private final StringProperty contentTitle = new SimpleStringProperty();
+	private final StringProperty contentSubtitle = new SimpleStringProperty();
 
 	@FXML
 	private StackPane root;
@@ -49,11 +57,13 @@ public class MainWindowController implements FxController {
 	public MainWindowController(@MainWindow Stage window, //
 								ObjectProperty<Vault> selectedVault, //
 								Settings settings, //
-								MainWindowNavigation navigation) {
+								MainWindowNavigation navigation, //
+								ResourceBundle resourceBundle) {
 		this.window = window;
 		this.selectedVault = selectedVault;
 		this.settings = settings;
 		this.navigation = navigation;
+		this.resourceBundle = resourceBundle;
 	}
 
 	@FXML
@@ -64,10 +74,16 @@ public class MainWindowController implements FxController {
 			root.getStyleClass().add("os-windows");
 		}
 		window.focusedProperty().addListener(this::mainWindowFocusChanged);
-		navigation.destinationProperty().addListener((_, _, destination) -> showDestination(destination));
+		navigation.destinationProperty().addListener((_, _, destination) -> {
+			showDestination(destination);
+			updateContextTitle();
+		});
+		navigation.selectedPreferencesTabProperty().addListener((_, _, _) -> updateContextTitle());
+		selectedVault.addListener((_, _, _) -> updateContextTitle());
 		navigation.addVaultContentProperty().addListener((_, _, content) -> showAddVaultContent(content));
 		showAddVaultContent(navigation.addVaultContentProperty().get());
 		showDestination(navigation.destinationProperty().get());
+		updateContextTitle();
 
 		int x = settings.windowXPosition.get();
 		int y = settings.windowYPosition.get();
@@ -86,6 +102,43 @@ public class MainWindowController implements FxController {
 		settings.windowYPosition.bind(window.yProperty());
 		settings.windowWidth.bind(window.widthProperty());
 		settings.windowHeight.bind(window.heightProperty());
+	}
+
+	private void updateContextTitle() {
+		MainWindowNavigation.Destination destination = navigation.destinationProperty().get();
+		contextTitle.set(switch (destination) {
+			case HOME -> resourceBundle.getString("main.home");
+			case VAULTS -> selectedVault.get() == null
+					? resourceBundle.getString("main.vaultlist")
+					: resourceBundle.getString("main.context.vault").formatted(selectedVault.get().getDisplayName());
+			case ACTIVITY -> resourceBundle.getString("main.vaultlist.events");
+			case ADD_VAULT -> resourceBundle.getString("addvaultwizard.title");
+			case SETTINGS -> resourceBundle.getString("main.context.settings").formatted(preferencesTabTitle());
+		});
+		contentTitle.set(resourceBundle.getString(switch (destination) {
+			case HOME -> "main.content.dashboard.title";
+			case VAULTS -> "main.content.vaults.title";
+			case ACTIVITY -> "main.content.activity.title";
+			case ADD_VAULT -> "main.content.addVault.title";
+			case SETTINGS -> "main.content.settings.title";
+		}));
+		contentSubtitle.set(resourceBundle.getString(switch (destination) {
+			case HOME -> "main.content.dashboard.subtitle";
+			case VAULTS -> "main.content.vaults.subtitle";
+			case ACTIVITY -> "main.content.activity.subtitle";
+			case ADD_VAULT -> "main.content.addVault.subtitle";
+			case SETTINGS -> "main.content.settings.subtitle";
+		}));
+	}
+
+	private String preferencesTabTitle() {
+		return switch (navigation.selectedPreferencesTabProperty().get()) {
+			case GENERAL, ANY, UPDATES -> resourceBundle.getString("preferences.general");
+			case INTERFACE -> resourceBundle.getString("preferences.interface");
+			case VOLUME -> resourceBundle.getString("preferences.volume");
+			case CONTRIBUTE -> resourceBundle.getString("preferences.contribute");
+			case ABOUT -> resourceBundle.getString("preferences.about");
+		};
 	}
 
 	private void showDestination(MainWindowNavigation.Destination destination) {
@@ -180,6 +233,30 @@ public class MainWindowController implements FxController {
 
 	public boolean getDebugModeEnabled() {
 		return debugModeEnabledProperty().get();
+	}
+
+	public ReadOnlyStringProperty contextTitleProperty() {
+		return contextTitle;
+	}
+
+	public String getContextTitle() {
+		return contextTitle.get();
+	}
+
+	public ReadOnlyStringProperty contentTitleProperty() {
+		return contentTitle;
+	}
+
+	public String getContentTitle() {
+		return contentTitle.get();
+	}
+
+	public ReadOnlyStringProperty contentSubtitleProperty() {
+		return contentSubtitle;
+	}
+
+	public String getContentSubtitle() {
+		return contentSubtitle.get();
 	}
 
 }

@@ -21,10 +21,16 @@
 		<HeaderBar managed="${controller.windows}" visible="${controller.windows}" styleClass="app-header-bar">
 			<leading>
 				<HBox alignment="CENTER_LEFT" spacing="8" styleClass="app-header-title">
-					<Label text="%app.name"/>
+					<Label text="%app.name" styleClass="app-header-brand"/>
+					<Label text="/" styleClass="app-header-separator"/>
+					<Label text="${controller.contextTitle}" styleClass="app-header-context"/>
 				</HBox>
 			</leading>
 		</HeaderBar>
+		<VBox spacing="3" styleClass="content-context-header">
+			<Label text="${controller.contentTitle}" styleClass="content-context-title"/>
+			<Label text="${controller.contentSubtitle}" wrapText="true" styleClass="content-context-subtitle"/>
+		</VBox>
 		<StackPane VBox.vgrow="ALWAYS">
 			<SplitPane fx:id="workspacePane" dividerPositions="0.30" orientation="HORIZONTAL" styleClass="dashboard-split">
 				<fx:include source="vault_list.fxml" SplitPane.resizableWithParent="false"/>

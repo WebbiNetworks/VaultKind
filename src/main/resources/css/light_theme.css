@@ -219,6 +219,33 @@
 	-fx-font-weight: 600;
 }
 
+.app-header-title .app-header-separator {
+	-fx-text-fill: #aeb6c2;
+	-fx-font-weight: 400;
+}
+
+.app-header-title .app-header-context {
+	-fx-text-fill: #d2d7df;
+	-fx-font-weight: 400;
+}
+
+.content-context-header {
+	-fx-padding: 18px 24px 16px 24px;
+	-fx-background-color: MAIN_BG;
+	-fx-border-color: transparent transparent GRAY_3 transparent;
+}
+
+.content-context-title {
+	-fx-text-fill: TEXT_FILL;
+	-fx-font-size: 24px;
+	-fx-font-weight: 600;
+}
+
+.content-context-subtitle {
+	-fx-text-fill: TEXT_FILL_MUTED;
+	-fx-font-size: 13px;
+}
+
 .add-vault-shell {
 	-fx-background-color: MAIN_BG;
 }

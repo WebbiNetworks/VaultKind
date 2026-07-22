@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import org.cryptomator.ui.controls.FontAwesome5IconView?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<HBox xmlns:fx="http://javafx.com/fxml"
+	  xmlns="http://javafx.com/javafx"
+	  fx:controller="org.cryptomator.ui.mainwindow.HowItWorksController"
+	  styleClass="how-it-works-shell">
+	<VBox minWidth="300" prefWidth="300" maxWidth="300" spacing="6" styleClass="preferences-navigation,embedded-preferences-navigation">
+		<Button text="%main.home" onAction="#showDashboard" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="vault-home-button">
+			<VBox.margin><Insets top="12" right="0" bottom="10" left="0"/></VBox.margin>
+			<graphic><FontAwesome5IconView glyph="HOME" glyphSize="15"/></graphic>
+		</Button>
+		<Label text="%howItWorks.navigation.title" styleClass="preferences-navigation-title"/>
+		<Label text="%howItWorks.navigation.subtitle" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+		<Region VBox.vgrow="ALWAYS"/>
+	</VBox>
+
+	<ScrollPane fx:id="contentScroll" fitToWidth="true" hbarPolicy="NEVER" HBox.hgrow="ALWAYS" styleClass="how-it-works-scroll">
+		<VBox alignment="TOP_CENTER" spacing="22" styleClass="how-it-works-content">
+			<VBox maxWidth="1000" spacing="7" styleClass="how-intro-card">
+				<HBox alignment="CENTER_LEFT" spacing="12">
+					<FontAwesome5IconView glyph="LOCK" glyphSize="25" styleClass="how-intro-icon"/>
+					<Label text="%howItWorks.intro.title" wrapText="true" styleClass="how-section-title"/>
+				</HBox>
+				<Label text="%howItWorks.intro.description" wrapText="true" styleClass="how-body-copy"/>
+			</VBox>
+
+			<VBox maxWidth="1000" spacing="12">
+				<Label text="%howItWorks.flow.title" styleClass="how-section-title"/>
+				<HBox alignment="CENTER" spacing="10">
+					<VBox alignment="TOP_LEFT" spacing="8" styleClass="how-step-card" HBox.hgrow="ALWAYS">
+						<HBox alignment="CENTER_LEFT" spacing="10">
+							<Label text="1" styleClass="how-step-number"/>
+							<FontAwesome5IconView glyph="FOLDER_OPEN" glyphSize="20" styleClass="how-step-icon"/>
+						</HBox>
+						<Label text="%howItWorks.step1.title" wrapText="true" styleClass="how-step-title"/>
+						<Label text="%howItWorks.step1.description" wrapText="true" styleClass="how-step-copy"/>
+					</VBox>
+					<FontAwesome5IconView glyph="CHEVRON_RIGHT" glyphSize="15" styleClass="how-flow-arrow"/>
+					<VBox alignment="TOP_LEFT" spacing="8" styleClass="how-step-card" HBox.hgrow="ALWAYS">
+						<HBox alignment="CENTER_LEFT" spacing="10">
+							<Label text="2" styleClass="how-step-number"/>
+							<FontAwesome5IconView glyph="KEY" glyphSize="20" styleClass="how-step-icon"/>
+						</HBox>
+						<Label text="%howItWorks.step2.title" wrapText="true" styleClass="how-step-title"/>
+						<Label text="%howItWorks.step2.description" wrapText="true" styleClass="how-step-copy"/>
+					</VBox>
+					<FontAwesome5IconView glyph="CHEVRON_RIGHT" glyphSize="15" styleClass="how-flow-arrow"/>
+					<VBox alignment="TOP_LEFT" spacing="8" styleClass="how-step-card" HBox.hgrow="ALWAYS">
+						<HBox alignment="CENTER_LEFT" spacing="10">
+							<Label text="3" styleClass="how-step-number"/>
+							<FontAwesome5IconView glyph="HDD" glyphSize="20" styleClass="how-step-icon"/>
+						</HBox>
+						<Label text="%howItWorks.step3.title" wrapText="true" styleClass="how-step-title"/>
+						<Label text="%howItWorks.step3.description" wrapText="true" styleClass="how-step-copy"/>
+					</VBox>
+				</HBox>
+			</VBox>
+
+			<VBox maxWidth="1000" spacing="12">
+				<Label text="%howItWorks.twoViews.title" styleClass="how-section-title"/>
+				<Label text="%howItWorks.twoViews.description" wrapText="true" styleClass="how-body-copy"/>
+				<HBox spacing="14">
+					<HBox alignment="CENTER_LEFT" spacing="13" styleClass="how-view-card" HBox.hgrow="ALWAYS">
+						<FontAwesome5IconView glyph="SYNC" glyphSize="23" styleClass="how-view-icon"/>
+						<VBox spacing="3">
+							<Label text="%howItWorks.encrypted.title" styleClass="how-step-title"/>
+							<Label text="%howItWorks.encrypted.description" wrapText="true" styleClass="how-step-copy"/>
+						</VBox>
+					</HBox>
+					<HBox alignment="CENTER_LEFT" spacing="13" styleClass="how-view-card" HBox.hgrow="ALWAYS">
+						<FontAwesome5IconView glyph="LOCK_OPEN" glyphSize="23" styleClass="how-view-icon"/>
+						<VBox spacing="3">
+							<Label text="%howItWorks.unlocked.title" styleClass="how-step-title"/>
+							<Label text="%howItWorks.unlocked.description" wrapText="true" styleClass="how-step-copy"/>
+						</VBox>
+					</HBox>
+				</HBox>
+			</VBox>
+
+			<HBox maxWidth="1000" alignment="CENTER_LEFT" spacing="14" styleClass="how-recovery-card">
+				<FontAwesome5IconView glyph="EXCLAMATION_TRIANGLE" glyphSize="22" styleClass="how-recovery-icon"/>
+				<VBox spacing="4" HBox.hgrow="ALWAYS">
+					<Label text="%howItWorks.recovery.title" styleClass="how-step-title"/>
+					<Label text="%howItWorks.recovery.description" wrapText="true" styleClass="how-step-copy"/>
+				</VBox>
+			</HBox>
+
+			<HBox maxWidth="1000" alignment="CENTER_RIGHT" spacing="12">
+				<Button text="%howItWorks.action.dashboard" onAction="#showDashboard" styleClass="how-secondary-button"/>
+				<Button text="%howItWorks.action.addVault" onAction="#addVault" defaultButton="true" styleClass="how-primary-button"/>
+			</HBox>
+		</VBox>
+	</ScrollPane>
+</HBox>

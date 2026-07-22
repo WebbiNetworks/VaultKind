@@ -49,6 +49,8 @@ public class MainWindowController implements FxController {
 	@FXML
 	private Node activityPane;
 	@FXML
+	private Node howItWorksPane;
+	@FXML
 	private Node addVaultPane;
 	@FXML
 	private StackPane addVaultContentHost;
@@ -112,6 +114,7 @@ public class MainWindowController implements FxController {
 					? resourceBundle.getString("main.vaultlist")
 					: resourceBundle.getString("main.context.vault").formatted(selectedVault.get().getDisplayName());
 			case ACTIVITY -> resourceBundle.getString("main.vaultlist.events");
+			case HOW_IT_WORKS -> resourceBundle.getString("howItWorks.title");
 			case ADD_VAULT -> resourceBundle.getString("addvaultwizard.title");
 			case SETTINGS -> resourceBundle.getString("main.context.settings").formatted(preferencesTabTitle());
 		});
@@ -119,6 +122,7 @@ public class MainWindowController implements FxController {
 			case HOME -> "main.content.dashboard.title";
 			case VAULTS -> "main.content.vaults.title";
 			case ACTIVITY -> "main.content.activity.title";
+			case HOW_IT_WORKS -> "howItWorks.title";
 			case ADD_VAULT -> "main.content.addVault.title";
 			case SETTINGS -> "main.content.settings.title";
 		}));
@@ -126,6 +130,7 @@ public class MainWindowController implements FxController {
 			case HOME -> "main.content.dashboard.subtitle";
 			case VAULTS -> "main.content.vaults.subtitle";
 			case ACTIVITY -> "main.content.activity.subtitle";
+			case HOW_IT_WORKS -> "howItWorks.subtitle";
 			case ADD_VAULT -> "main.content.addVault.subtitle";
 			case SETTINGS -> "main.content.settings.subtitle";
 		}));
@@ -144,6 +149,7 @@ public class MainWindowController implements FxController {
 	private void showDestination(MainWindowNavigation.Destination destination) {
 		showOnly(destination == MainWindowNavigation.Destination.SETTINGS ? settingsPane
 				: destination == MainWindowNavigation.Destination.ACTIVITY ? activityPane
+				: destination == MainWindowNavigation.Destination.HOW_IT_WORKS ? howItWorksPane
 				: destination == MainWindowNavigation.Destination.ADD_VAULT ? addVaultPane
 				: workspacePane);
 	}
@@ -156,7 +162,7 @@ public class MainWindowController implements FxController {
 	}
 
 	private void showOnly(Node selectedPane) {
-		for (Node pane : new Node[]{workspacePane, settingsPane, activityPane, addVaultPane}) {
+		for (Node pane : new Node[]{workspacePane, settingsPane, activityPane, howItWorksPane, addVaultPane}) {
 			boolean selected = pane == selectedPane;
 			pane.setVisible(selected);
 			pane.setManaged(selected);

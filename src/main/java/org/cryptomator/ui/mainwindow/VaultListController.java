@@ -16,7 +16,6 @@ import org.cryptomator.ui.addvaultwizard.AddVaultWizardComponent;
 import org.cryptomator.ui.common.FxController;
 import org.cryptomator.ui.common.MicroInteractionSupport;
 import org.cryptomator.ui.common.VaultService;
-import org.cryptomator.ui.common.VaultKindUrls;
 import org.cryptomator.ui.dialogs.Dialogs;
 import org.cryptomator.ui.fxapp.FxApplicationWindows;
 import org.cryptomator.ui.fxapp.FxFSEventList;
@@ -26,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
@@ -77,7 +75,6 @@ public class VaultListController implements FxController {
 	private static final Logger LOG = LoggerFactory.getLogger(VaultListController.class);
 
 	private final Stage mainWindow;
-	private final Application application;
 	private final ObservableList<Vault> vaults;
 	private final VaultService vaultService;
 	private final ObjectProperty<Vault> selectedVault;
@@ -107,7 +104,6 @@ public class VaultListController implements FxController {
 
 	@Inject
 	VaultListController(@MainWindow Stage mainWindow, //
-						Application application, //
 						ObservableList<Vault> vaults, //
 						ObjectProperty<Vault> selectedVault, //
 						VaultListCellFactory cellFactory, //
@@ -125,7 +121,6 @@ public class VaultListController implements FxController {
 						ExecutorService executor, //
 						MainWindowNavigation navigation) {
 		this.mainWindow = mainWindow;
-		this.application = application;
 		this.vaults = vaults;
 		this.selectedVault = selectedVault;
 		this.cellFactory = cellFactory;
@@ -375,7 +370,8 @@ public class VaultListController implements FxController {
 
 	@FXML
 	public void showHelp() {
-		application.getHostServices().showDocument(VaultKindUrls.DOCUMENTATION);
+		vaultList.getSelectionModel().clearSelection();
+		navigation.showHowItWorks();
 	}
 	// Getter and Setter
 

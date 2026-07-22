@@ -135,6 +135,11 @@ abstract class MainWindowModule {
 
 	@Binds
 	@IntoMap
+	@FxControllerKey(HowItWorksController.class)
+	abstract FxController bindHowItWorksController(HowItWorksController controller);
+
+	@Binds
+	@IntoMap
 	@FxControllerKey(VaultListController.class)
 	abstract FxController bindVaultListController(VaultListController controller);
 

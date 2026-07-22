@@ -2,12 +2,8 @@ package org.cryptomator.ui.mainwindow;
 
 import org.cryptomator.common.vaults.Vault;
 import org.cryptomator.ui.common.FxController;
-import org.cryptomator.ui.common.VaultKindUrls;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javafx.application.Application;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.binding.IntegerBinding;
@@ -24,10 +20,7 @@ import static org.cryptomator.common.vaults.VaultState.Value.VAULT_CONFIG_MISSIN
 @MainWindowScoped
 public class WelcomeController implements FxController {
 
-	private static final Logger LOG = LoggerFactory.getLogger(WelcomeController.class);
-	private static final String GETTING_STARTED_URI = VaultKindUrls.DOCUMENTATION;
-
-	private final Application application;
+	private final MainWindowNavigation navigation;
 	private final BooleanBinding noVaultPresent;
 	private final IntegerBinding totalVaultCount;
 	private final IntegerBinding lockedVaultCount;
@@ -36,8 +29,8 @@ public class WelcomeController implements FxController {
 	private final BooleanBinding allVaultsHealthy;
 
 	@Inject
-	public WelcomeController(Application application, ObservableList<Vault> vaults) {
-		this.application = application;
+	public WelcomeController(ObservableList<Vault> vaults, MainWindowNavigation navigation) {
+		this.navigation = navigation;
 		this.noVaultPresent = Bindings.isEmpty(vaults);
 		this.totalVaultCount = Bindings.size(vaults);
 		this.lockedVaultCount = Bindings.createIntegerBinding(() -> (int) vaults.stream().filter(Vault::isLocked).count(), vaults);
@@ -49,8 +42,7 @@ public class WelcomeController implements FxController {
 
 	@FXML
 	public void visitGettingStartedGuide() {
-		LOG.trace("Opening {}", GETTING_STARTED_URI);
-		application.getHostServices().showDocument(GETTING_STARTED_URI);
+		navigation.showHowItWorks();
 	}
 
 	/* Getter/Setter */

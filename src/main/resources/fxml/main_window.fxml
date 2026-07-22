@@ -38,6 +38,7 @@
 			</SplitPane>
 			<fx:include fx:id="settingsPane" source="preferences_embedded.fxml" visible="false" managed="false"/>
 			<fx:include fx:id="activityPane" source="activity_embedded.fxml" visible="false" managed="false"/>
+			<fx:include fx:id="howItWorksPane" source="how_it_works_embedded.fxml" visible="false" managed="false"/>
 			<HBox fx:id="addVaultPane" visible="false" managed="false" styleClass="embedded-add-vault">
 				<VBox minWidth="300" prefWidth="300" maxWidth="300" spacing="6" styleClass="preferences-navigation,embedded-preferences-navigation">
 					<Button text="%main.home" onAction="#showDashboard" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="vault-home-button">

@@ -25,6 +25,7 @@ public class MainWindowNavigation {
 		HOME,
 		VAULTS,
 		ACTIVITY,
+		HOW_IT_WORKS,
 		ADD_VAULT,
 		SETTINGS
 	}
@@ -59,6 +60,11 @@ public class MainWindowNavigation {
 	public void showActivity() {
 		leaveAddVault();
 		destination.set(Destination.ACTIVITY);
+	}
+
+	public void showHowItWorks() {
+		leaveAddVault();
+		destination.set(Destination.HOW_IT_WORKS);
 	}
 
 	public void showAddVault(Stage wizardStage) {

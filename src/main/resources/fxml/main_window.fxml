@@ -11,6 +11,12 @@
 <?import javafx.scene.control.Button?>
 <?import org.cryptomator.ui.controls.FontAwesome5IconView?>
 <?import org.cryptomator.ui.controls.InfoBar?>
+<?import org.cryptomator.ui.controls.FormattedLabel?>
+<?import org.cryptomator.ui.controls.NiceSecurePasswordField?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ButtonBar?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 
 <StackPane xmlns:fx="http://javafx.com/fxml"
 		   xmlns="http://javafx.com/javafx"
@@ -50,6 +56,51 @@
 					<Region VBox.vgrow="ALWAYS"/>
 				</VBox>
 				<StackPane fx:id="addVaultContentHost" HBox.hgrow="ALWAYS" styleClass="embedded-add-vault-content"/>
+			</HBox>
+			<HBox fx:id="unlockPane" visible="false" managed="false" styleClass="embedded-unlock">
+				<VBox minWidth="300" prefWidth="300" maxWidth="300" spacing="6" styleClass="preferences-navigation,embedded-preferences-navigation">
+					<Button text="%main.home" onAction="#showDashboard" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="vault-home-button">
+						<VBox.margin><Insets top="12" right="0" bottom="10" left="0"/></VBox.margin>
+						<graphic><FontAwesome5IconView glyph="HOME" glyphSize="15"/></graphic>
+					</Button>
+					<Label text="%main.content.unlock.title" styleClass="preferences-navigation-title"/>
+					<Label text="${controller.unlockVaultName}" wrapText="true" styleClass="unlock-navigation-vault"/>
+					<Label text="%main.content.unlock.subtitle" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+					<Region VBox.vgrow="ALWAYS"/>
+				</VBox>
+				<StackPane HBox.hgrow="ALWAYS" styleClass="embedded-unlock-content">
+					<VBox minWidth="560" prefWidth="620" maxWidth="680" minHeight="330" prefHeight="360" maxHeight="420" spacing="14" alignment="TOP_CENTER" styleClass="embedded-unlock-card">
+						<StackPane alignment="CENTER" minHeight="72" prefHeight="72">
+							<ImageView fitWidth="64" preserveRatio="true" smooth="true" cache="true"><Image url="@../img/bot/body.png"/></ImageView>
+						</StackPane>
+						<FormattedLabel format="%unlock.passwordPrompt" arg1="${controller.unlockVaultName}" wrapText="true" maxWidth="Infinity" styleClass="unlock-password-prompt"/>
+						<HBox spacing="8" alignment="CENTER_LEFT" maxWidth="Infinity" styleClass="unlock-inline-error" visible="${controller.unlockWrongPassword}" managed="${controller.unlockWrongPassword}">
+							<FontAwesome5IconView glyph="EXCLAMATION_CIRCLE" glyphSize="14"/>
+							<Label text="%unlock.error.wrongPassword" wrapText="true"/>
+						</HBox>
+						<NiceSecurePasswordField fx:id="unlockPasswordField" maxWidth="Infinity" prefHeight="42"/>
+						<CheckBox fx:id="unlockSavePasswordCheckbox" text="%unlock.savePassword" maxWidth="Infinity" visible="${controller.unlockSavePasswordAvailable}" managed="${controller.unlockSavePasswordAvailable}"/>
+						<ButtonBar maxWidth="Infinity" buttonMinWidth="130" buttonOrder="+CI" VBox.vgrow="ALWAYS">
+							<buttons>
+								<Button text="%generic.button.cancel" ButtonBar.buttonData="CANCEL_CLOSE" cancelButton="true" onAction="#cancelUnlock" styleClass="unlock-action-secondary"/>
+								<Button text="%unlock.unlockBtn" ButtonBar.buttonData="FINISH" defaultButton="true" onAction="#submitUnlock" disable="${controller.unlockButtonDisabled}" styleClass="unlock-action-primary"/>
+							</buttons>
+						</ButtonBar>
+					</VBox>
+				</StackPane>
+			</HBox>
+			<HBox fx:id="vaultOptionsPane" visible="false" managed="false" styleClass="embedded-vault-options">
+				<VBox minWidth="300" prefWidth="300" maxWidth="300" spacing="6" styleClass="preferences-navigation,embedded-preferences-navigation">
+					<Button text="%main.content.vaults.title" onAction="#showVaults" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="vault-home-button">
+						<VBox.margin><Insets top="12" right="0" bottom="10" left="0"/></VBox.margin>
+						<graphic><FontAwesome5IconView glyph="CHEVRON_LEFT" glyphSize="15"/></graphic>
+					</Button>
+					<Label text="%main.content.vaultOptions.title" styleClass="preferences-navigation-title"/>
+					<Label text="${controller.vaultOptionsVaultName}" wrapText="true" styleClass="unlock-navigation-vault"/>
+					<Label text="%main.content.vaultOptions.subtitle" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+					<Region VBox.vgrow="ALWAYS"/>
+				</VBox>
+				<StackPane fx:id="vaultOptionsContentHost" HBox.hgrow="ALWAYS" styleClass="embedded-vault-options-content"/>
 			</HBox>
 		</StackPane>
 	</VBox>

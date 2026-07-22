@@ -104,7 +104,6 @@ public class Mounter {
 		private Runnable prepareMountPoint() throws IOException {
 			Runnable cleanup = () -> {};
 			var userChosenMountPoint = vaultSettings.mountPoint.get();
-			var defaultMountPointBase = env.getMountPointsDir().orElseThrow();
 			var canMountToDriveLetter = service.hasCapability(MOUNT_AS_DRIVE_LETTER);
 			var canMountToParent = service.hasCapability(MOUNT_WITHIN_EXISTING_PARENT);
 			var canMountToDir = service.hasCapability(MOUNT_TO_EXISTING_DIR);
@@ -116,9 +115,11 @@ public class Mounter {
 				} else if (canMountToDriveLetter) {
 					builder.setMountpoint(driveLetters.getFirstDesiredAvailable().orElseThrow()); //TODO: catch exception and translate
 				} else if (canMountToParent) {
+					var defaultMountPointBase = env.getMountPointsDir().orElseThrow();
 					Files.createDirectories(defaultMountPointBase);
 					builder.setMountpoint(defaultMountPointBase);
 				} else if (canMountToDir) {
+					var defaultMountPointBase = env.getMountPointsDir().orElseThrow();
 					var mountPoint = defaultMountPointBase.resolve(vaultSettings.mountName.get());
 					Files.createDirectories(mountPoint);
 					builder.setMountpoint(mountPoint);

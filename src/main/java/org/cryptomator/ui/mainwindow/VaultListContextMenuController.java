@@ -44,6 +44,7 @@ public class VaultListContextMenuController implements FxController {
 	private final ObservableValue<Boolean> selectedVaultLockable;
 	private final ObservableList<Vault> vaults;
 	private final Dialogs dialogs;
+	private final MainWindowNavigation navigation;
 
 	@Inject
 	VaultListContextMenuController(ObjectProperty<Vault> selectedVault, //
@@ -53,7 +54,8 @@ public class VaultListContextMenuController implements FxController {
 								   VaultService vaultService, //
 								   KeychainManager keychain, //
 								   VaultOptionsComponent.Factory vaultOptionsWindow, //
-								   Dialogs dialogs) {
+								   Dialogs dialogs, //
+								   MainWindowNavigation navigation) {
 		this.selectedVault = selectedVault;
 		this.vaults = vaults;
 		this.mainWindow = mainWindow;
@@ -62,6 +64,7 @@ public class VaultListContextMenuController implements FxController {
 		this.keychain = keychain;
 		this.vaultOptionsWindow = vaultOptionsWindow;
 		this.dialogs = dialogs;
+		this.navigation = navigation;
 
 		this.selectedVaultState = selectedVault.flatMap(Vault::stateProperty).orElse(null);
 		this.selectedVaultPassphraseStored = selectedVault.map(this::isPasswordStored).orElse(false);
@@ -83,7 +86,7 @@ public class VaultListContextMenuController implements FxController {
 	@FXML
 	public void didClickShowVaultOptions() {
 		var vault = Objects.requireNonNull(selectedVault.get());
-		vaultOptionsWindow.create(vault).showVaultOptionsWindow(SelectedVaultOptionsTab.ANY);
+		navigation.showVaultOptions(vaultOptionsWindow.create(vault), SelectedVaultOptionsTab.ANY, vault.getDisplayName());
 	}
 
 	@FXML

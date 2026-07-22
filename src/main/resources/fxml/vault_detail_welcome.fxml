@@ -47,8 +47,8 @@
 
 	<VBox alignment="TOP_CENTER" spacing="18" visible="${!controller.noVaultPresent}" managed="${!controller.noVaultPresent}" styleClass="home-dashboard">
 		<padding><Insets top="12" right="12" bottom="12" left="12"/></padding>
-		<ImageView fitWidth="92" preserveRatio="true" cache="true" accessibleText="VaultKind">
-			<Image url="@../img/vaultkind_mark_256.png"/>
+		<ImageView fitWidth="420" preserveRatio="true" cache="true" accessibleText="VaultKind — Your files. Your vault. Your control." styleClass="home-dashboard-brand-lockup">
+			<Image url="@../img/vaultkind_full_lockup.png"/>
 		</ImageView>
 		<VBox alignment="CENTER" spacing="5">
 			<Label text="%main.home.dashboard.title" styleClass="home-dashboard-title"/>

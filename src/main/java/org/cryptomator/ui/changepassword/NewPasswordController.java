@@ -47,12 +47,22 @@ public class NewPasswordController implements FxController {
 
 		BooleanBinding passwordsMatch = Bindings.createBooleanBinding(this::passwordFieldsMatch, passwordField.textProperty(), reenterField.textProperty());
 		BooleanBinding reenterFieldNotEmpty = reenterField.textProperty().isNotEmpty();
+		BooleanBinding confirmedMatch = passwordsMatch.and(reenterFieldNotEmpty);
 		passwordMatchLabel.visibleProperty().bind(reenterFieldNotEmpty);
-		passwordMatchLabel.graphicProperty().bind(Bindings.when(passwordsMatch.and(reenterFieldNotEmpty)).then(passwordMatchCheckmark).otherwise(passwordMatchCross));
-		passwordMatchLabel.textProperty().bind(Bindings.when(passwordsMatch.and(reenterFieldNotEmpty)).then(resourceBundle.getString("newPassword.passwordsMatch")).otherwise(resourceBundle.getString("newPassword.passwordsDoNotMatch")));
+		passwordMatchLabel.graphicProperty().bind(Bindings.when(confirmedMatch).then(passwordMatchCheckmark).otherwise(passwordMatchCross));
+		passwordMatchLabel.textProperty().bind(Bindings.when(confirmedMatch).then(resourceBundle.getString("newPassword.passwordsMatch")).otherwise(resourceBundle.getString("newPassword.passwordsDoNotMatch")));
+		confirmedMatch.addListener((_, _, matches) -> updatePasswordMatchStyle(matches));
+		updatePasswordMatchStyle(confirmedMatch.get());
 
 		BooleanBinding sufficientStrength = Bindings.createBooleanBinding(this::sufficientStrength, passwordField.textProperty());
 		goodPassword.bind(passwordsMatch.and(sufficientStrength));
+	}
+
+	private void updatePasswordMatchStyle(boolean matches) {
+		passwordMatchLabel.getStyleClass().remove("label-success");
+		if (matches) {
+			passwordMatchLabel.getStyleClass().add("label-success");
+		}
 	}
 
 	private FontAwesome5IconView getIconViewForPasswordStrengthLabel() {

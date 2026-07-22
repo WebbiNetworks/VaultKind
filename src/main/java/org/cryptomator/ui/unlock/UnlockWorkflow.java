@@ -108,8 +108,7 @@ public class UnlockWorkflow extends Task<Void> {
 
 	private void handleGenericError(Throwable e) {
 		LOG.error("Unlock failed for technical reasons.", e);
-		Stage errorOwner = window.getOwner() == mainWindow ? mainWindow : window;
-		appWindows.showErrorWindow(e, errorOwner, null);
+		appWindows.showErrorWindow(e, window, null);
 	}
 
 	@Override

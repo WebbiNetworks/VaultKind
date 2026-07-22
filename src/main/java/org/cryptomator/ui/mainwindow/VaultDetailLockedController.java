@@ -22,14 +22,16 @@ public class VaultDetailLockedController implements FxController {
 	private final FxApplicationWindows appWindows;
 	private final VaultOptionsComponent.Factory vaultOptionsWindow;
 	private final Stage mainWindow;
+	private final MainWindowNavigation navigation;
 	private final ObservableValue<Boolean> passwordSaved;
 
 	@Inject
-	VaultDetailLockedController(ObjectProperty<Vault> vault, FxApplicationWindows appWindows, VaultOptionsComponent.Factory vaultOptionsWindow, KeychainManager keychain, @MainWindow Stage mainWindow) {
+	VaultDetailLockedController(ObjectProperty<Vault> vault, FxApplicationWindows appWindows, VaultOptionsComponent.Factory vaultOptionsWindow, KeychainManager keychain, @MainWindow Stage mainWindow, MainWindowNavigation navigation) {
 		this.vault = vault;
 		this.appWindows = appWindows;
 		this.vaultOptionsWindow = vaultOptionsWindow;
 		this.mainWindow = mainWindow;
+		this.navigation = navigation;
 		this.passwordSaved = Bindings.createBooleanBinding(() -> {
 			var v = vault.get();
 			return v != null && keychain.getPassphraseStoredProperty(v.getId()).getValue();
@@ -48,12 +50,14 @@ public class VaultDetailLockedController implements FxController {
 
 	@FXML
 	public void showVaultOptions() {
-		vaultOptionsWindow.create(vault.get()).showVaultOptionsWindow(SelectedVaultOptionsTab.ANY);
+		var selectedVault = vault.get();
+		navigation.showVaultOptions(vaultOptionsWindow.create(selectedVault), SelectedVaultOptionsTab.ANY, selectedVault.getDisplayName());
 	}
 
 	@FXML
 	public void showKeyVaultOptions() {
-		vaultOptionsWindow.create(vault.get()).showVaultOptionsWindow(SelectedVaultOptionsTab.KEY);
+		var selectedVault = vault.get();
+		navigation.showVaultOptions(vaultOptionsWindow.create(selectedVault), SelectedVaultOptionsTab.KEY, selectedVault.getDisplayName());
 	}
 
 	/* Getter/Setter */

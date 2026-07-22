@@ -14,14 +14,13 @@ import org.cryptomator.integrations.keychain.KeychainAccessException;
 import org.cryptomator.ui.common.Animations;
 import org.cryptomator.ui.keyloading.KeyLoading;
 import org.cryptomator.ui.keyloading.KeyLoadingStrategy;
+import org.cryptomator.ui.mainwindow.MainWindowNavigation;
 import org.cryptomator.ui.unlock.UnlockCancelledException;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import javafx.application.Platform;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import java.io.IOException;
@@ -45,13 +44,14 @@ public class MasterkeyFileLoadingStrategy implements KeyLoadingStrategy {
 	private final ChooseMasterkeyFileComponent.Builder masterkeyFileChoice;
 	private final KeychainManager keychain;
 	private final ResourceBundle resourceBundle;
+	private final MainWindowNavigation mainWindowNavigation;
 
 	private Passphrase passphrase;
 	private boolean savePassphrase;
 	private boolean wrongPassphrase;
 
 	@Inject
-	public MasterkeyFileLoadingStrategy(@KeyLoading Vault vault, MasterkeyFileAccess masterkeyFileAccess, @KeyLoading Stage window, @Named("savedPassword") Optional<char[]> savedPassphrase, PassphraseEntryComponent.Builder passphraseEntry, ChooseMasterkeyFileComponent.Builder masterkeyFileChoice, KeychainManager keychain, ResourceBundle resourceBundle) {
+	public MasterkeyFileLoadingStrategy(@KeyLoading Vault vault, MasterkeyFileAccess masterkeyFileAccess, @KeyLoading Stage window, @Named("savedPassword") Optional<char[]> savedPassphrase, PassphraseEntryComponent.Builder passphraseEntry, ChooseMasterkeyFileComponent.Builder masterkeyFileChoice, KeychainManager keychain, ResourceBundle resourceBundle, MainWindowNavigation mainWindowNavigation) {
 		this.vault = vault;
 		this.masterkeyFileAccess = masterkeyFileAccess;
 		this.window = window;
@@ -59,6 +59,7 @@ public class MasterkeyFileLoadingStrategy implements KeyLoadingStrategy {
 		this.masterkeyFileChoice = masterkeyFileChoice;
 		this.keychain = keychain;
 		this.resourceBundle = resourceBundle;
+		this.mainWindowNavigation = mainWindowNavigation;
 		this.passphrase = savedPassphrase.map(Passphrase::new).orElse(null);
 		this.savePassphrase = savedPassphrase.isPresent();
 	}
@@ -157,7 +158,7 @@ public class MasterkeyFileLoadingStrategy implements KeyLoadingStrategy {
 		Platform.runLater(() -> {
 			Window owner = window.getOwner();
 			if (canShowInline(owner)) {
-				showInline(comp.passphraseEntryScene(), comp.result(), (StackPane) owner.getScene().getRoot());
+				mainWindowNavigation.showUnlock(comp.result(), vault.getDisplayName(), wrongPassphrase, keychain.isSupported());
 			} else {
 				window.setScene(comp.passphraseEntryScene());
 				window.show();
@@ -184,17 +185,7 @@ public class MasterkeyFileLoadingStrategy implements KeyLoadingStrategy {
 	}
 
 	private boolean canShowInline(Window owner) {
-		return owner != null && owner.isShowing() && owner.getScene() != null && owner.getScene().getRoot() instanceof StackPane root && root.getStyleClass().contains("main-window");
-	}
-
-	private void showInline(Scene passphraseScene, java.util.concurrent.CompletableFuture<PassphraseEntryResult> result, StackPane mainRoot) {
-		Parent content = passphraseScene.getRoot();
-		passphraseScene.setRoot(new StackPane());
-		content.getStyleClass().add("inline-unlock-card");
-		StackPane overlay = new StackPane(content);
-		overlay.getStyleClass().add("inline-unlock-overlay");
-		mainRoot.getChildren().add(overlay);
-		result.whenComplete((_, _) -> Platform.runLater(() -> mainRoot.getChildren().remove(overlay)));
+		return owner != null && owner.isShowing() && owner.getScene() != null && owner.getScene().getRoot().getStyleClass().contains("main-window");
 	}
 
 }

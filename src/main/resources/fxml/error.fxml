@@ -48,8 +48,8 @@
 			<Region minHeight="12"/>
 			<ButtonBar buttonMinWidth="120" buttonOrder="+NY">
 				<buttons>
-					<Button text="%error.dismiss" ButtonBar.buttonData="NO" onAction="#dismiss"/>
-					<Button text="%error.lookUpSolution" ButtonBar.buttonData="YES" defaultButton="true" onAction="#lookUpSolution"/>
+					<Button text="%error.dismiss" ButtonBar.buttonData="NO" onAction="#dismiss" styleClass="error-action-secondary"/>
+					<Button text="%error.lookUpSolution" ButtonBar.buttonData="YES" defaultButton="true" onAction="#lookUpSolution" styleClass="error-action-primary"/>
 				</buttons>
 			</ButtonBar>
 		</VBox>
@@ -98,8 +98,8 @@
 		<Region minHeight="18"/>
 		<ButtonBar buttonMinWidth="120" buttonOrder="B+C">
 			<buttons>
-				<Button text="%generic.button.back" ButtonBar.buttonData="BACK_PREVIOUS" onAction="#back" visible="${controller.previousScenePresent}"/>
-				<Button text="%generic.button.cancel" ButtonBar.buttonData="CANCEL_CLOSE" onAction="#close"/>
+				<Button text="%generic.button.back" ButtonBar.buttonData="BACK_PREVIOUS" onAction="#back" visible="${controller.previousScenePresent}" styleClass="error-action-secondary"/>
+				<Button text="%generic.button.cancel" ButtonBar.buttonData="CANCEL_CLOSE" onAction="#close" styleClass="error-action-secondary"/>
 			</buttons>
 		</ButtonBar>
 	</VBox>

@@ -20,12 +20,21 @@
 		</Button>
 		<Label text="%howItWorks.navigation.title" styleClass="preferences-navigation-title"/>
 		<Label text="%howItWorks.navigation.subtitle" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+		<VBox spacing="3" styleClass="learn-chapter-list">
+			<Button text="%howItWorks.navigation.how" onAction="#showHowChapter" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button,learn-chapter-button-active"/>
+			<Button text="%howItWorks.navigation.create" onAction="#showCreateChapter" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button"/>
+			<Button text="%howItWorks.navigation.recovery" onAction="#showRecoveryChapter" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button"/>
+			<Button text="%howItWorks.navigation.cloud" onAction="#showCloudChapter" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button"/>
+			<Button text="%howItWorks.navigation.virtualDrive" onAction="#showVirtualDriveChapter" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button"/>
+			<Button text="%howItWorks.navigation.security" onAction="#showSecurityChapter" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button"/>
+			<Button text="%howItWorks.navigation.faq" onAction="#showFaqChapter" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button"/>
+		</VBox>
 		<Region VBox.vgrow="ALWAYS"/>
 	</VBox>
 
 	<ScrollPane fx:id="contentScroll" fitToWidth="true" hbarPolicy="NEVER" HBox.hgrow="ALWAYS" styleClass="how-it-works-scroll">
 		<VBox alignment="TOP_CENTER" spacing="22" styleClass="how-it-works-content">
-			<VBox maxWidth="1000" spacing="7" styleClass="how-intro-card">
+			<VBox fx:id="howChapter" maxWidth="1000" spacing="7" styleClass="how-intro-card">
 				<HBox alignment="CENTER_LEFT" spacing="12">
 					<FontAwesome5IconView glyph="LOCK" glyphSize="25" styleClass="how-intro-icon"/>
 					<Label text="%howItWorks.intro.title" wrapText="true" styleClass="how-section-title"/>
@@ -93,6 +102,38 @@
 					<Label text="%howItWorks.recovery.description" wrapText="true" styleClass="how-step-copy"/>
 				</VBox>
 			</HBox>
+
+			<VBox fx:id="createChapter" maxWidth="1000" spacing="8" styleClass="learn-content-card">
+				<Label text="%howItWorks.create.title" styleClass="how-section-title"/>
+				<Label text="%howItWorks.create.description" wrapText="true" styleClass="how-body-copy"/>
+				<Label text="%howItWorks.create.tip" wrapText="true" styleClass="learn-tip-copy"/>
+			</VBox>
+			<VBox fx:id="recoveryChapter" maxWidth="1000" spacing="8" styleClass="learn-content-card">
+				<Label text="%howItWorks.recoveryKeys.title" styleClass="how-section-title"/>
+				<Label text="%howItWorks.recoveryKeys.description" wrapText="true" styleClass="how-body-copy"/>
+				<Label text="%howItWorks.recoveryKeys.tip" wrapText="true" styleClass="learn-tip-copy"/>
+			</VBox>
+			<VBox fx:id="cloudChapter" maxWidth="1000" spacing="8" styleClass="learn-content-card">
+				<Label text="%howItWorks.cloud.title" styleClass="how-section-title"/>
+				<Label text="%howItWorks.cloud.description" wrapText="true" styleClass="how-body-copy"/>
+				<Label text="%howItWorks.cloud.tip" wrapText="true" styleClass="learn-tip-copy"/>
+			</VBox>
+			<VBox fx:id="virtualDriveChapter" maxWidth="1000" spacing="8" styleClass="learn-content-card">
+				<Label text="%howItWorks.virtualDrives.title" styleClass="how-section-title"/>
+				<Label text="%howItWorks.virtualDrives.description" wrapText="true" styleClass="how-body-copy"/>
+				<Label text="%howItWorks.virtualDrives.tip" wrapText="true" styleClass="learn-tip-copy"/>
+			</VBox>
+			<VBox fx:id="securityChapter" maxWidth="1000" spacing="8" styleClass="learn-content-card">
+				<Label text="%howItWorks.security.title" styleClass="how-section-title"/>
+				<Label text="%howItWorks.security.description" wrapText="true" styleClass="how-body-copy"/>
+				<Label text="%howItWorks.security.tip" wrapText="true" styleClass="learn-tip-copy"/>
+			</VBox>
+			<VBox fx:id="faqChapter" maxWidth="1000" spacing="10" styleClass="learn-content-card">
+				<Label text="%howItWorks.faq.title" styleClass="how-section-title"/>
+				<Label text="%howItWorks.faq.q1" styleClass="learn-question"/><Label text="%howItWorks.faq.a1" wrapText="true" styleClass="how-body-copy"/>
+				<Label text="%howItWorks.faq.q2" styleClass="learn-question"/><Label text="%howItWorks.faq.a2" wrapText="true" styleClass="how-body-copy"/>
+				<Label text="%howItWorks.faq.q3" styleClass="learn-question"/><Label text="%howItWorks.faq.a3" wrapText="true" styleClass="how-body-copy"/>
+			</VBox>
 
 			<HBox maxWidth="1000" alignment="CENTER_RIGHT" spacing="12">
 				<Button text="%howItWorks.action.dashboard" onAction="#showDashboard" styleClass="how-secondary-button"/>

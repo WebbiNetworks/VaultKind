@@ -23,10 +23,6 @@ This repository is private while the product identity, security update process, 
 
 ## Building
 
-### One-click Windows development launcher
-
-Double-click `Launch-VaultKind-Dev.cmd` in the repository root. It immediately starts the most recently compiled VaultKind build with an isolated development profile under `target/ui-dev-profile`, and leaves an installed Cryptomator profile untouched. Codex rebuilds the project whenever source files change.
-
 ### Requirements
 
 - JDK 26 (for example Eclipse Temurin or Azul Zulu)

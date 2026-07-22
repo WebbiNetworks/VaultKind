@@ -18,7 +18,7 @@
 	  fx:controller="org.cryptomator.ui.addvaultwizard.CreateNewVaultLocationController"
 	  prefWidth="820"
 	  prefHeight="546"
-	  spacing="20"
+	  spacing="16"
 	  styleClass="add-vault-page"
 	  accessibleRole="DIALOG">
 	<fx:define>
@@ -27,9 +27,23 @@
 		<FontAwesome5IconView fx:id="goodLocation" styleClass="glyph-icon-primary" glyph="CHECK"/>
 	</fx:define>
 	<padding>
-		<Insets top="32" right="42" bottom="26" left="42"/>
+		<Insets top="28" right="42" bottom="24" left="42"/>
 	</padding>
 	<children>
+		<VBox spacing="9">
+			<HBox alignment="CENTER_LEFT">
+				<Label text="%addvaultwizard.new.progress.title" styleClass="add-vault-step-kicker"/>
+				<Region HBox.hgrow="ALWAYS"/>
+				<Label text="%addvaultwizard.new.progress.location" styleClass="add-vault-step-count"/>
+			</HBox>
+			<HBox spacing="7" styleClass="add-vault-progress">
+				<Region styleClass="add-vault-progress-segment,add-vault-progress-current" HBox.hgrow="ALWAYS"/>
+				<Region styleClass="add-vault-progress-segment,add-vault-progress-current" HBox.hgrow="ALWAYS"/>
+				<Region styleClass="add-vault-progress-segment" HBox.hgrow="ALWAYS"/>
+				<Region styleClass="add-vault-progress-segment" HBox.hgrow="ALWAYS"/>
+			</HBox>
+		</VBox>
+
 		<VBox spacing="7">
 			<Label text="%addvaultwizard.new.locationTitle" styleClass="add-vault-page-title"/>
 			<Label text="%addvaultwizard.new.locationInstruction" wrapText="true" maxWidth="Infinity" styleClass="add-vault-page-description"/>

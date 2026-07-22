@@ -353,6 +353,30 @@
 	-fx-background-color: MAIN_BG;
 }
 
+.add-vault-step-kicker {
+	-fx-font-size: 12px;
+	-fx-font-weight: 700;
+	-fx-text-fill: PRIMARY_D1;
+}
+
+.add-vault-step-count {
+	-fx-font-size: 12px;
+	-fx-font-weight: 600;
+	-fx-text-fill: TEXT_FILL_MUTED;
+}
+
+.add-vault-progress-segment {
+	-fx-min-height: 4px;
+	-fx-pref-height: 4px;
+	-fx-max-height: 4px;
+	-fx-background-color: GRAY_7;
+	-fx-background-radius: 2px;
+}
+
+.add-vault-progress-current {
+	-fx-background-color: PRIMARY;
+}
+
 .add-vault-page-title {
 	-fx-font-size: 28px;
 	-fx-font-weight: 600;
@@ -420,6 +444,46 @@
 	-fx-padding: 14px 16px;
 	-fx-background-color: PRIMARY_L2;
 	-fx-background-radius: 10px;
+}
+
+.add-vault-review-row {
+	-fx-padding: 5px 0;
+}
+
+.add-vault-review-card {
+	-fx-padding: 10px 16px;
+}
+
+.add-vault-review-icon {
+	-fx-min-width: 34px;
+	-fx-pref-width: 34px;
+	-fx-min-height: 34px;
+	-fx-pref-height: 34px;
+	-fx-background-color: GRAY_9;
+	-fx-background-radius: 17px;
+}
+
+.add-vault-review-label {
+	-fx-font-size: 12px;
+	-fx-font-weight: 600;
+	-fx-text-fill: TEXT_FILL_MUTED;
+}
+
+.add-vault-review-value {
+	-fx-font-size: 16px;
+	-fx-text-fill: TEXT_FILL;
+}
+
+.add-vault-review-divider {
+	-fx-min-height: 1px;
+	-fx-pref-height: 1px;
+	-fx-background-color: GRAY_7;
+}
+
+.add-vault-review-note {
+	-fx-padding: 11px 12px;
+	-fx-background-color: GRAY_9;
+	-fx-background-radius: 8px;
 }
 
 .add-vault-location-list,

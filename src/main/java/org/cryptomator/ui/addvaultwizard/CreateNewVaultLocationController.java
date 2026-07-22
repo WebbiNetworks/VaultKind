@@ -219,6 +219,7 @@ public class CreateNewVaultLocationController implements FxController {
 				}
 			}
 			window.setScene(chooseExpertSettingsScene.get());
+			window.sizeToScene();
 		}
 	}
 

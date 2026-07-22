@@ -88,11 +88,13 @@ public class CreateNewVaultExpertSettingsController implements FxController {
 	@FXML
 	public void back() {
 		window.setScene(chooseLocationScene.get());
+		window.sizeToScene();
 	}
 
 	@FXML
 	public void next() {
 		window.setScene(choosePasswordScene.get());
+		window.sizeToScene();
 	}
 
 	public BooleanBinding validShorteningThresholdProperty() {

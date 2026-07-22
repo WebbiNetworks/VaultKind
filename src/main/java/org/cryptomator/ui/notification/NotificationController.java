@@ -35,7 +35,7 @@ public class NotificationController implements FxController {
 
 	private static final Logger LOG = LoggerFactory.getLogger(NotificationController.class);
 	private static final DateTimeFormatter LOCAL_TIME_FORMATTER_TEMPLATE = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withZone(ZoneId.systemDefault());
-	private static final String BUG_MSG = "If you see this message, please report it on the Cryptomator issue tracker.";
+	private static final String BUG_MSG = "If you see this message, please report it on the VaultKind project issue tracker.";
 
 	private final Stage window;
 	private final SimpleListProperty<VaultEvent> events;

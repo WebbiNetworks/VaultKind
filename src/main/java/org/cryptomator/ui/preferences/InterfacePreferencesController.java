@@ -1,6 +1,5 @@
 package org.cryptomator.ui.preferences;
 
-import org.cryptomator.common.LicenseHolder;
 import org.cryptomator.common.settings.Settings;
 import org.cryptomator.common.settings.UiTheme;
 import org.cryptomator.launcher.SupportedLanguages;
@@ -10,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javafx.beans.property.ObjectProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.geometry.NodeOrientation;
@@ -31,8 +29,6 @@ public class InterfacePreferencesController implements FxController {
 	private final Settings settings;
 	private final boolean trayMenuInitialized;
 	private final boolean trayMenuSupported;
-	private final ObjectProperty<SelectedPreferencesTab> selectedTabProperty;
-	private final LicenseHolder licenseHolder;
 	private final ResourceBundle resourceBundle;
 	private final SupportedLanguages supportedLanguages;
 	public ChoiceBox<UiTheme> themeChoiceBox;
@@ -44,12 +40,10 @@ public class InterfacePreferencesController implements FxController {
 	public RadioButton nodeOrientationRtl;
 
 	@Inject
-	InterfacePreferencesController(Settings settings, SupportedLanguages supportedLanguages, TrayMenuComponent trayMenu, ObjectProperty<SelectedPreferencesTab> selectedTabProperty, LicenseHolder licenseHolder, ResourceBundle resourceBundle) {
+	InterfacePreferencesController(Settings settings, SupportedLanguages supportedLanguages, TrayMenuComponent trayMenu, ResourceBundle resourceBundle) {
 		this.settings = settings;
 		this.trayMenuInitialized = trayMenu.isInitialized();
 		this.trayMenuSupported = trayMenu.isSupported();
-		this.selectedTabProperty = selectedTabProperty;
-		this.licenseHolder = licenseHolder;
 		this.resourceBundle = resourceBundle;
 		this.supportedLanguages = supportedLanguages;
 	}
@@ -58,7 +52,7 @@ public class InterfacePreferencesController implements FxController {
 	public void initialize() {
 		themeChoiceBox.getItems().addAll(UiTheme.values());
 		if (!themeChoiceBox.getItems().contains(settings.theme.get())) {
-			settings.theme.set(UiTheme.LIGHT);
+			settings.theme.set(UiTheme.DARK);
 		}
 		themeChoiceBox.valueProperty().bindBidirectional(settings.theme);
 		themeChoiceBox.setConverter(new UiThemeConverter(resourceBundle));
@@ -92,16 +86,6 @@ public class InterfacePreferencesController implements FxController {
 		} else {
 			LOG.warn("Unexpected toggle option {}", newValue);
 		}
-	}
-
-	public LicenseHolder getLicenseHolder() {
-		return licenseHolder;
-	}
-
-
-	@FXML
-	public void showContributeTab() {
-		selectedTabProperty.set(SelectedPreferencesTab.CONTRIBUTE);
 	}
 
 	/* Helper classes */

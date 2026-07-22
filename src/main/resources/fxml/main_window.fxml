@@ -17,7 +17,7 @@
 		<HeaderBar managed="${controller.windows}" visible="${controller.windows}" styleClass="app-header-bar">
 			<leading>
 				<HBox alignment="CENTER_LEFT" spacing="8" styleClass="app-header-title">
-					<Label text="Cryptomator"/>
+					<Label text="%app.name"/>
 				</HBox>
 			</leading>
 		</HeaderBar>
@@ -27,16 +27,6 @@
 		</SplitPane>
 	</VBox>
 	<VBox maxWidth="340" maxHeight="210" spacing="14" mouseTransparent="false" StackPane.alignment="TOP_RIGHT" styleClass="notification-stack">
-		<InfoBar onMouseClicked="#showUpdatePreferences"
-					 text="%main.notification.updateAvailable"
-					 dismissable="true"
-					 notify="${controller.updateAvailable}"
-					 styleClass="info-bar--yellow"/>
-		<InfoBar onMouseClicked="#showContributePreferences"
-					 text="%main.notification.support"
-					 dismissable="true"
-					 notify="${!controller.licenseValid}"
-					 styleClass="info-bar--green"/>
 		<InfoBar onMouseClicked="#showGeneralPreferences"
 					 text="DEBUG MODE"
 					 styleClass="info-bar--red"

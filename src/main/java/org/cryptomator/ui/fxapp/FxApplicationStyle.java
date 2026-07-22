@@ -1,6 +1,5 @@
 package org.cryptomator.ui.fxapp;
 
-import org.cryptomator.common.LicenseHolder;
 import org.cryptomator.common.settings.Settings;
 import org.cryptomator.common.settings.UiTheme;
 import org.cryptomator.integrations.uiappearance.Theme;
@@ -24,15 +23,13 @@ public class FxApplicationStyle {
 
 	private final Settings settings;
 	private final Optional<UiAppearanceProvider> appearanceProvider;
-	private final LicenseHolder licenseHolder;
 	private final UiAppearanceListener systemInterfaceThemeListener = this::systemInterfaceThemeChanged;
 	private final ObjectProperty<Theme> appliedTheme = new SimpleObjectProperty<>(Theme.LIGHT);
 
 	@Inject
-	public FxApplicationStyle(Settings settings, Optional<UiAppearanceProvider> appearanceProvider, LicenseHolder licenseHolder) {
+	public FxApplicationStyle(Settings settings, Optional<UiAppearanceProvider> appearanceProvider) {
 		this.settings = settings;
 		this.appearanceProvider = appearanceProvider;
-		this.licenseHolder = licenseHolder;
 	}
 
 	public void initialize() {
@@ -81,17 +78,13 @@ public class FxApplicationStyle {
 	}
 
 	private void applyTheme(UiTheme uiTheme) {
-		if (!licenseHolder.isValidLicense()) {
-			loadAndApplyLightTheme();
-		} else {
-			switch (uiTheme) {
-				case AUTOMATIC -> {
-					var osTheme = appearanceProvider.map(UiAppearanceProvider::getSystemTheme).orElse(Theme.LIGHT);
-					systemInterfaceThemeChanged(osTheme);
-				}
-				case LIGHT -> loadAndApplyLightTheme();
-				case DARK -> loadAndApplyDarkTheme();
+		switch (uiTheme) {
+			case AUTOMATIC -> {
+				var osTheme = appearanceProvider.map(UiAppearanceProvider::getSystemTheme).orElse(Theme.DARK);
+				systemInterfaceThemeChanged(osTheme);
 			}
+			case LIGHT -> loadAndApplyLightTheme();
+			case DARK -> loadAndApplyDarkTheme();
 		}
 	}
 

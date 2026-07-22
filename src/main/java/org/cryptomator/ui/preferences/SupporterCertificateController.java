@@ -3,7 +3,6 @@ package org.cryptomator.ui.preferences;
 import com.google.common.base.CharMatcher;
 import org.cryptomator.common.LicenseHolder;
 import org.cryptomator.common.settings.Settings;
-import org.cryptomator.common.settings.UiTheme;
 import org.cryptomator.ui.common.FxController;
 import org.cryptomator.ui.dialogs.Dialogs;
 
@@ -67,9 +66,6 @@ public class SupporterCertificateController implements FxController {
 
 	private void registrationKeyChanged(@SuppressWarnings("unused") ObservableValue<? extends String> observable, @SuppressWarnings("unused") String oldValue, String newValue) {
 		licenseHolder.validateAndStoreLicense(newValue);
-		if (!licenseHolder.isValidLicense()) {
-			settings.theme.set(UiTheme.LIGHT);
-		}
 	}
 
 	@FXML

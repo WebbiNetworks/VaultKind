@@ -18,7 +18,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see http://www.gnu.org/licenses/.
 
-Cryptomator uses ${dependencyMap?size} third-party dependencies under the following licenses:
+VaultKind is a GPLv3 derivative of Cryptomator. Cryptomator is copyright
+Skymatic GmbH and contributors. VaultKind is not affiliated with or endorsed by Skymatic GmbH.
+
+VaultKind uses ${dependencyMap?size} third-party dependencies under the following licenses:
 <#list licenseMap as e>
     <#assign license = e.getKey()/>
     <#assign projects = e.getValue()/>
@@ -30,6 +33,6 @@ Cryptomator uses ${dependencyMap?size} third-party dependencies under the follow
     </#if>
 </#list>
 
-Cryptomator uses other third-party assets under the following licenses:
+VaultKind uses other third-party assets under the following licenses:
     SIL OFL 1.1 License:
         - Font Awesome (5.12.0 - https://fontawesome.com/)

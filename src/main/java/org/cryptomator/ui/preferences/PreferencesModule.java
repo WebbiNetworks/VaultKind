@@ -11,12 +11,15 @@ import org.cryptomator.ui.common.FxControllerKey;
 import org.cryptomator.ui.common.FxmlFile;
 import org.cryptomator.ui.common.FxmlScene;
 import org.cryptomator.ui.common.StageFactory;
+import org.apache.commons.lang3.SystemUtils;
 
 import javax.inject.Provider;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Scene;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import java.util.Map;
 import java.util.ResourceBundle;
 
@@ -41,6 +44,9 @@ abstract class PreferencesModule {
 	@PreferencesScoped
 	static Stage provideStage(StageFactory factory, ResourceBundle resourceBundle) {
 		Stage stage = factory.create();
+		if (SystemUtils.IS_OS_WINDOWS) {
+			stage.initStyle(StageStyle.EXTENDED);
+		}
 		stage.setTitle(resourceBundle.getString("preferences.title"));
 		return stage;
 	}
@@ -49,7 +55,9 @@ abstract class PreferencesModule {
 	@FxmlScene(FxmlFile.PREFERENCES)
 	@PreferencesScoped
 	static Scene providePreferencesScene(@PreferencesWindow FxmlLoaderFactory fxmlLoaders) {
-		return fxmlLoaders.createScene(FxmlFile.PREFERENCES);
+		Scene scene = fxmlLoaders.createScene(FxmlFile.PREFERENCES);
+		scene.setFill(Color.web("#2B2F31"));
+		return scene;
 	}
 
 	// ------------------

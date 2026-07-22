@@ -8,7 +8,7 @@
 {\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1031{\fonttbl{\f0\fnil\fcharset0 Segoe UI;}}
 {\colortbl ;\red0\green0\blue255;}
 \vieww12000\viewh15840\viewkind0
-\pard\tx283\tx567\tx850\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\b\fs16\lang7 Cryptomator is distributed under the GPLv3 License, found below. Please see the bottom of this document for any other license applicable to code used within Cryptomator.\b0\par
+\pard\tx283\tx567\tx850\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\b\fs16\lang7 VaultKind is a GPLv3 derivative of Cryptomator and is distributed under the GPLv3 License, found below. VaultKind is not affiliated with or endorsed by Skymatic GmbH.\b0\par
 \par
 \b\'a9 2016 \'96 2025 Skymatic GmbH \b0\par
 \par
@@ -19,7 +19,7 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU General Public License along with this program. If not, see {{\field{\*\fldinst{HYPERLINK http://www.gnu.org/licenses/ }}{\fldrslt{http://www.gnu.org/licenses/\ul0\cf0}}}}\f0\fs16 .\par
 \par
 
-\b Cryptomator uses ${dependencyMap?size} third-party dependencies under the following licenses:\b0\par
+\b VaultKind uses ${dependencyMap?size} third-party dependencies under the following licenses:\b0\par
 <#list licenseMap as e>
 <#assign license = e.getKey()/>
 <#assign projects = e.getValue()/>
@@ -31,7 +31,7 @@ You should have received a copy of the GNU General Public License along with thi
 </#if>
 </#list>
 \par
-\b Cryptomator uses other third-party assets under the following licenses:\b0\par
+\b VaultKind uses other third-party assets under the following licenses:\b0\par
 \tab SIL OFL 1.1 License:\par
 \tab\tab - Font Awesome (5.12.0 - {{\field{\*\fldinst{HYPERLINK https://fontawesome.com/ }}{\fldrslt{https://fontawesome.com/\ul0\cf0}}}}\f0\fs16 )\b\par
 }

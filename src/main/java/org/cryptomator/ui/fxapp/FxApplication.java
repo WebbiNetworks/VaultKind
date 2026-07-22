@@ -1,7 +1,6 @@
 package org.cryptomator.ui.fxapp;
 
 import dagger.Lazy;
-import org.cryptomator.common.Environment;
 import org.cryptomator.common.settings.Settings;
 import org.cryptomator.common.settings.VaultSettings;
 import org.cryptomator.ui.traymenu.TrayMenuComponent;
@@ -12,8 +11,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javafx.application.Application;
 import javafx.application.Platform;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -25,7 +22,6 @@ public class FxApplication {
 	static final AtomicReference<Application> INSTANCE = new AtomicReference<>();
 
 	private final long startupTime;
-	private final Environment environment;
 	private final Settings settings;
 	private final AppLaunchEventHandler launchEventHandler;
 	private final Lazy<TrayMenuComponent> trayMenu;
@@ -39,7 +35,6 @@ public class FxApplication {
 	@Inject
 	FxApplication(Application fxApp,
 				   @Named("startupTime") long startupTime, //
-				  Environment environment, //
 				  Settings settings, //
 				  AppLaunchEventHandler launchEventHandler, //
 				  Lazy<TrayMenuComponent> trayMenu, //
@@ -50,7 +45,6 @@ public class FxApplication {
 				  FxFSEventList fxFSEventList, //
 				  FxNotificationManager notificationManager) {
 		this.startupTime = startupTime;
-		this.environment = environment;
 		this.settings = settings;
 		this.launchEventHandler = launchEventHandler;
 		this.trayMenu = trayMenu;
@@ -94,14 +88,6 @@ public class FxApplication {
 			LOG.error("Failed to show main window", error);
 			return null;
 		});
-
-		var time14DaysAgo = Instant.now().minus(Duration.ofDays(14));
-		if (!environment.disableUpdateCheck() //
-				&& !settings.checkForUpdates.getValue() //
-				&& settings.lastSuccessfulUpdateCheck.get().isBefore(time14DaysAgo) //
-				&& settings.lastUpdateCheckReminder.get().isBefore(time14DaysAgo)) {
-			appWindows.showUpdateReminderWindow();
-		}
 
 		migrateAndInformDokanyRemoval();
 

@@ -43,7 +43,7 @@ public class Settings {
 	static final int DEFAULT_PORT = 42427;
 	static final int DEFAULT_NUM_TRAY_NOTIFICATIONS = 3;
 	static final boolean DEFAULT_DEBUG_MODE = false;
-	static final UiTheme DEFAULT_THEME = UiTheme.LIGHT;
+	static final UiTheme DEFAULT_THEME = UiTheme.DARK;
 	@Deprecated // to be changed to "whatever is available" eventually
 	static final String DEFAULT_KEYCHAIN_PROVIDER = SystemUtils.IS_OS_WINDOWS ? "org.cryptomator.windows.keychain.WindowsProtectedKeychainAccess" : //
 			SystemUtils.IS_OS_MAC ? "org.cryptomator.macos.keychain.MacSystemKeychainAccess" : //

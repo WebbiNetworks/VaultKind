@@ -3,7 +3,6 @@ package org.cryptomator.ui.preferences;
 import com.google.common.io.CharStreams;
 import org.cryptomator.common.Environment;
 import org.cryptomator.ui.common.FxController;
-import org.cryptomator.updater.UpdateChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +20,7 @@ public class AboutController implements FxController {
 	private final String fullApplicationVersion;
 
 	@Inject
-	AboutController(UpdateChecker updateChecker, Environment environment) {
+	AboutController(Environment environment) {
 		this.thirdPartyLicenseText = loadThirdPartyLicenseFile();
 		StringBuilder sb = new StringBuilder(environment.getAppVersion());
 		environment.getBuildNumber().ifPresent(s -> sb.append(" (").append(s).append(')'));

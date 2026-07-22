@@ -4,11 +4,11 @@
 	<groupId>org.cryptomator</groupId>
 	<artifactId>cryptomator</artifactId>
 	<version>1.20.0-SNAPSHOT</version>
-	<name>Cryptomator Desktop App</name>
+	<name>VaultKind Desktop App</name>
 
 	<organization>
-		<name>cryptomator.org</name>
-		<url>https://cryptomator.org</url>
+		<name>VaultKind contributors</name>
+		<url>https://vaultkind.dev</url>
 	</organization>
 
 	<developers>

@@ -42,7 +42,7 @@ abstract class MainWindowModule {
 	@MainWindowScoped
 	static Stage provideMainWindow(@PrimaryStage Stage stage, StageInitializer initializer, FxApplicationTerminator terminator, Lazy<TrayMenuComponent> trayMenu) {
 		initializer.accept(stage);
-		stage.setTitle("Cryptomator");
+		stage.setTitle("VaultKind");
 		stage.setMinWidth(920);
 		stage.setMinHeight(600);
 		stage.setWidth(1120);

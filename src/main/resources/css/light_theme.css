@@ -35,16 +35,16 @@
 
 	SECONDARY: #008A7B;
 
-	GRAY_0: #1F2122;
-	GRAY_1: #2B2F31;
-	GRAY_2: #3B4144;
-	GRAY_3: #50575B;
-	GRAY_4: #687177;
-	GRAY_5: #8E989E;
-	GRAY_6: #A8B2B8;
-	GRAY_7: #C3CDD2;
-	GRAY_8: #D8E0E4;
-	GRAY_9: #EDF3F7;
+	GRAY_0: #222222;
+	GRAY_1: #3B3B3B;
+	GRAY_2: #515151;
+	GRAY_3: #626262;
+	GRAY_4: #7E7E7E;
+	GRAY_5: #9E9E9E;
+	GRAY_6: #B1B1B1;
+	GRAY_7: #CFCFCF;
+	GRAY_8: #E1E1E1;
+	GRAY_9: #F7F7F7;
 
 	GREEN_3: PRIMARY_D1;
 	GREEN_5: PRIMARY;
@@ -53,36 +53,36 @@
 	YELLOW_4: #C19F0E;
 	YELLOW_5: #F1C40F;
 
-	MAIN_BG: GRAY_1;
-	MUTED_BG: GRAY_3;
-	TEXT_FILL: GRAY_9;
+	MAIN_BG: GRAY_9;
+	MUTED_BG: GRAY_5;
+	TEXT_FILL: GRAY_0;
 	TEXT_FILL_HIGHLIGHTED: PRIMARY;
-	TEXT_FILL_MUTED: GRAY_6;
+	TEXT_FILL_MUTED: GRAY_5;
 
-	TITLE_BG: linear-gradient(to bottom, GRAY_2, GRAY_1);
-	TITLE_TEXT_FILL: PRIMARY;
+	TITLE_BG: PRIMARY;
+	TITLE_TEXT_FILL: white;
 
-	CONTROL_BORDER_NORMAL: GRAY_3;
+	CONTROL_BORDER_NORMAL: GRAY_7;
 	CONTROL_BORDER_FOCUSED: GRAY_5;
-	CONTROL_BORDER_DISABLED: GRAY_2;
-	CONTROL_BG_NORMAL: GRAY_0;
-	CONTROL_BG_HOVER: GRAY_2;
-	CONTROL_BG_ARMED: GRAY_3;
-	CONTROL_BG_DISABLED: GRAY_1;
-	CONTROL_BG_SELECTED: GRAY_2;
+	CONTROL_BORDER_DISABLED: GRAY_8;
+	CONTROL_BG_NORMAL: white;
+	CONTROL_BG_HOVER: GRAY_9;
+	CONTROL_BG_ARMED: GRAY_8;
+	CONTROL_BG_DISABLED: GRAY_9;
+	CONTROL_BG_SELECTED: PRIMARY_L2;
 
-	CONTROL_PRIMARY_BORDER_NORMAL: PRIMARY;
-	CONTROL_PRIMARY_BORDER_ARMED: PRIMARY_L1;
+	CONTROL_PRIMARY_BORDER_NORMAL: PRIMARY_D1;
+	CONTROL_PRIMARY_BORDER_ARMED: PRIMARY_D2;
 	CONTROL_PRIMARY_BORDER_FOCUSED: SECONDARY;
 	CONTROL_PRIMARY_BG_NORMAL: PRIMARY;
-	CONTROL_PRIMARY_BG_ARMED: PRIMARY_L1;
+	CONTROL_PRIMARY_BG_ARMED: PRIMARY_D1;
 
-	SCROLL_BAR_THUMB_NORMAL: GRAY_3;
-	SCROLL_BAR_THUMB_HOVER: GRAY_4;
+	SCROLL_BAR_THUMB_NORMAL: GRAY_7;
+	SCROLL_BAR_THUMB_HOVER: GRAY_6;
 
-	PROGRESS_INDICATOR_BEGIN: GRAY_7;
-	PROGRESS_INDICATOR_END: GRAY_5;
-	PROGRESS_BAR_BG: GRAY_2;
+	PROGRESS_INDICATOR_BEGIN: GRAY_2;
+	PROGRESS_INDICATOR_END: GRAY_4;
+	PROGRESS_BAR_BG: GRAY_8;
 
 
 	-fx-background-color: MAIN_BG;
@@ -205,7 +205,7 @@
 }
 
 .app-header-title .label {
-	-fx-text-fill: TEXT_FILL;
+	-fx-text-fill: white;
 	-fx-font-size: 13px;
 	-fx-font-weight: 600;
 }
@@ -379,24 +379,28 @@
 
 .welcome-benefits {
 	-fx-padding: 16px 18px;
-	-fx-background-color: GRAY_2;
+	-fx-background-color: GRAY_8;
 	-fx-background-radius: 12px;
-	-fx-border-color: GRAY_3;
+	-fx-border-color: GRAY_7;
 	-fx-border-radius: 12px;
 }
 
 .welcome-benefits .label {
-	-fx-text-fill: GRAY_8;
+	-fx-text-fill: GRAY_2;
 	-fx-font-size: 13px;
 }
 
 .welcome-check {
-	-fx-fill: PRIMARY_L1;
+	-fx-fill: PRIMARY_D1;
 }
 
 .welcome-learn-more {
-	-fx-text-fill: PRIMARY_L1;
+	-fx-text-fill: PRIMARY_D1;
 	-fx-font-weight: 600;
+}
+
+.welcome-brand-mark {
+	-fx-fill: PRIMARY;
 }
 
 .vault-status-icon {
@@ -627,43 +631,43 @@
 }
 
 .info-bar--green {
-	-bar-bg: GRAY_2;
+	-bar-bg: CONTROL_BG_NORMAL;
 	-bar-accent: GREEN_5;
 	-button-bg: transparent;
-	-button-bg-pressed: GRAY_3;
+	-button-bg-pressed: GRAY_8;
 }
 
 .info-bar--yellow {
-	-bar-bg: GRAY_2;
+	-bar-bg: CONTROL_BG_NORMAL;
 	-bar-accent: YELLOW_5;
 	-button-bg: transparent;
-	-button-bg-pressed: GRAY_3;
+	-button-bg-pressed: GRAY_8;
 }
 
 .info-bar--red {
-	-bar-bg: GRAY_2;
+	-bar-bg: CONTROL_BG_NORMAL;
 	-bar-accent: RED_5;
 	-button-bg: transparent;
-	-button-bg-pressed: GRAY_3;
+	-button-bg-pressed: GRAY_8;
 }
 
 .info-bar .label {
-	-fx-text-fill: GRAY_8;
+	-fx-text-fill: GRAY_2;
 	-fx-font-weight: 600;
 	-fx-font-size: 13px;
 }
 
 .info-bar--green .label {
-	-fx-text-fill: PRIMARY_L1;
+	-fx-text-fill: PRIMARY_D1;
 }
 
 .info-bar--yellow .label {
-	-fx-text-fill: #F4D35E;
+	-fx-text-fill: #8A6D00;
 	-fx-effect: none;
 }
 
 .info-bar--red .label {
-	-fx-text-fill: #FF7B70;
+	-fx-text-fill: RED_5;
 }
 
 .info-bar .glyph {
@@ -671,7 +675,7 @@
 }
 
 .info-bar:hover .label {
-	-fx-text-fill: GRAY_9;
+	-fx-text-fill: GRAY_0;
 }
 
 .info-bar .button {

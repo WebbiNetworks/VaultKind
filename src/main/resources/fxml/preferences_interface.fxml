@@ -3,7 +3,6 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ChoiceBox?>
-<?import javafx.scene.control.Hyperlink?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.ToggleGroup?>
@@ -22,8 +21,7 @@
 	<children>
 		<HBox spacing="12" alignment="CENTER_LEFT">
 			<Label text="%preferences.interface.theme" labelFor="$themeChoiceBox"/>
-			<ChoiceBox fx:id="themeChoiceBox" disable="${!controller.licenseHolder.validLicense}"/>
-			<Hyperlink styleClass="hyperlink-underline,hyperlink-muted" text="%preferences.interface.unlockThemes" onAction="#showContributeTab" visible="${!controller.licenseHolder.validLicense}" managed="${!controller.licenseHolder.validLicense}"/>
+			<ChoiceBox fx:id="themeChoiceBox"/>
 		</HBox>
 
 		<HBox spacing="12" alignment="CENTER_LEFT">

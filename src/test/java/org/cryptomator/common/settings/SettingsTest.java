@@ -31,6 +31,10 @@ public class SettingsTest {
 		// third change (to property of list item):
 		vaultSettings.displayName.set("asd");
 		Mockito.verify(provider, Mockito.times(3)).scheduleSave(settings);
+
+		// fourth change (to local Learning Center progress):
+		settings.learningCenterCompletedTopics.add("recovery-keys");
+		Mockito.verify(provider, Mockito.times(4)).scheduleSave(settings);
 	}
 
 }

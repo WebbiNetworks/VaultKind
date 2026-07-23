@@ -103,6 +103,7 @@ public class MainWindowController implements FxController {
 			updateContextTitle();
 		});
 		navigation.selectedPreferencesTabProperty().addListener((_, _, _) -> updateContextTitle());
+		navigation.assistantModeProperty().addListener((_, _, _) -> updateContextTitle());
 		selectedVault.addListener((_, _, _) -> updateContextTitle());
 		navigation.addVaultContentProperty().addListener((_, _, content) -> showAddVaultContent(content));
 		navigation.vaultOptionsContentProperty().addListener((_, _, content) -> showVaultOptionsContent(content));
@@ -140,7 +141,7 @@ public class MainWindowController implements FxController {
 					? resourceBundle.getString("main.vaultlist")
 					: resourceBundle.getString("main.context.vault").formatted(selectedVault.get().getDisplayName());
 			case ACTIVITY -> resourceBundle.getString("main.vaultlist.events");
-			case HOW_IT_WORKS -> resourceBundle.getString("howItWorks.title");
+			case HOW_IT_WORKS -> resourceBundle.getString(navigation.assistantModeProperty().get() ? "howItWorks.assistant.title" : "howItWorks.title");
 			case ADD_VAULT -> resourceBundle.getString("addvaultwizard.title");
 			case UNLOCK -> resourceBundle.getString("main.content.unlock.title");
 			case VAULT_OPTIONS -> resourceBundle.getString("main.content.vaultOptions.title");
@@ -153,7 +154,7 @@ public class MainWindowController implements FxController {
 			case HOME -> "main.content.dashboard.title";
 			case VAULTS -> "main.content.vaults.title";
 			case ACTIVITY -> "main.content.activity.title";
-			case HOW_IT_WORKS -> "howItWorks.title";
+			case HOW_IT_WORKS -> navigation.assistantModeProperty().get() ? "howItWorks.assistant.title" : "howItWorks.title";
 			case ADD_VAULT -> "main.content.addVault.title";
 			case UNLOCK -> "main.content.unlock.title";
 			case VAULT_OPTIONS -> "main.content.vaultOptions.title";
@@ -166,7 +167,7 @@ public class MainWindowController implements FxController {
 			case HOME -> "main.content.dashboard.subtitle";
 			case VAULTS -> "main.content.vaults.subtitle";
 			case ACTIVITY -> "main.content.activity.subtitle";
-			case HOW_IT_WORKS -> "howItWorks.subtitle";
+			case HOW_IT_WORKS -> navigation.assistantModeProperty().get() ? "howItWorks.assistant.workspace.subtitle" : "howItWorks.subtitle";
 			case ADD_VAULT -> "main.content.addVault.subtitle";
 			case UNLOCK -> "main.content.unlock.subtitle";
 			case VAULT_OPTIONS -> "main.content.vaultOptions.subtitle";

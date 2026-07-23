@@ -82,6 +82,7 @@ public class Settings {
 	public final ObjectProperty<Path> previouslyUsedVaultDirectory;
 	public final StringProperty lastUpdateAttemptedByVersion;
 	public final ObservableSet<String> trustedHosts;
+	public final ObservableSet<String> learningCenterCompletedTopics;
 
 	public static Settings create(SettingsProvider provider, Environment env) {
 		var defaults = new SettingsJson();
@@ -123,6 +124,7 @@ public class Settings {
 		this.previouslyUsedVaultDirectory = new SimpleObjectProperty<>(this, "previouslyUsedVaultDirectory", json.previouslyUsedVaultDirectory);
 		this.lastUpdateAttemptedByVersion = new SimpleStringProperty(this, "lastUpdateAttemptedByVersion", json.lastUpdateAttemptedByVersion);
 		this.trustedHosts = FXCollections.observableSet(json.trustedHosts);
+		this.learningCenterCompletedTopics = FXCollections.observableSet(json.learningCenterCompletedTopics);
 
 		this.directories.addAll(json.directories.stream().map(VaultSettings::new).toList());
 
@@ -155,6 +157,7 @@ public class Settings {
 		previouslyUsedVaultDirectory.addListener(this::somethingChanged);
 		lastUpdateAttemptedByVersion.addListener(this::somethingChanged);
 		trustedHosts.addListener(this::somethingChanged);
+		learningCenterCompletedTopics.addListener(this::somethingChanged);
 	}
 
 	@SuppressWarnings("deprecation")
@@ -214,6 +217,7 @@ public class Settings {
 		json.previouslyUsedVaultDirectory = previouslyUsedVaultDirectory.get();
 		json.lastUpdateAttemptedByVersion = lastUpdateAttemptedByVersion.get();
 		json.trustedHosts = Set.copyOf(trustedHosts);
+		json.learningCenterCompletedTopics = Set.copyOf(learningCenterCompletedTopics);
 		return json;
 	}
 

@@ -13,8 +13,11 @@ import javafx.application.Platform;
 import javafx.beans.binding.BooleanExpression;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
 import javafx.scene.input.Clipboard;
@@ -25,6 +28,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 public class ErrorController implements FxController {
 
@@ -51,22 +56,26 @@ public class ErrorController implements FxController {
 	private final Scene previousScene;
 	private final Stage window;
 	private final Environment environment;
+	private final ResourceBundle resourceBundle;
 
 	private final BooleanProperty copiedDetails = new SimpleBooleanProperty();
 	private final ObjectProperty<ErrorDiscussion> matchingErrorDiscussion = new SimpleObjectProperty<>();
 	private final BooleanExpression errorSolutionFound = matchingErrorDiscussion.isNotNull();
 	private final BooleanProperty isLoadingHttpResponse = new SimpleBooleanProperty();
 	private final BooleanProperty askedForLookupDatabasePermission = new SimpleBooleanProperty();
+	private final StringProperty localGuidanceTitle = new SimpleStringProperty();
+	private final StringProperty localGuidanceBody = new SimpleStringProperty();
 	private final boolean formerSceneWasResizable;
 
 	@Inject
-	ErrorController(Application application, @Named("stackTrace") String stackTrace, ErrorCode errorCode, @Nullable Scene previousScene, Stage window, Environment environment, ExecutorService executorService) {
+	ErrorController(Application application, @Named("stackTrace") String stackTrace, ErrorCode errorCode, @Nullable Scene previousScene, Stage window, Environment environment, ExecutorService executorService, ResourceBundle resourceBundle) {
 		this.application = application;
 		this.stackTrace = stackTrace;
 		this.errorCode = errorCode;
 		this.previousScene = previousScene;
 		this.window = window;
 		this.environment = environment;
+		this.resourceBundle = resourceBundle;
 		this.formerSceneWasResizable = window.isResizable();
 	}
 
@@ -129,8 +138,21 @@ public class ErrorController implements FxController {
 	@FXML
 	public void lookUpSolution() {
 		askedForLookupDatabasePermission.set(true);
-		matchingErrorDiscussion.set(null);
-		isLoadingHttpResponse.set(false);
+		String details = (getErrorCode() + " " + stackTrace).toLowerCase(Locale.ROOT);
+		if (details.contains("bts9:kt9r:kt9r") || details.contains("nosuchelementexception") || details.contains("mounter") || details.contains("mount")) {
+			setLocalGuidance("error.local.mount.title", "error.local.mount.body");
+		} else if (details.contains("accessdenied") || details.contains("in use") || details.contains("busy") || details.contains("filesystemexception")) {
+			setLocalGuidance("error.local.busy.title", "error.local.busy.body");
+		} else if (details.contains("nosuchfile") || details.contains("not found") || details.contains("missing")) {
+			setLocalGuidance("error.local.missing.title", "error.local.missing.body");
+		} else {
+			setLocalGuidance("error.local.generic.title", "error.local.generic.body");
+		}
+	}
+
+	private void setLocalGuidance(String titleKey, String bodyKey) {
+		localGuidanceTitle.set(resourceBundle.getString(titleKey));
+		localGuidanceBody.set(resourceBundle.getString(bodyKey).formatted(getErrorCode()));
 	}
 
 	/**
@@ -267,6 +289,22 @@ public class ErrorController implements FxController {
 
 	public boolean getAskedForLookupDatabasePermission() {
 		return askedForLookupDatabasePermission.get();
+	}
+
+	public ReadOnlyStringProperty localGuidanceTitleProperty() {
+		return localGuidanceTitle;
+	}
+
+	public String getLocalGuidanceTitle() {
+		return localGuidanceTitle.get();
+	}
+
+	public ReadOnlyStringProperty localGuidanceBodyProperty() {
+		return localGuidanceBody;
+	}
+
+	public String getLocalGuidanceBody() {
+		return localGuidanceBody.get();
 	}
 
 }

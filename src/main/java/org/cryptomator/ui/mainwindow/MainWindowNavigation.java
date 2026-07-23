@@ -13,6 +13,8 @@ import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.scene.Node;
@@ -42,6 +44,7 @@ public class MainWindowNavigation {
 
 	private final ObjectProperty<Destination> destination = new SimpleObjectProperty<>(Destination.HOME);
 	private final ObjectProperty<SelectedPreferencesTab> selectedPreferencesTab = new SimpleObjectProperty<>(SelectedPreferencesTab.GENERAL);
+	private final BooleanProperty assistantMode = new SimpleBooleanProperty(false);
 	private final ReadOnlyObjectWrapper<Node> addVaultContent = new ReadOnlyObjectWrapper<>();
 	private final ReadOnlyObjectWrapper<String> unlockVaultName = new ReadOnlyObjectWrapper<>("");
 	private final ReadOnlyBooleanWrapper unlockWrongPassword = new ReadOnlyBooleanWrapper(false);
@@ -299,5 +302,9 @@ public class MainWindowNavigation {
 
 	public ObjectProperty<SelectedPreferencesTab> selectedPreferencesTabProperty() {
 		return selectedPreferencesTab;
+	}
+
+	public BooleanProperty assistantModeProperty() {
+		return assistantMode;
 	}
 }

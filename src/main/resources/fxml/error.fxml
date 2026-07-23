@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import org.cryptomator.ui.controls.FontAwesome5IconView?>
-<?import org.cryptomator.ui.controls.FontAwesome5Spinner?>
 <?import org.cryptomator.ui.controls.FormattedLabel?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
@@ -44,36 +43,21 @@
 		</FormattedLabel>
 
 		<VBox visible="${!controller.askedForLookupDatabasePermission}" managed="${!controller.askedForLookupDatabasePermission}">
-			<Label text="%error.lookupPermissionMessage" wrapText="true"/>
+			<Label text="%error.localPermissionMessage" wrapText="true"/>
 			<Region minHeight="12"/>
 			<ButtonBar buttonMinWidth="120" buttonOrder="+NY">
 				<buttons>
 					<Button text="%error.dismiss" ButtonBar.buttonData="NO" onAction="#dismiss" styleClass="error-action-secondary"/>
-					<Button text="%error.lookUpSolution" ButtonBar.buttonData="YES" defaultButton="true" onAction="#lookUpSolution" styleClass="error-action-primary"/>
+					<Button text="%error.showLocalGuidance" ButtonBar.buttonData="YES" defaultButton="true" onAction="#lookUpSolution" styleClass="error-action-primary"/>
 				</buttons>
 			</ButtonBar>
 		</VBox>
 		<VBox visible="${controller.askedForLookupDatabasePermission}" managed="${controller.askedForLookupDatabasePermission}">
-			<FontAwesome5Spinner glyphSize="24" visible="${controller.isLoadingHttpResponse}" managed="${controller.isLoadingHttpResponse}"/>
-			<VBox visible="${!controller.isLoadingHttpResponse}" managed="${!controller.isLoadingHttpResponse}">
-				<Label text="%error.existingSolutionDescription" wrapText="true" visible="${controller.errorSolutionFound}" managed="${controller.errorSolutionFound}"/>
-				<Hyperlink styleClass="hyperlink-underline" text="%error.hyperlink.solution" onAction="#showSolution" contentDisplay="LEFT" visible="${controller.errorSolutionFound}" managed="${controller.errorSolutionFound}">
-					<graphic>
-						<FontAwesome5IconView glyph="LINK" glyphSize="12"/>
-					</graphic>
-				</Hyperlink>
-				<Label text="%error.description" wrapText="true" visible="${!controller.errorSolutionFound}" managed="${!controller.errorSolutionFound}"/>
-				<Hyperlink styleClass="hyperlink-underline" text="%error.hyperlink.lookup" onAction="#searchError" contentDisplay="LEFT" visible="${!controller.errorSolutionFound}" managed="${!controller.errorSolutionFound}">
-					<graphic>
-						<FontAwesome5IconView glyph="LINK" glyphSize="12"/>
-					</graphic>
-				</Hyperlink>
-				<Hyperlink styleClass="hyperlink-underline" text="%error.hyperlink.report" onAction="#reportError" contentDisplay="LEFT" visible="${!controller.errorSolutionFound}" managed="${!controller.errorSolutionFound}">
-					<graphic>
-						<FontAwesome5IconView glyph="LINK" glyphSize="12"/>
-					</graphic>
-				</Hyperlink>
-			</VBox>
+			<Label text="${controller.localGuidanceTitle}" wrapText="true" styleClass="label-large"/>
+			<Region minHeight="6"/>
+			<Label text="${controller.localGuidanceBody}" wrapText="true"/>
+			<Region minHeight="8"/>
+			<Label text="%error.localAssistantHint" wrapText="true" styleClass="text-muted"/>
 		</VBox>
 		<Region minHeight="12"/>
 		<HBox>

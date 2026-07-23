@@ -13,6 +13,7 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import java.util.concurrent.ExecutorService;
+import java.util.ResourceBundle;
 
 class ErrorControllerTest {
 
@@ -23,6 +24,7 @@ class ErrorControllerTest {
 	Stage window;
 	Environment environment;
 	ExecutorService executorService;
+	ResourceBundle resourceBundle;
 	ErrorController errorController;
 
 	@BeforeEach
@@ -34,7 +36,8 @@ class ErrorControllerTest {
 		window = Mockito.mock(Stage.class);
 		environment = Mockito.mock(Environment.class);
 		executorService = Mockito.mock(ExecutorService.class);
-		errorController = new ErrorController(application, stackTrace, errorCode, previousScene, window, environment, executorService);
+		resourceBundle = Mockito.mock(ResourceBundle.class);
+		errorController = new ErrorController(application, stackTrace, errorCode, previousScene, window, environment, executorService, resourceBundle);
 	}
 
 	private ErrorDiscussion createErrorDiscussion(String title, int upvoteCount, ErrorDiscussion.Answer answer) {

@@ -14,19 +14,34 @@
 	  fx:controller="org.cryptomator.ui.addvaultwizard.ChooseExistingVaultController"
 	  prefWidth="820"
 	  prefHeight="546"
-	  spacing="26"
+	  spacing="20"
 	  styleClass="add-vault-page"
 	  accessibleRole="DIALOG">
 	<padding>
-		<Insets top="38" right="42" bottom="28" left="42"/>
+		<Insets top="30" right="42" bottom="28" left="42"/>
 	</padding>
 	<children>
+		<VBox spacing="9">
+			<HBox alignment="CENTER_LEFT">
+				<Label text="%addvaultwizard.existing.progress.title" styleClass="add-vault-step-kicker"/>
+				<Region HBox.hgrow="ALWAYS"/>
+				<Label text="${controller.stepCount}" styleClass="add-vault-step-count"/>
+			</HBox>
+			<HBox spacing="7" styleClass="add-vault-progress">
+				<Region styleClass="add-vault-progress-segment,add-vault-progress-current" HBox.hgrow="ALWAYS"/>
+				<StackPane HBox.hgrow="ALWAYS">
+					<Region styleClass="add-vault-progress-segment" maxWidth="Infinity"/>
+					<Region styleClass="add-vault-progress-segment,add-vault-progress-current" maxWidth="Infinity" visible="${controller.selectionReady}" managed="${controller.selectionReady}"/>
+				</StackPane>
+			</HBox>
+		</VBox>
+
 		<VBox spacing="7">
 			<Label text="%addvaultwizard.existing.pageTitle" styleClass="add-vault-page-title"/>
 			<Label text="%addvaultwizard.existing.pageDescription" wrapText="true" styleClass="add-vault-page-description"/>
 		</VBox>
 
-		<HBox spacing="20" alignment="CENTER_LEFT" styleClass="add-vault-form-card">
+		<HBox spacing="18" alignment="CENTER_LEFT" styleClass="add-vault-form-card">
 			<StackPane styleClass="add-vault-choice-icon">
 				<FontAwesome5IconView glyph="FOLDER_OPEN" glyphSize="22" styleClass="glyph-icon-primary"/>
 			</StackPane>
@@ -34,10 +49,35 @@
 				<Label text="%addvaultwizard.existing.instructionTitle" styleClass="add-vault-choice-title"/>
 				<Label text="%addvaultwizard.existing.instruction" wrapText="true" styleClass="add-vault-choice-description"/>
 			</VBox>
+			<Button text="%addvaultwizard.existing.chooseBtn" onAction="#chooseFolder" minWidth="128"/>
 		</HBox>
 
+		<VBox spacing="9" visible="${controller.selectionMade}" managed="${controller.selectionMade}" styleClass="add-vault-form-card">
+			<HBox alignment="CENTER_LEFT" spacing="12">
+				<StackPane styleClass="add-vault-choice-icon">
+					<FontAwesome5IconView glyph="LOCK" glyphSize="19" styleClass="glyph-icon-primary"/>
+				</StackPane>
+				<VBox spacing="3" HBox.hgrow="ALWAYS">
+					<Label text="%addvaultwizard.existing.reviewTitle" styleClass="add-vault-choice-title"/>
+					<Label text="${controller.selectedVaultName}" styleClass="add-vault-review-name"/>
+				</VBox>
+			</HBox>
+			<HBox spacing="8">
+				<Label text="%addvaultwizard.existing.locationLabel" styleClass="add-vault-field-label" minWidth="120"/>
+				<Label text="${controller.selectedVaultLocation}" wrapText="true" styleClass="label-muted" HBox.hgrow="ALWAYS"/>
+			</HBox>
+			<HBox spacing="8" alignment="CENTER_LEFT" visible="${controller.selectionReady}" managed="${controller.selectionReady}" styleClass="add-vault-inline-success">
+				<FontAwesome5IconView glyph="CHECK" glyphSize="14" styleClass="glyph-icon-success"/>
+				<Label text="${controller.selectionMessage}" wrapText="true" styleClass="label-success" HBox.hgrow="ALWAYS"/>
+			</HBox>
+			<HBox spacing="8" alignment="CENTER_LEFT" visible="${controller.selectionError}" managed="${controller.selectionError}" styleClass="add-vault-inline-error">
+				<FontAwesome5IconView glyph="EXCLAMATION_CIRCLE" glyphSize="14" styleClass="glyph-icon-red"/>
+				<Label text="${controller.selectionMessage}" wrapText="true" styleClass="label-red" HBox.hgrow="ALWAYS"/>
+			</HBox>
+		</VBox>
+
 		<HBox spacing="10" alignment="CENTER_LEFT" styleClass="add-vault-note">
-			<FontAwesome5IconView glyph="SHIELD_ALT" glyphSize="17" styleClass="glyph-icon-primary"/>
+			<FontAwesome5IconView glyph="INFO_CIRCLE" glyphSize="15" styleClass="glyph-icon-primary"/>
 			<Label text="%addvaultwizard.existing.safetyNote" wrapText="true" styleClass="label-muted" HBox.hgrow="ALWAYS"/>
 		</HBox>
 
@@ -46,7 +86,7 @@
 		<ButtonBar buttonMinWidth="120" buttonOrder="B+X">
 			<buttons>
 				<Button text="%generic.button.back" ButtonBar.buttonData="BACK_PREVIOUS" onAction="#back"/>
-				<Button fx:id="finishButton" text="%addvaultwizard.existing.chooseBtn" ButtonBar.buttonData="NEXT_FORWARD" onAction="#chooseFileAndNext" defaultButton="true"/>
+				<Button text="%addvaultwizard.existing.connectBtn" ButtonBar.buttonData="NEXT_FORWARD" onAction="#connectVault" defaultButton="true" disable="${!controller.selectionReady}"/>
 			</buttons>
 		</ButtonBar>
 	</children>

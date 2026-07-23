@@ -30,7 +30,8 @@ public class SettingsJsonTest {
 					"port": 8080,
 					"language": "de-DE",
 					"numTrayNotifications": 42,
-					"trustedHosts": null
+					"trustedHosts": null,
+					"learningCenterCompletedTopics": null
 				}
 				""";
 
@@ -46,6 +47,7 @@ public class SettingsJsonTest {
 		Assertions.assertEquals("de-DE", jsonObj.language);
 		Assertions.assertEquals(42, jsonObj.numTrayNotifications);
 		Assertions.assertEquals(0, jsonObj.trustedHosts.size());
+		Assertions.assertEquals(0, jsonObj.learningCenterCompletedTopics.size());
 	}
 
 	@SuppressWarnings("SpellCheckingInspection")

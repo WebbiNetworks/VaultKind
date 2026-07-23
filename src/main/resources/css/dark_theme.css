@@ -475,6 +475,30 @@
 	-fx-border-radius: 14px;
 }
 
+.add-vault-review-name {
+	-fx-font-size: 17px;
+	-fx-font-weight: 600;
+	-fx-text-fill: PRIMARY_L1;
+}
+
+.add-vault-inline-success,
+.add-vault-inline-error {
+	-fx-padding: 10px 12px;
+	-fx-background-radius: 8px;
+}
+
+.add-vault-inline-success {
+	-fx-background-color: rgba(73, 184, 90, 0.10);
+	-fx-border-color: rgba(73, 184, 90, 0.55);
+	-fx-border-radius: 8px;
+}
+
+.add-vault-inline-error {
+	-fx-background-color: rgba(239, 83, 80, 0.10);
+	-fx-border-color: rgba(239, 83, 80, 0.55);
+	-fx-border-radius: 8px;
+}
+
 .add-vault-field-label {
 	-fx-font-size: 14px;
 	-fx-font-weight: 600;
@@ -849,6 +873,141 @@
 	-fx-padding: 10px 0 0 0;
 }
 
+.learning-search-field {
+	-fx-font-size: 15px;
+	-fx-padding: 9px 11px;
+}
+
+.learning-search-empty {
+	-fx-padding: 11px;
+	-fx-text-fill: TEXT_FILL_MUTED;
+}
+
+.learning-complete-icon {
+	-fx-fill: GREEN_5;
+}
+
+.learning-progress-panel {
+	-fx-padding: 12px 0 2px 0;
+	-fx-border-color: GRAY_3 transparent transparent transparent;
+}
+
+.learning-progress-text {
+	-fx-text-fill: TEXT_FILL_MUTED;
+	-fx-font-size: 13px;
+}
+
+.learning-reset-button {
+	-fx-background-color: transparent;
+	-fx-border-color: CONTROL_BORDER_NORMAL;
+	-fx-text-fill: TEXT_FILL_MUTED;
+	-fx-alignment: CENTER_LEFT;
+}
+
+.learning-reset-button:hover {
+	-fx-border-color: PRIMARY;
+	-fx-text-fill: PRIMARY_L1;
+}
+
+.learning-assistant-nav {
+	-fx-border-color: rgba(31, 120, 232, 0.42);
+}
+
+.learning-assistant-icon {
+	-fx-fill: PRIMARY_L1;
+}
+
+.learning-assistant-card {
+	-fx-border-color: rgba(31, 120, 232, 0.55);
+}
+
+.learning-assistant-status {
+	-fx-padding: 6px 10px;
+	-fx-background-color: rgba(73, 184, 90, 0.12);
+	-fx-background-radius: 999px;
+	-fx-border-color: rgba(73, 184, 90, 0.55);
+	-fx-border-radius: 999px;
+	-fx-text-fill: GREEN_5;
+	-fx-font-size: 11px;
+	-fx-font-weight: 700;
+}
+
+.learning-assistant-choice {
+	-fx-padding: 12px 14px;
+	-fx-background-color: CONTROL_BG_NORMAL;
+	-fx-border-color: CONTROL_BORDER_NORMAL;
+	-fx-border-radius: 8px;
+	-fx-background-radius: 8px;
+	-fx-text-fill: TEXT_FILL;
+	-fx-alignment: CENTER_LEFT;
+}
+
+.learning-assistant-choice:hover {
+	-fx-background-color: rgba(31, 120, 232, 0.18);
+	-fx-border-color: PRIMARY;
+}
+
+.learning-assistant-answer {
+	-fx-padding: 15px 17px;
+	-fx-background-color: rgba(31, 120, 232, 0.12);
+	-fx-border-color: PRIMARY;
+	-fx-border-radius: 9px;
+	-fx-background-radius: 9px;
+}
+
+.learning-assistant-privacy {
+	-fx-padding: 10px 12px;
+	-fx-background-color: rgba(255, 255, 255, 0.04);
+	-fx-background-radius: 7px;
+	-fx-text-fill: TEXT_FILL_MUTED;
+	-fx-font-size: 12px;
+}
+
+.diagnostic-case-label,
+.diagnostic-section-label {
+	-fx-text-fill: PRIMARY_L1;
+	-fx-font-weight: bold;
+}
+
+.diagnostic-section-label {
+	-fx-font-size: 11px;
+}
+
+.diagnostic-confidence {
+	-fx-background-color: rgba(69, 196, 90, 0.14);
+	-fx-border-color: rgba(69, 196, 90, 0.58);
+	-fx-border-radius: 12px;
+	-fx-background-radius: 12px;
+	-fx-padding: 3px 9px;
+	-fx-text-fill: GREEN_5;
+	-fx-font-weight: bold;
+}
+
+.diagnostic-case-button {
+	-fx-background-color: CONTROL_BG_NORMAL;
+	-fx-border-color: CONTROL_BORDER_NORMAL;
+	-fx-border-radius: 5px;
+	-fx-background-radius: 5px;
+	-fx-text-fill: TEXT_FILL;
+	-fx-padding: 10px 12px;
+	-fx-cursor: hand;
+}
+
+.diagnostic-case-button:hover {
+	-fx-background-color: rgba(31, 120, 232, 0.18);
+	-fx-border-color: PRIMARY;
+}
+
+.diagnostic-back-button:hover {
+	-fx-background-color: rgba(31, 120, 232, 0.20);
+	-fx-border-color: PRIMARY_L1;
+	-fx-translate-y: -2px;
+}
+
+.diagnostic-back-button:pressed {
+	-fx-translate-y: 0px;
+}
+
 .learn-chapter-button {
 	-fx-background-color: transparent;
 	-fx-border-color: transparent;
@@ -856,13 +1015,24 @@
 	-fx-border-radius: 7px;
 	-fx-padding: 9px 11px;
 	-fx-text-fill: TEXT_FILL_MUTED;
+	-fx-line-spacing: 2px;
 }
 
-.learn-chapter-button:hover,
-.learn-chapter-button-active {
+.learn-chapter-button:hover {
 	-fx-background-color: CONTROL_BG_HOVER;
 	-fx-border-color: CONTROL_BORDER_NORMAL;
 	-fx-text-fill: PRIMARY_L1;
+}
+
+.learn-chapter-button-active,
+.learn-chapter-button-active:hover,
+.learn-chapter-button:focused {
+	-fx-background-color: rgba(31, 120, 232, 0.28);
+	-fx-border-color: PRIMARY;
+	-fx-border-width: 1px 1px 1px 5px;
+	-fx-text-fill: white;
+	-fx-font-weight: 700;
+	-fx-effect: dropshadow(gaussian, rgba(31, 120, 232, 0.30), 10px, 0.12, 0, 1px);
 }
 
 .learn-content-card {
@@ -871,6 +1041,14 @@
 	-fx-background-radius: 10px;
 	-fx-border-color: GRAY_3;
 	-fx-border-radius: 10px;
+}
+
+.learn-content-card-active {
+	-fx-background-color: rgba(31, 120, 232, 0.12);
+	-fx-border-color: PRIMARY;
+	-fx-border-width: 2px;
+	-fx-border-radius: 10px;
+	-fx-effect: dropshadow(gaussian, rgba(31, 120, 232, 0.28), 14px, 0.14, 0, 2px);
 }
 
 .learn-tip-copy {

@@ -5,6 +5,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
@@ -18,23 +19,55 @@
 			<VBox.margin><Insets top="12" right="0" bottom="10" left="0"/></VBox.margin>
 			<graphic><FontAwesome5IconView glyph="HOME" glyphSize="15"/></graphic>
 		</Button>
+		<VBox spacing="6" visible="${!controller.assistantMode}" managed="${!controller.assistantMode}" VBox.vgrow="ALWAYS">
 		<Label text="%howItWorks.navigation.title" styleClass="preferences-navigation-title"/>
 		<Label text="%howItWorks.navigation.subtitle" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+		<TextField fx:id="topicSearch" promptText="%howItWorks.navigation.search" accessibleHelp="%howItWorks.navigation.searchHelp" styleClass="learning-search-field">
+			<VBox.margin><Insets top="10" right="0" bottom="4" left="0"/></VBox.margin>
+		</TextField>
 		<VBox spacing="3" styleClass="learn-chapter-list">
-			<Button text="%howItWorks.navigation.how" onAction="#showHowChapter" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button,learn-chapter-button-active"/>
-			<Button text="%howItWorks.navigation.create" onAction="#showCreateChapter" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button"/>
-			<Button text="%howItWorks.navigation.recovery" onAction="#showRecoveryChapter" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button"/>
-			<Button text="%howItWorks.navigation.cloud" onAction="#showCloudChapter" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button"/>
-			<Button text="%howItWorks.navigation.virtualDrive" onAction="#showVirtualDriveChapter" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button"/>
-			<Button text="%howItWorks.navigation.security" onAction="#showSecurityChapter" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button"/>
-			<Button text="%howItWorks.navigation.faq" onAction="#showFaqChapter" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button"/>
+			<Button fx:id="howChapterButton" text="%howItWorks.navigation.how" onAction="#showHowChapter" maxWidth="Infinity" alignment="CENTER_LEFT" wrapText="true" styleClass="learn-chapter-button,learn-chapter-button-active"/>
+			<Button fx:id="createChapterButton" text="%howItWorks.navigation.create" onAction="#showCreateChapter" maxWidth="Infinity" alignment="CENTER_LEFT" wrapText="true" styleClass="learn-chapter-button"/>
+			<Button fx:id="recoveryChapterButton" text="%howItWorks.navigation.recovery" onAction="#showRecoveryChapter" maxWidth="Infinity" alignment="CENTER_LEFT" wrapText="true" styleClass="learn-chapter-button"/>
+			<Button fx:id="cloudChapterButton" text="%howItWorks.navigation.cloud" onAction="#showCloudChapter" maxWidth="Infinity" alignment="CENTER_LEFT" wrapText="true" styleClass="learn-chapter-button"/>
+			<Button fx:id="virtualDriveChapterButton" text="%howItWorks.navigation.virtualDrive" onAction="#showVirtualDriveChapter" maxWidth="Infinity" alignment="CENTER_LEFT" wrapText="true" styleClass="learn-chapter-button"/>
+			<Button fx:id="securityChapterButton" text="%howItWorks.navigation.security" onAction="#showSecurityChapter" maxWidth="Infinity" alignment="CENTER_LEFT" wrapText="true" styleClass="learn-chapter-button"/>
+			<Button fx:id="faqChapterButton" text="%howItWorks.navigation.faq" onAction="#showFaqChapter" maxWidth="Infinity" alignment="CENTER_LEFT" wrapText="true" styleClass="learn-chapter-button"/>
+			<Button fx:id="assistantChapterButton" text="%howItWorks.navigation.assistant" onAction="#showAssistantChapter" maxWidth="Infinity" alignment="CENTER_LEFT" wrapText="true" styleClass="learn-chapter-button,learning-assistant-nav">
+				<graphic><FontAwesome5IconView glyph="MAGIC" glyphSize="13" styleClass="learning-assistant-icon"/></graphic>
+			</Button>
+			<Label fx:id="noSearchResults" text="%howItWorks.navigation.noResults" wrapText="true" visible="false" managed="false" styleClass="learning-search-empty"/>
 		</VBox>
 		<Region VBox.vgrow="ALWAYS"/>
+		<VBox spacing="6" styleClass="learning-progress-panel">
+			<Label text="${controller.progressText}" styleClass="learning-progress-text"/>
+			<Button text="%howItWorks.navigation.resetProgress" onAction="#resetLearningProgress" disable="${controller.resetProgressDisabled}" maxWidth="Infinity" styleClass="learning-reset-button"/>
+		</VBox>
+		</VBox>
+		<VBox spacing="8" visible="${controller.assistantMode}" managed="${controller.assistantMode}" VBox.vgrow="ALWAYS">
+			<Label text="%howItWorks.assistant.title" styleClass="preferences-navigation-title"/>
+			<Label text="%howItWorks.assistant.sidebar.subtitle" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+			<Button text="%howItWorks.assistant.back" onAction="#returnToLearningCenter" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learning-reset-button">
+				<VBox.margin><Insets top="10" right="0" bottom="8" left="0"/></VBox.margin>
+				<graphic><FontAwesome5IconView glyph="CHEVRON_LEFT" glyphSize="12"/></graphic>
+			</Button>
+			<Label text="%howItWorks.assistant.sidebar.browse" styleClass="preferences-navigation-subtitle"/>
+			<VBox spacing="4">
+				<Button fx:id="assistantAllButton" text="%howItWorks.assistant.sidebar.all" onAction="#showAllDiagnostics" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button,learn-chapter-button-active"/>
+				<Button fx:id="assistantStartupButton" text="%howItWorks.assistant.sidebar.startup" onAction="#showStartupDiagnostics" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button"/>
+				<Button fx:id="assistantVaultButton" text="%howItWorks.assistant.sidebar.vault" onAction="#showVaultDiagnostics" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button"/>
+				<Button fx:id="assistantFilesystemButton" text="%howItWorks.assistant.sidebar.filesystem" onAction="#showFilesystemDiagnostics" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button"/>
+				<Button fx:id="assistantRecoveryButton" text="%howItWorks.assistant.sidebar.recovery" onAction="#showRecoveryDiagnostics" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="learn-chapter-button"/>
+			</VBox>
+			<Region VBox.vgrow="ALWAYS"/>
+			<Label text="%howItWorks.assistant.sidebar.privacy" wrapText="true" styleClass="learning-assistant-privacy"/>
+		</VBox>
 	</VBox>
 
 	<ScrollPane fx:id="contentScroll" fitToWidth="true" hbarPolicy="NEVER" HBox.hgrow="ALWAYS" styleClass="how-it-works-scroll">
 		<VBox alignment="TOP_CENTER" spacing="22" styleClass="how-it-works-content">
-			<VBox fx:id="howChapter" maxWidth="1000" spacing="7" styleClass="how-intro-card">
+			<VBox fx:id="learningContent" alignment="TOP_CENTER" spacing="22" maxWidth="1000" visible="${!controller.assistantMode}" managed="${!controller.assistantMode}">
+			<VBox fx:id="howChapter" maxWidth="1000" spacing="7" styleClass="how-intro-card,learn-content-card-active">
 				<HBox alignment="CENTER_LEFT" spacing="12">
 					<FontAwesome5IconView glyph="LOCK" glyphSize="25" styleClass="how-intro-icon"/>
 					<Label text="%howItWorks.intro.title" wrapText="true" styleClass="how-section-title"/>
@@ -133,6 +166,61 @@
 				<Label text="%howItWorks.faq.q1" styleClass="learn-question"/><Label text="%howItWorks.faq.a1" wrapText="true" styleClass="how-body-copy"/>
 				<Label text="%howItWorks.faq.q2" styleClass="learn-question"/><Label text="%howItWorks.faq.a2" wrapText="true" styleClass="how-body-copy"/>
 				<Label text="%howItWorks.faq.q3" styleClass="learn-question"/><Label text="%howItWorks.faq.a3" wrapText="true" styleClass="how-body-copy"/>
+			</VBox>
+			</VBox>
+
+			<VBox fx:id="assistantChapter" maxWidth="1000" spacing="14" visible="${controller.assistantMode}" managed="${controller.assistantMode}" styleClass="learn-content-card,learning-assistant-card,learn-content-card-active">
+				<HBox alignment="CENTER_LEFT" spacing="12">
+					<FontAwesome5IconView glyph="MAGIC" glyphSize="24" styleClass="learning-assistant-icon"/>
+					<VBox spacing="3" HBox.hgrow="ALWAYS">
+						<Label text="%howItWorks.assistant.title" styleClass="how-section-title"/>
+						<Label text="%howItWorks.assistant.subtitle" wrapText="true" styleClass="how-body-copy"/>
+					</VBox>
+					<Label text="%howItWorks.assistant.offline" styleClass="learning-assistant-status"/>
+				</HBox>
+				<Label text="%howItWorks.assistant.search.label" styleClass="learn-question"/>
+				<HBox spacing="10">
+					<TextField fx:id="assistantSearch" promptText="%howItWorks.assistant.search.prompt" onAction="#findAssistantHelp" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="learning-assistant-search"/>
+					<Button text="%howItWorks.assistant.search.action" onAction="#findAssistantHelp" styleClass="how-primary-button"/>
+				</HBox>
+				<Label text="%howItWorks.assistant.prompt" styleClass="learn-question"/>
+				<HBox spacing="10">
+					<Button text="%howItWorks.assistant.unlock" onAction="#showUnlockHelp" wrapText="true" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="learning-assistant-choice"/>
+					<Button text="%howItWorks.assistant.missing" onAction="#showMissingVaultHelp" wrapText="true" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="learning-assistant-choice"/>
+				</HBox>
+				<HBox spacing="10">
+					<Button text="%howItWorks.assistant.cloud" onAction="#showCloudHelp" wrapText="true" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="learning-assistant-choice"/>
+					<Button text="%howItWorks.assistant.drive" onAction="#showDriveHelp" wrapText="true" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="learning-assistant-choice"/>
+				</HBox>
+				<VBox spacing="8" visible="${controller.assistantBrowseVisible}" managed="${controller.assistantBrowseVisible}" styleClass="learning-assistant-answer">
+					<Label text="${controller.assistantBrowseTitle}" styleClass="how-step-title"/>
+					<VBox fx:id="assistantCaseResults" spacing="5"/>
+				</VBox>
+				<VBox spacing="6" visible="${controller.assistantAnswerVisible}" managed="${controller.assistantAnswerVisible}" styleClass="learning-assistant-answer">
+					<HBox alignment="CENTER_LEFT" visible="${controller.assistantStructuredResultVisible}" managed="${controller.assistantStructuredResultVisible}">
+						<Button text="%diagnostics.action.backToCases" onAction="#returnToDiagnosticList" styleClass="how-secondary-button,diagnostic-back-button">
+							<graphic><FontAwesome5IconView glyph="CHEVRON_LEFT" glyphSize="11"/></graphic>
+						</Button>
+					</HBox>
+					<HBox alignment="CENTER_LEFT" spacing="10" visible="${controller.assistantStructuredResultVisible}" managed="${controller.assistantStructuredResultVisible}">
+						<Label text="${controller.assistantCaseLabel}" styleClass="diagnostic-case-label"/>
+						<Region HBox.hgrow="ALWAYS"/>
+						<Label text="${controller.assistantConfidence}" styleClass="diagnostic-confidence"/>
+					</HBox>
+					<Label text="${controller.assistantAnswerTitle}" wrapText="true" styleClass="how-step-title"/>
+					<Label text="${controller.assistantAnswerBody}" wrapText="true" visible="${!controller.assistantStructuredResultVisible}" managed="${!controller.assistantStructuredResultVisible}" styleClass="how-body-copy"/>
+					<VBox spacing="8" visible="${controller.assistantStructuredResultVisible}" managed="${controller.assistantStructuredResultVisible}">
+						<Label text="%diagnostics.label.cause" styleClass="diagnostic-section-label"/>
+						<Label text="${controller.assistantCause}" wrapText="true" styleClass="how-body-copy"/>
+						<Label text="%diagnostics.label.checks" styleClass="diagnostic-section-label"/>
+						<Label text="${controller.assistantChecks}" wrapText="true" styleClass="how-body-copy"/>
+						<Label text="%diagnostics.label.evidence" styleClass="diagnostic-section-label"/>
+						<Label text="${controller.assistantEvidence}" wrapText="true" styleClass="how-body-copy"/>
+						<Label text="%diagnostics.label.fix" styleClass="diagnostic-section-label"/>
+						<Label text="${controller.assistantFix}" wrapText="true" styleClass="how-body-copy"/>
+					</VBox>
+				</VBox>
+				<Label text="%howItWorks.assistant.privacy" wrapText="true" styleClass="learning-assistant-privacy"/>
 			</VBox>
 
 			<HBox maxWidth="1000" alignment="CENTER_RIGHT" spacing="12">

@@ -1,13 +1,15 @@
 # VaultKind
 
-**Encryption designed for people.**
+**Desktop First. Windows Focused. Privacy Always.**
 
-VaultKind is a community-driven desktop encryption application focused on accessibility, modern usability, and transparent security. It is currently in private development and is not ready for production use or public distribution.
+VaultKind is a Windows desktop encryption application focused on accessibility, modern usability, and transparent security. Its product promise is simple: **VaultKind is the best Windows desktop vault experience.** It is currently in private development and is not ready for production use or public distribution.
 
 VaultKind is derived from [Cryptomator](https://github.com/cryptomator/cryptomator) under the GNU General Public License v3. It is not affiliated with or endorsed by Skymatic GmbH or the Cryptomator project.
 
 ## Project direction
 
+- Windows is the only supported target; cross-platform parity is not a product goal
+- Desktop-native workflows take priority over web, mobile, and platform-neutral compromises
 - Dark, Light, and System themes included for everyone
 - Clear first-run onboarding and approachable security language
 - Accessible contrast, scalable layouts, and keyboard-friendly interaction
@@ -15,7 +17,7 @@ VaultKind is derived from [Cryptomator](https://github.com/cryptomator/cryptomat
 - Security-sensitive code kept close to upstream to make review and updates safer
 - No VaultKind updater until a dedicated, signed release channel exists
 
-The first development phase deliberately concentrates on the desktop interface. Package names and core cryptographic components retain their upstream identifiers for now; changing them would add risk without improving the user experience.
+The product philosophy and its engineering decision filter are documented in [PRODUCT_PHILOSOPHY.md](docs/PRODUCT_PHILOSOPHY.md). Package names and core cryptographic components retain their upstream identifiers for now; changing them would add risk without improving the user experience.
 
 ## Development status
 

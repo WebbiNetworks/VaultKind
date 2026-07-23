@@ -109,4 +109,8 @@ class SettingsJson {
 	@JsonProperty("trustedHosts")
 	@JsonSetter(nulls = Nulls.AS_EMPTY)
 	Set<String> trustedHosts = new HashSet<>();
+
+	@JsonProperty("learningCenterCompletedTopics")
+	@JsonSetter(nulls = Nulls.AS_EMPTY)
+	Set<String> learningCenterCompletedTopics = new HashSet<>();
 }

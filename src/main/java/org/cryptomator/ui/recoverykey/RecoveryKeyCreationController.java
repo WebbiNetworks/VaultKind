@@ -27,6 +27,8 @@ import javax.inject.Named;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.StringProperty;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.Scene;
@@ -63,6 +65,8 @@ public class RecoveryKeyCreationController implements FxController {
 	public Button nextButton;
 	private final VaultListManager vaultListManager;
 	private final Dialogs dialogs;
+	private final BooleanProperty passwordInvalid = new SimpleBooleanProperty(false);
+	private Runnable embeddedDoneAction;
 
 	@Inject
 	public RecoveryKeyCreationController(FxApplicationWindows appWindows, //
@@ -97,6 +101,7 @@ public class RecoveryKeyCreationController implements FxController {
 
 	@FXML
 	public void initialize() {
+		passwordField.textProperty().addListener((_, _, _) -> passwordInvalid.set(false));
 		if (recoverType.get() == RecoveryActionType.SHOW_KEY) {
 			window.setTitle(resourceBundle.getString("recoveryKey.display.title"));
 		} else if (recoverType.get() == RecoveryActionType.RESTORE_VAULT_CONFIG) {
@@ -127,7 +132,12 @@ public class RecoveryKeyCreationController implements FxController {
 		});
 		task.setOnFailed(event -> {
 			if (task.getException() instanceof InvalidPassphraseException) {
-				Animations.createShakeWindowAnimation(window).play();
+				passwordInvalid.set(true);
+				if (embeddedDoneAction == null) {
+					Animations.createShakeWindowAnimation(window).play();
+				}
+				passwordField.selectAll();
+				passwordField.requestFocus();
 			} else {
 				LOG.error("Creation of recovery key failed.", task.getException());
 				appWindows.showErrorWindow(task.getException(), window, window.getScene());
@@ -193,7 +203,24 @@ public class RecoveryKeyCreationController implements FxController {
 
 	@FXML
 	public void close() {
-		window.close();
+		Runnable doneAction = embeddedDoneAction;
+		cleanup();
+		if (doneAction != null) {
+			doneAction.run();
+		} else {
+			window.close();
+		}
+	}
+
+	public void prepareEmbedded(Runnable doneAction) {
+		embeddedDoneAction = doneAction;
+		passwordInvalid.set(false);
+	}
+
+	public void cleanup() {
+		passwordField.wipe();
+		passwordInvalid.set(false);
+		embeddedDoneAction = null;
 	}
 
 	private class RecoveryKeyCreationTask extends Task<String> {
@@ -213,5 +240,13 @@ public class RecoveryKeyCreationController implements FxController {
 
 	public Vault getVault() {
 		return vault;
+	}
+
+	public BooleanProperty passwordInvalidProperty() {
+		return passwordInvalid;
+	}
+
+	public boolean isPasswordInvalid() {
+		return passwordInvalid.get();
 	}
 }

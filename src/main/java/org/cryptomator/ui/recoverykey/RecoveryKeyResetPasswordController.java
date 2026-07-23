@@ -25,6 +25,9 @@ import javax.inject.Named;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -59,6 +62,10 @@ public class RecoveryKeyResetPasswordController implements FxController {
 	private final ObjectProperty<CryptorProvider.Scheme> cipherCombo;
 	private final ResourceBundle resourceBundle;
 	private final Dialogs dialogs;
+	private final BooleanProperty resetSucceeded = new SimpleBooleanProperty(false);
+	private final BooleanProperty processing = new SimpleBooleanProperty(false);
+	private final StringProperty operationError = new SimpleStringProperty("");
+	private Runnable embeddedDoneAction;
 
 	public NewPasswordController newPasswordController;
 	public Button nextButton;
@@ -111,6 +118,15 @@ public class RecoveryKeyResetPasswordController implements FxController {
 			case RESTORE_ALL -> window.setScene(recoverExpertSettingsScene.get());
 			case RESTORE_MASTERKEY, RESET_PASSWORD -> window.setScene(recoverykeyRecoverScene.get());
 			default -> window.close();
+		}
+	}
+
+	@FXML
+	public void done() {
+		if (embeddedDoneAction != null) {
+			embeddedDoneAction.run();
+		} else {
+			window.close();
 		}
 	}
 
@@ -176,10 +192,17 @@ public class RecoveryKeyResetPasswordController implements FxController {
 
 		task.setOnScheduled(_ -> {
 			LOG.debug("Using recovery key to reset password for {}.", vault.getDisplayablePath());
+			processing.set(true);
+			operationError.set("");
 		});
 
 		task.setOnSucceeded(_ -> {
 			LOG.debug("Used recovery key to reset password for {}.", vault.getDisplayablePath());
+			processing.set(false);
+			if (embeddedDoneAction != null) {
+				resetSucceeded.set(true);
+				return;
+			}
 			window.close();
 			switch (recoverType.get()){
 				case RESET_PASSWORD -> dialogs.prepareRecoverPasswordSuccess((Stage)window.getOwner()).build().showAndWait();
@@ -190,7 +213,12 @@ public class RecoveryKeyResetPasswordController implements FxController {
 
 		task.setOnFailed(_ -> {
 			LOG.error("Resetting password failed.", task.getException());
-			appWindows.showErrorWindow(task.getException(), window, null);
+			processing.set(false);
+			if (embeddedDoneAction != null) {
+				operationError.set(resourceBundle.getString("recoveryKey.reset.inlineError"));
+			} else {
+				appWindows.showErrorWindow(task.getException(), window, null);
+			}
 		});
 
 		executor.submit(task);
@@ -219,6 +247,47 @@ public class RecoveryKeyResetPasswordController implements FxController {
 
 	public boolean isPasswordSufficientAndMatching() {
 		return newPasswordController.isGoodPassword();
+	}
+
+	public boolean isResetSucceeded() {
+		return resetSucceeded.get();
+	}
+
+	public ReadOnlyBooleanProperty resetSucceededProperty() {
+		return resetSucceeded;
+	}
+
+	public boolean isProcessing() {
+		return processing.get();
+	}
+
+	public ReadOnlyBooleanProperty processingProperty() {
+		return processing;
+	}
+
+	public String getOperationError() {
+		return operationError.get();
+	}
+
+	public StringProperty operationErrorProperty() {
+		return operationError;
+	}
+
+	public Vault getVault() {
+		return vault;
+	}
+
+	public void prepareEmbedded(Runnable doneAction) {
+		this.embeddedDoneAction = doneAction;
+		resetSucceeded.set(false);
+		processing.set(false);
+		operationError.set("");
+	}
+
+	public void cleanup() {
+		this.embeddedDoneAction = null;
+		processing.set(false);
+		operationError.set("");
 	}
 
 }

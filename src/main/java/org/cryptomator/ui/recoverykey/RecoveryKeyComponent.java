@@ -29,6 +29,26 @@ public interface RecoveryKeyComponent {
 	@FxmlScene(FxmlFile.RECOVERYKEY_ONBOARDING)
 	Lazy<Scene> recoverOnboardingScene();
 
+	RecoveryKeyCreationController creationController();
+
+	RecoveryKeySuccessController successController();
+
+	RecoveryKeyRecoverController recoverController();
+
+	RecoveryKeyResetPasswordController resetPasswordController();
+
+	default Scene prepareEmbeddedCreation(Runnable doneAction) {
+		creationController().prepareEmbedded(doneAction);
+		successController().prepareEmbedded(doneAction);
+		return creationScene().get();
+	}
+
+	default Scene prepareEmbeddedPasswordReset(Runnable doneAction) {
+		recoverController().prepareEmbedded(doneAction);
+		resetPasswordController().prepareEmbedded(doneAction);
+		return recoverScene().get();
+	}
+
 	default void showRecoveryKeyCreationWindow() {
 		Stage stage = window();
 		stage.setScene(creationScene().get());

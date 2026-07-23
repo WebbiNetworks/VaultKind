@@ -20,6 +20,10 @@ public interface ShareVaultComponent {
 	@FxmlScene(FxmlFile.SHARE_VAULT)
 	Lazy<Scene> scene();
 
+	default Scene prepareEmbeddedView() {
+		return scene().get();
+	}
+
 	default void showShareVaultWindow(){
 		Stage stage = window();
 		stage.setScene(scene().get());

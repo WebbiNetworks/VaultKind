@@ -32,11 +32,13 @@ public class MainWindowNavigation {
 
 	public enum Destination {
 		HOME,
+		VAULT_DOCTOR,
 		VAULTS,
 		ACTIVITY,
 		HOW_IT_WORKS,
 		ADD_VAULT,
 		UNLOCK,
+		SHARE_VAULT,
 		VAULT_OPTIONS,
 		VAULT_TOOL,
 		SETTINGS
@@ -49,6 +51,7 @@ public class MainWindowNavigation {
 	private final ReadOnlyObjectWrapper<String> unlockVaultName = new ReadOnlyObjectWrapper<>("");
 	private final ReadOnlyBooleanWrapper unlockWrongPassword = new ReadOnlyBooleanWrapper(false);
 	private final ReadOnlyBooleanWrapper unlockSavePasswordAvailable = new ReadOnlyBooleanWrapper(false);
+	private final ReadOnlyObjectWrapper<String> shareVaultName = new ReadOnlyObjectWrapper<>("");
 	private final ReadOnlyObjectWrapper<Node> vaultOptionsContent = new ReadOnlyObjectWrapper<>();
 	private final ReadOnlyObjectWrapper<String> vaultOptionsVaultName = new ReadOnlyObjectWrapper<>("");
 	private final ReadOnlyObjectWrapper<Node> vaultToolContent = new ReadOnlyObjectWrapper<>();
@@ -62,6 +65,9 @@ public class MainWindowNavigation {
 	private Runnable vaultToolOnClose;
 	private Scene vaultToolScene;
 	private Parent vaultToolRoot;
+	private final Map<Scene, Parent> vaultToolRoots = new IdentityHashMap<>();
+	private Stage vaultToolStage;
+	private ChangeListener<Scene> vaultToolSceneListener;
 
 	@Inject
 	MainWindowNavigation() {
@@ -73,6 +79,14 @@ public class MainWindowNavigation {
 		leaveVaultOptions();
 		leaveVaultTool();
 		destination.set(Destination.HOME);
+	}
+
+	public void showVaultDoctor() {
+		leaveAddVault();
+		leaveUnlock();
+		leaveVaultOptions();
+		leaveVaultTool();
+		destination.set(Destination.VAULT_DOCTOR);
 	}
 
 	public void showVaults() {
@@ -155,6 +169,15 @@ public class MainWindowNavigation {
 		destination.set(Destination.VAULT_OPTIONS);
 	}
 
+	public void showShareVault(String vaultName) {
+		leaveAddVault();
+		leaveUnlock();
+		leaveVaultOptions();
+		leaveVaultTool();
+		shareVaultName.set(vaultName);
+		destination.set(Destination.SHARE_VAULT);
+	}
+
 	public void showVaultTool(Scene scene, String title, String subtitle, String vaultName, Runnable onClose) {
 		leaveAddVault();
 		leaveUnlock();
@@ -172,6 +195,42 @@ public class MainWindowNavigation {
 		destination.set(Destination.VAULT_TOOL);
 		Platform.runLater(() -> {
 			if (destination.get() == Destination.VAULT_TOOL && vaultToolRoot == content) {
+				vaultToolContent.set(content);
+				content.applyCss();
+				content.layout();
+			}
+		});
+	}
+
+	public void showVaultToolWizard(Stage stage, Scene initialScene, String title, String subtitle, String vaultName, Runnable onClose) {
+		leaveAddVault();
+		leaveUnlock();
+		leaveVaultOptions();
+		leaveVaultTool();
+		vaultToolTitle.set(title);
+		vaultToolSubtitle.set(subtitle);
+		vaultToolVaultName.set(vaultName);
+		vaultToolOnClose = onClose;
+		vaultToolStage = stage;
+		vaultToolSceneListener = (_, _, scene) -> mountVaultToolScene(scene);
+		stage.sceneProperty().addListener(vaultToolSceneListener);
+		stage.setScene(initialScene);
+		destination.set(Destination.VAULT_TOOL);
+		mountVaultToolScene(initialScene);
+	}
+
+	private void mountVaultToolScene(Scene scene) {
+		if (scene == null) {
+			return;
+		}
+		Parent content = vaultToolRoots.computeIfAbsent(scene, currentScene -> {
+			Parent root = currentScene.getRoot();
+			currentScene.setRoot(new StackPane());
+			root.getStyleClass().add("embedded-vault-tool-card");
+			return root;
+		});
+		Platform.runLater(() -> {
+			if (destination.get() == Destination.VAULT_TOOL && vaultToolStage != null) {
 				vaultToolContent.set(content);
 				content.applyCss();
 				content.layout();
@@ -215,6 +274,13 @@ public class MainWindowNavigation {
 		}
 		vaultToolOnClose = null;
 		vaultToolContent.set(null);
+		if (vaultToolStage != null && vaultToolSceneListener != null) {
+			vaultToolStage.sceneProperty().removeListener(vaultToolSceneListener);
+		}
+		vaultToolRoots.forEach(Scene::setRoot);
+		vaultToolRoots.clear();
+		vaultToolStage = null;
+		vaultToolSceneListener = null;
 		if (vaultToolScene != null && vaultToolRoot != null) {
 			vaultToolScene.setRoot(vaultToolRoot);
 		}
@@ -274,6 +340,10 @@ public class MainWindowNavigation {
 
 	public ReadOnlyBooleanProperty unlockSavePasswordAvailableProperty() {
 		return unlockSavePasswordAvailable.getReadOnlyProperty();
+	}
+
+	public ReadOnlyObjectProperty<String> shareVaultNameProperty() {
+		return shareVaultName.getReadOnlyProperty();
 	}
 
 	public ReadOnlyObjectProperty<Node> vaultOptionsContentProperty() {

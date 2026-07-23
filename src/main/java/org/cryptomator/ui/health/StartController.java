@@ -41,9 +41,13 @@ public class StartController implements FxController {
 	private final AtomicReference<VaultConfig> vaultConfigRef;
 	private final Lazy<Scene> checkScene;
 	private final FxApplicationWindows appWindows;
+	private final Lazy<CheckListController> checkListController;
+	private CheckListController activeCheckListController;
+	private Runnable embeddedCloseAction;
+	private Runnable embeddedReadyAction;
 
 	@Inject
-	public StartController(@HealthCheckWindow Stage window, @HealthCheckWindow Vault vault, @HealthCheckWindow KeyLoadingStrategy keyLoadingStrategy, ExecutorService executor, AtomicReference<Masterkey> masterkeyRef, AtomicReference<VaultConfig> vaultConfigRef, @FxmlScene(FxmlFile.HEALTH_CHECK_LIST) Lazy<Scene> checkScene, FxApplicationWindows appWindows, @Named("unlockWindow") Stage unlockWindow) {
+	public StartController(@HealthCheckWindow Stage window, @HealthCheckWindow Vault vault, @HealthCheckWindow KeyLoadingStrategy keyLoadingStrategy, ExecutorService executor, AtomicReference<Masterkey> masterkeyRef, AtomicReference<VaultConfig> vaultConfigRef, @FxmlScene(FxmlFile.HEALTH_CHECK_LIST) Lazy<Scene> checkScene, FxApplicationWindows appWindows, @Named("unlockWindow") Stage unlockWindow, Lazy<CheckListController> checkListController) {
 		this.window = window;
 		this.unlockWindow = unlockWindow;
 		this.vaultConfig = vault.getVaultConfigCache();
@@ -53,12 +57,17 @@ public class StartController implements FxController {
 		this.vaultConfigRef = vaultConfigRef;
 		this.checkScene = checkScene;
 		this.appWindows = appWindows;
+		this.checkListController = checkListController;
 	}
 
 	@FXML
 	public void close() {
 		LOG.trace("StartController.close()");
-		window.close();
+		if (embeddedCloseAction != null) {
+			embeddedCloseAction.run();
+		} else {
+			window.close();
+		}
 	}
 
 	@FXML
@@ -98,7 +107,26 @@ public class StartController implements FxController {
 			LOG.debug("Loaded valid key");
 			unlockWindow.close();
 			window.setScene(checkScene.get());
+			activeCheckListController = checkListController.get();
+			activeCheckListController.prepareEmbedded(embeddedCloseAction);
+			if (embeddedReadyAction != null) {
+				embeddedReadyAction.run();
+			}
 		}
+	}
+
+	public void prepareEmbedded(Runnable closeAction, Runnable readyAction) {
+		this.embeddedCloseAction = closeAction;
+		this.embeddedReadyAction = readyAction;
+	}
+
+	public void cleanup() {
+		if (activeCheckListController != null) {
+			activeCheckListController.cleanup();
+			activeCheckListController = null;
+		}
+		this.embeddedCloseAction = null;
+		this.embeddedReadyAction = null;
 	}
 
 	private void loadingKeyFailed(Throwable t) {

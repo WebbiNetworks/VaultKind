@@ -101,6 +101,8 @@ public class VaultListController implements FxController {
 	private Button addVaultButton;
 	@FXML
 	private ToggleButton homeButton;
+	@FXML
+	private ToggleButton vaultDoctorButton;
 
 	@Inject
 	VaultListController(@MainWindow Stage mainWindow, //
@@ -160,8 +162,9 @@ public class VaultListController implements FxController {
 				}
 			}
 		});
-		homeButton.setSelected(selectedVault.get() == null);
-		selectedVault.addListener((observable, oldValue, newValue) -> homeButton.setSelected(newValue == null));
+		updateNavigationSelection();
+		selectedVault.addListener((observable, oldValue, newValue) -> updateNavigationSelection());
+		navigation.destinationProperty().addListener((observable, oldValue, newValue) -> updateNavigationSelection());
 		vaultList.addEventFilter(MouseEvent.MOUSE_RELEASED, this::deselect);
 
 		//unlock vault on double click
@@ -259,6 +262,17 @@ public class VaultListController implements FxController {
 		vaultList.getSelectionModel().clearSelection();
 		homeButton.setSelected(true);
 		navigation.showHome();
+	}
+
+	@FXML
+	public void showVaultDoctor() {
+		vaultList.getSelectionModel().clearSelection();
+		navigation.showVaultDoctor();
+	}
+
+	private void updateNavigationSelection() {
+		homeButton.setSelected(navigation.destinationProperty().get() == MainWindowNavigation.Destination.HOME);
+		vaultDoctorButton.setSelected(navigation.destinationProperty().get() == MainWindowNavigation.Destination.VAULT_DOCTOR);
 	}
 
 	@FXML

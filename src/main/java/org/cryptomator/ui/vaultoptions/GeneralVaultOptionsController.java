@@ -5,6 +5,7 @@ import org.cryptomator.common.vaults.Vault;
 import org.cryptomator.ui.common.FxController;
 import org.cryptomator.ui.controls.NumericTextField;
 import org.cryptomator.ui.health.HealthCheckComponent;
+import org.cryptomator.ui.mainwindow.MainWindowNavigation;
 
 import javax.inject.Inject;
 import javafx.beans.Observable;
@@ -18,16 +19,20 @@ import javafx.scene.control.TextFormatter;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import java.util.ResourceBundle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @VaultOptionsScoped
 public class GeneralVaultOptionsController implements FxController {
 
 	private static final int VAULTNAME_TRUNCATE_THRESHOLD = 50;
+	private static final Logger LOG = LoggerFactory.getLogger(GeneralVaultOptionsController.class);
 
 	private final Stage window;
 	private final Vault vault;
 	private final HealthCheckComponent.Builder healthCheckWindow;
 	private final ResourceBundle resourceBundle;
+	private final MainWindowNavigation navigation;
 
 	public TextField vaultName;
 	public CheckBox unlockOnStartupCheckbox;
@@ -36,11 +41,12 @@ public class GeneralVaultOptionsController implements FxController {
 	public NumericTextField lockTimeInMinutesTextField;
 
 	@Inject
-	GeneralVaultOptionsController(@VaultOptionsWindow Stage window, @VaultOptionsWindow Vault vault, HealthCheckComponent.Builder healthCheckWindow, ResourceBundle resourceBundle) {
+	GeneralVaultOptionsController(@VaultOptionsWindow Stage window, @VaultOptionsWindow Vault vault, HealthCheckComponent.Builder healthCheckWindow, ResourceBundle resourceBundle, MainWindowNavigation navigation) {
 		this.window = window;
 		this.vault = vault;
 		this.healthCheckWindow = healthCheckWindow;
 		this.resourceBundle = resourceBundle;
+		this.navigation = navigation;
 	}
 
 	@FXML
@@ -115,6 +121,19 @@ public class GeneralVaultOptionsController implements FxController {
 	}
 
 	public void startHealthCheck() {
-		healthCheckWindow.vault(vault).owner(window).build().showHealthCheckWindow();
+		LOG.info("Opening embedded health check for {}.", vault.getDisplayablePath());
+		try {
+			var component = healthCheckWindow.vault(vault).owner(window).build();
+			Runnable closeAction = () -> {
+				component.cleanupEmbedded();
+				navigation.showVaults();
+			};
+			Runnable readyAction = () -> navigation.showVaultToolWizard(component.window(), component.window().getScene(), resourceBundle.getString("health.workspace.title"), resourceBundle.getString("health.workspace.subtitle"), vault.getDisplayName(), component::cleanupEmbedded);
+			var scene = component.prepareEmbedded(closeAction, readyAction);
+			navigation.showVaultToolWizard(component.window(), scene, resourceBundle.getString("health.workspace.title"), resourceBundle.getString("health.workspace.subtitle"), vault.getDisplayName(), () -> {});
+		} catch (RuntimeException e) {
+			LOG.error("Unable to open the embedded health check.", e);
+			throw e;
+		}
 	}
 }

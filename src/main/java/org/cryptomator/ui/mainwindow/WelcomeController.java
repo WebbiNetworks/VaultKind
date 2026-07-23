@@ -45,6 +45,11 @@ public class WelcomeController implements FxController {
 		navigation.showHowItWorks();
 	}
 
+	@FXML
+	public void openVaultDoctor() {
+		navigation.showVaultDoctor();
+	}
+
 	/* Getter/Setter */
 
 	public BooleanBinding noVaultPresentProperty() {

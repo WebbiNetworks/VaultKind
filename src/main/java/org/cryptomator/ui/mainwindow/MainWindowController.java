@@ -9,6 +9,7 @@ import org.cryptomator.ui.preferences.SelectedPreferencesTab;
 import org.cryptomator.common.Passphrase;
 import org.cryptomator.ui.controls.NiceSecurePasswordField;
 import org.cryptomator.ui.keyloading.masterkeyfile.PassphraseEntryResult;
+import org.cryptomator.integrations.mount.MountService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,9 +28,17 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.layout.StackPane;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import javafx.collections.ObservableList;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import java.nio.file.Files;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.ResourceBundle;
 
 @MainWindowScoped
@@ -42,15 +51,37 @@ public class MainWindowController implements FxController {
 	private final Settings settings;
 	private final MainWindowNavigation navigation;
 	private final ResourceBundle resourceBundle;
+	private final ObservableList<Vault> vaults;
+	private final List<MountService> mountServices;
 	private final StringProperty contextTitle = new SimpleStringProperty();
 	private final StringProperty contentTitle = new SimpleStringProperty();
 	private final StringProperty contentSubtitle = new SimpleStringProperty();
 	private final BooleanProperty unlockButtonDisabled = new SimpleBooleanProperty(true);
+	private final StringProperty doctorOverallTitle = new SimpleStringProperty();
+	private final StringProperty doctorOverallDescription = new SimpleStringProperty();
+	private final StringProperty doctorLastChecked = new SimpleStringProperty();
+	private final IntegerProperty doctorHealthyCount = new SimpleIntegerProperty();
+	private final IntegerProperty doctorAttentionCount = new SimpleIntegerProperty();
+	private final IntegerProperty doctorInformationCount = new SimpleIntegerProperty(3);
 
 	@FXML
 	private StackPane root;
 	@FXML
 	private Node workspacePane;
+	@FXML
+	private Node vaultDoctorPane;
+	@FXML
+	private Label doctorConfigurationStatus;
+	@FXML
+	private Label doctorLocationStatus;
+	@FXML
+	private Label doctorStorageStatus;
+	@FXML
+	private Label doctorWindowsStatus;
+	@FXML
+	private Label doctorMountStatus;
+	@FXML
+	private Label doctorSettingsStatus;
 	@FXML
 	private Node settingsPane;
 	@FXML
@@ -63,6 +94,8 @@ public class MainWindowController implements FxController {
 	private StackPane addVaultContentHost;
 	@FXML
 	private Node unlockPane;
+	@FXML
+	private Node shareVaultPane;
 	@FXML
 	private NiceSecurePasswordField unlockPasswordField;
 	@FXML
@@ -81,12 +114,16 @@ public class MainWindowController implements FxController {
 								ObjectProperty<Vault> selectedVault, //
 								Settings settings, //
 								MainWindowNavigation navigation, //
-								ResourceBundle resourceBundle) {
+								ResourceBundle resourceBundle, //
+								ObservableList<Vault> vaults, //
+								List<MountService> mountServices) {
 		this.window = window;
 		this.selectedVault = selectedVault;
 		this.settings = settings;
 		this.navigation = navigation;
 		this.resourceBundle = resourceBundle;
+		this.vaults = vaults;
+		this.mountServices = mountServices;
 	}
 
 	@FXML
@@ -137,6 +174,7 @@ public class MainWindowController implements FxController {
 		MainWindowNavigation.Destination destination = navigation.destinationProperty().get();
 		contextTitle.set(switch (destination) {
 			case HOME -> resourceBundle.getString("main.home");
+			case VAULT_DOCTOR -> resourceBundle.getString("main.vaultDoctor");
 			case VAULTS -> selectedVault.get() == null
 					? resourceBundle.getString("main.vaultlist")
 					: resourceBundle.getString("main.context.vault").formatted(selectedVault.get().getDisplayName());
@@ -144,6 +182,7 @@ public class MainWindowController implements FxController {
 			case HOW_IT_WORKS -> resourceBundle.getString(navigation.assistantModeProperty().get() ? "howItWorks.assistant.title" : "howItWorks.title");
 			case ADD_VAULT -> resourceBundle.getString("addvaultwizard.title");
 			case UNLOCK -> resourceBundle.getString("main.content.unlock.title");
+			case SHARE_VAULT -> resourceBundle.getString("shareVault.title");
 			case VAULT_OPTIONS -> resourceBundle.getString("main.content.vaultOptions.title");
 			case VAULT_TOOL -> navigation.vaultToolTitleProperty().get();
 			case SETTINGS -> resourceBundle.getString("main.context.settings").formatted(preferencesTabTitle());
@@ -152,11 +191,13 @@ public class MainWindowController implements FxController {
 				? navigation.vaultToolTitleProperty().get()
 				: resourceBundle.getString(switch (destination) {
 			case HOME -> "main.content.dashboard.title";
+			case VAULT_DOCTOR -> "main.vaultDoctor";
 			case VAULTS -> "main.content.vaults.title";
 			case ACTIVITY -> "main.content.activity.title";
 			case HOW_IT_WORKS -> navigation.assistantModeProperty().get() ? "howItWorks.assistant.title" : "howItWorks.title";
 			case ADD_VAULT -> "main.content.addVault.title";
 			case UNLOCK -> "main.content.unlock.title";
+			case SHARE_VAULT -> "shareVault.title";
 			case VAULT_OPTIONS -> "main.content.vaultOptions.title";
 			case VAULT_TOOL -> throw new IllegalStateException();
 			case SETTINGS -> "main.content.settings.title";
@@ -165,11 +206,13 @@ public class MainWindowController implements FxController {
 				? navigation.vaultToolSubtitleProperty().get()
 				: resourceBundle.getString(switch (destination) {
 			case HOME -> "main.content.dashboard.subtitle";
+			case VAULT_DOCTOR -> "main.vaultDoctor.subtitle";
 			case VAULTS -> "main.content.vaults.subtitle";
 			case ACTIVITY -> "main.content.activity.subtitle";
 			case HOW_IT_WORKS -> navigation.assistantModeProperty().get() ? "howItWorks.assistant.workspace.subtitle" : "howItWorks.subtitle";
 			case ADD_VAULT -> "main.content.addVault.subtitle";
 			case UNLOCK -> "main.content.unlock.subtitle";
+			case SHARE_VAULT -> "shareVault.workspace.subtitle";
 			case VAULT_OPTIONS -> "main.content.vaultOptions.subtitle";
 			case VAULT_TOOL -> throw new IllegalStateException();
 			case SETTINGS -> "main.content.settings.subtitle";
@@ -188,13 +231,18 @@ public class MainWindowController implements FxController {
 
 	private void showDestination(MainWindowNavigation.Destination destination) {
 		showOnly(destination == MainWindowNavigation.Destination.SETTINGS ? settingsPane
+				: destination == MainWindowNavigation.Destination.VAULT_DOCTOR ? vaultDoctorPane
 				: destination == MainWindowNavigation.Destination.ACTIVITY ? activityPane
 				: destination == MainWindowNavigation.Destination.HOW_IT_WORKS ? howItWorksPane
 				: destination == MainWindowNavigation.Destination.ADD_VAULT ? addVaultPane
 				: destination == MainWindowNavigation.Destination.UNLOCK ? unlockPane
+				: destination == MainWindowNavigation.Destination.SHARE_VAULT ? shareVaultPane
 				: destination == MainWindowNavigation.Destination.VAULT_OPTIONS ? vaultOptionsPane
 				: destination == MainWindowNavigation.Destination.VAULT_TOOL ? vaultToolPane
 				: workspacePane);
+		if (destination == MainWindowNavigation.Destination.VAULT_DOCTOR) {
+			runVaultDoctor();
+		}
 	}
 
 	private void showVaultOptionsContent(Node content) {
@@ -219,7 +267,7 @@ public class MainWindowController implements FxController {
 	}
 
 	private void showOnly(Node selectedPane) {
-		for (Node pane : new Node[]{workspacePane, settingsPane, activityPane, howItWorksPane, addVaultPane, unlockPane, vaultOptionsPane, vaultToolPane}) {
+		for (Node pane : new Node[]{workspacePane, vaultDoctorPane, settingsPane, activityPane, howItWorksPane, addVaultPane, unlockPane, shareVaultPane, vaultOptionsPane, vaultToolPane}) {
 			boolean selected = pane == selectedPane;
 			pane.setVisible(selected);
 			pane.setManaged(selected);
@@ -234,6 +282,78 @@ public class MainWindowController implements FxController {
 	@FXML
 	public void showVaults() {
 		navigation.showVaults();
+	}
+
+	@FXML
+	public void runVaultDoctor() {
+		vaults.forEach(VaultListManager::redetermineVaultState);
+		int healthy = 0;
+		int attention = 0;
+
+		boolean configurationsHealthy = vaults.stream().allMatch(vault -> switch (vault.getState()) {
+			case LOCKED, UNLOCKED, PROCESSING -> true;
+			default -> false;
+		});
+		setDoctorStatus(doctorConfigurationStatus, configurationsHealthy,
+				vaults.isEmpty() ? resourceBundle.getString("main.vaultDoctor.status.noVaults") : resourceBundle.getString("main.vaultDoctor.status.configHealthy").formatted(vaults.size()),
+				resourceBundle.getString("main.vaultDoctor.status.configAttention"));
+		if (vaults.isEmpty()) {
+			// No configured vault is not a fault, so keep this result informational.
+		} else if (configurationsHealthy) {
+			healthy++;
+		} else {
+			attention++;
+		}
+
+		boolean locationsHealthy = vaults.stream().allMatch(vault -> Files.isDirectory(vault.getPath()) && Files.isReadable(vault.getPath()) && Files.isWritable(vault.getPath()));
+		setDoctorStatus(doctorLocationStatus, locationsHealthy,
+				vaults.isEmpty() ? resourceBundle.getString("main.vaultDoctor.status.noVaults") : resourceBundle.getString("main.vaultDoctor.status.locationHealthy"),
+				resourceBundle.getString("main.vaultDoctor.status.locationAttention"));
+		if (!vaults.isEmpty()) {
+			if (locationsHealthy) healthy++; else attention++;
+		}
+
+		boolean storageHealthy = vaults.stream().allMatch(vault -> {
+			try {
+				return Files.getFileStore(vault.getPath()).getUsableSpace() > 0;
+			} catch (Exception e) {
+				return false;
+			}
+		});
+		setDoctorStatus(doctorStorageStatus, storageHealthy,
+				vaults.isEmpty() ? resourceBundle.getString("main.vaultDoctor.status.noVaults") : resourceBundle.getString("main.vaultDoctor.status.storageHealthy"),
+				resourceBundle.getString("main.vaultDoctor.status.storageAttention"));
+		if (!vaults.isEmpty()) {
+			if (storageHealthy) healthy++; else attention++;
+		}
+
+		boolean windowsHealthy = SystemUtils.IS_OS_WINDOWS;
+		setDoctorStatus(doctorWindowsStatus, windowsHealthy, resourceBundle.getString("main.vaultDoctor.status.windowsHealthy"), resourceBundle.getString("main.vaultDoctor.status.windowsAttention"));
+		if (windowsHealthy) healthy++; else attention++;
+
+		boolean mountHealthy = !mountServices.isEmpty();
+		setDoctorStatus(doctorMountStatus, mountHealthy, resourceBundle.getString("main.vaultDoctor.status.mountHealthy"), resourceBundle.getString("main.vaultDoctor.status.mountAttention"));
+		if (mountHealthy) healthy++; else attention++;
+
+		setDoctorStatus(doctorSettingsStatus, true, resourceBundle.getString("main.vaultDoctor.status.settingsHealthy"), "");
+		healthy++;
+
+		doctorHealthyCount.set(healthy);
+		doctorAttentionCount.set(attention);
+		doctorLastChecked.set(resourceBundle.getString("main.vaultDoctor.lastChecked").formatted(LocalDateTime.now().format(DateTimeFormatter.ofPattern("MMM d, yyyy h:mm a"))));
+		if (attention == 0) {
+			doctorOverallTitle.set(resourceBundle.getString("main.vaultDoctor.overallHealthy"));
+			doctorOverallDescription.set(resourceBundle.getString("main.vaultDoctor.overallHealthyDescription"));
+		} else {
+			doctorOverallTitle.set(resourceBundle.getString("main.vaultDoctor.overallAttention").formatted(attention));
+			doctorOverallDescription.set(resourceBundle.getString("main.vaultDoctor.overallAttentionDescription"));
+		}
+	}
+
+	private void setDoctorStatus(Label label, boolean healthy, String healthyText, String attentionText) {
+		label.setText((healthy ? "✓  " : "!  ") + (healthy ? healthyText : attentionText));
+		label.getStyleClass().removeAll("vault-doctor-status-healthy", "vault-doctor-status-attention");
+		label.getStyleClass().add(healthy ? "vault-doctor-status-healthy" : "vault-doctor-status-attention");
 	}
 
 	@FXML
@@ -373,8 +493,64 @@ public class MainWindowController implements FxController {
 		return unlockPasswordField == null || unlockPasswordField.getText().isEmpty();
 	}
 
+	public StringProperty doctorOverallTitleProperty() {
+		return doctorOverallTitle;
+	}
+
+	public String getDoctorOverallTitle() {
+		return doctorOverallTitle.get();
+	}
+
+	public StringProperty doctorOverallDescriptionProperty() {
+		return doctorOverallDescription;
+	}
+
+	public String getDoctorOverallDescription() {
+		return doctorOverallDescription.get();
+	}
+
+	public StringProperty doctorLastCheckedProperty() {
+		return doctorLastChecked;
+	}
+
+	public String getDoctorLastChecked() {
+		return doctorLastChecked.get();
+	}
+
+	public IntegerProperty doctorHealthyCountProperty() {
+		return doctorHealthyCount;
+	}
+
+	public int getDoctorHealthyCount() {
+		return doctorHealthyCount.get();
+	}
+
+	public IntegerProperty doctorAttentionCountProperty() {
+		return doctorAttentionCount;
+	}
+
+	public int getDoctorAttentionCount() {
+		return doctorAttentionCount.get();
+	}
+
+	public IntegerProperty doctorInformationCountProperty() {
+		return doctorInformationCount;
+	}
+
+	public int getDoctorInformationCount() {
+		return doctorInformationCount.get();
+	}
+
 	public ReadOnlyObjectProperty<String> vaultOptionsVaultNameProperty() {
 		return navigation.vaultOptionsVaultNameProperty();
+	}
+
+	public ReadOnlyObjectProperty<String> shareVaultNameProperty() {
+		return navigation.shareVaultNameProperty();
+	}
+
+	public String getShareVaultName() {
+		return shareVaultNameProperty().get();
 	}
 
 	public String getVaultOptionsVaultName() {

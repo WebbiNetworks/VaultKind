@@ -7,6 +7,7 @@ import org.cryptomator.ui.changepassword.ChangePasswordComponent;
 import org.cryptomator.ui.common.FxController;
 import org.cryptomator.ui.forgetpassword.ForgetPasswordComponent;
 import org.cryptomator.ui.recoverykey.RecoveryKeyComponent;
+import org.cryptomator.ui.mainwindow.MainWindowNavigation;
 
 import javax.inject.Inject;
 import javafx.beans.property.BooleanProperty;
@@ -16,6 +17,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.stage.Stage;
 import java.nio.file.Files;
+import java.util.ResourceBundle;
 
 import static org.cryptomator.common.Constants.MASTERKEY_FILENAME;
 
@@ -30,16 +32,20 @@ public class MasterkeyOptionsController implements FxController {
 	private final KeychainManager keychain;
 	private final ObservableValue<Boolean> passwordSaved;
 	private final BooleanProperty masterkeyFileAvailable;
+	private final MainWindowNavigation navigation;
+	private final ResourceBundle resourceBundle;
 
 
 	@Inject
-	MasterkeyOptionsController(@VaultOptionsWindow Vault vault, @VaultOptionsWindow Stage window, ChangePasswordComponent.Builder changePasswordWindow, RecoveryKeyComponent.Factory recoveryKeyWindow, ForgetPasswordComponent.Builder forgetPasswordWindow, KeychainManager keychain) {
+	MasterkeyOptionsController(@VaultOptionsWindow Vault vault, @VaultOptionsWindow Stage window, ChangePasswordComponent.Builder changePasswordWindow, RecoveryKeyComponent.Factory recoveryKeyWindow, ForgetPasswordComponent.Builder forgetPasswordWindow, KeychainManager keychain, MainWindowNavigation navigation, ResourceBundle resourceBundle) {
 		this.vault = vault;
 		this.window = window;
 		this.changePasswordWindow = changePasswordWindow;
 		this.recoveryKeyWindow = recoveryKeyWindow;
 		this.forgetPasswordWindow = forgetPasswordWindow;
 		this.keychain = keychain;
+		this.navigation = navigation;
+		this.resourceBundle = resourceBundle;
 		if (keychain.isSupported() && !keychain.isLocked()) {
 			this.passwordSaved = keychain.getPassphraseStoredProperty(vault.getId()).orElse(false);
 		} else {
@@ -50,17 +56,36 @@ public class MasterkeyOptionsController implements FxController {
 
 	@FXML
 	public void changePassword() {
-		changePasswordWindow.vault(vault).owner(window).build().showChangePasswordWindow();
+		var component = changePasswordWindow.vault(vault).owner(window).build();
+		navigation.showVaultTool(component.prepareEmbeddedView(navigation::showVaults), //
+				resourceBundle.getString("changepassword.title"), //
+				resourceBundle.getString("changepassword.workspace.subtitle"), //
+				vault.getDisplayName(), //
+				component.controller()::cleanup);
 	}
 
 	@FXML
 	public void showRecoveryKey() {
-		recoveryKeyWindow.create(vault, window, new SimpleObjectProperty<>(RecoveryActionType.SHOW_KEY)).showRecoveryKeyCreationWindow();
+		var component = recoveryKeyWindow.create(vault, window, new SimpleObjectProperty<>(RecoveryActionType.SHOW_KEY));
+		var scene = component.prepareEmbeddedCreation(navigation::showVaults);
+		navigation.showVaultToolWizard(component.window(), scene, //
+				resourceBundle.getString("recoveryKey.display.title"), //
+				resourceBundle.getString("recoveryKey.workspace.subtitle"), //
+				vault.getDisplayName(), //
+				() -> {
+					component.creationController().cleanup();
+					component.successController().cleanup();
+				});
 	}
 
 	@FXML
 	public void showRecoverVaultDialog() {
-		recoveryKeyWindow.create(vault, window, new SimpleObjectProperty<>(RecoveryActionType.RESET_PASSWORD)).showRecoveryKeyRecoverWindow();
+		var component = recoveryKeyWindow.create(vault, window, new SimpleObjectProperty<>(RecoveryActionType.RESET_PASSWORD));
+		var scene = component.prepareEmbeddedPasswordReset(navigation::showVaults);
+		navigation.showVaultToolWizard(component.window(), scene, resourceBundle.getString("recoveryKey.recover.title"), resourceBundle.getString("recoveryKey.reset.workspace.subtitle"), vault.getDisplayName(), () -> {
+			component.recoverController().cleanup();
+			component.resetPasswordController().cleanup();
+		});
 	}
 
 	@FXML

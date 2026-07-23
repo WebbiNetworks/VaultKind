@@ -38,6 +38,7 @@ public class CheckListController implements FxController {
 	private final IntegerBinding chosenTaskCount;
 	private final BooleanBinding anyCheckSelected;
 	private final CheckListCellFactory listCellFactory;
+	private Runnable embeddedDoneAction;
 
 	/* FXML */
 	public ListView<Check> checksListView;
@@ -103,6 +104,26 @@ public class CheckListController implements FxController {
 			LOG.error("Failed to write health check report.", e);
 			appWindows.showErrorWindow(e, window, window.getScene());
 		}
+	}
+
+	@FXML
+	public void done() {
+		if (embeddedDoneAction != null) {
+			embeddedDoneAction.run();
+		} else {
+			window.close();
+		}
+	}
+
+	public void prepareEmbedded(Runnable doneAction) {
+		this.embeddedDoneAction = doneAction;
+	}
+
+	public void cleanup() {
+		if (somethingsRunning.get()) {
+			checkExecutor.cancel();
+		}
+		this.embeddedDoneAction = null;
 	}
 
 	/* Getter/Setter */

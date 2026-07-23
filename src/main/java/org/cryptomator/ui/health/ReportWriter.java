@@ -31,7 +31,7 @@ public class ReportWriter {
 	private static final Logger LOG = LoggerFactory.getLogger(ReportWriter.class);
 	private static final String REPORT_HEADER = """
 			*******************************************
-			*     Cryptomator Vault Health Report     *
+			*       VaultKind Vault Doctor Report     *
 			*******************************************
 			Analyzed vault: %s (Current name "%s")
 			Vault storage path: %s

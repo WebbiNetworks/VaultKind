@@ -45,7 +45,8 @@ public class VaultDetailLockedController implements FxController {
 
 	@FXML
 	public void share() {
-		appWindows.showShareVaultWindow(vault.get());
+		var selectedVault = vault.get();
+		navigation.showShareVault(selectedVault.getDisplayName());
 	}
 
 	@FXML

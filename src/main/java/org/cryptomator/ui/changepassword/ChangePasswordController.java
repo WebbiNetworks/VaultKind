@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javafx.beans.binding.BooleanBinding;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -39,6 +41,9 @@ public class ChangePasswordController implements FxController {
 	private final FxApplicationWindows appWindows;
 	private final KeychainManager keychain;
 	private final MasterkeyFileAccess masterkeyFileAccess;
+	private final BooleanProperty oldPasswordInvalid = new SimpleBooleanProperty(false);
+	private final BooleanProperty passwordChanged = new SimpleBooleanProperty(false);
+	private Runnable embeddedDoneAction;
 
 	public NiceSecurePasswordField oldPasswordField;
 	public CheckBox finalConfirmationCheckbox;
@@ -59,6 +64,7 @@ public class ChangePasswordController implements FxController {
 		BooleanBinding checkboxNotConfirmed = finalConfirmationCheckbox.selectedProperty().not();
 		BooleanBinding oldPasswordFieldEmpty = oldPasswordField.textProperty().isEmpty();
 		finishButton.disableProperty().bind(checkboxNotConfirmed.or(oldPasswordFieldEmpty).or(newPasswordController.goodPasswordProperty().not()));
+		oldPasswordField.textProperty().addListener((_, _, _) -> oldPasswordInvalid.set(false));
 		window.setOnHiding(event -> {
 			oldPasswordField.wipe();
 			newPasswordController.passwordField.wipe();
@@ -68,7 +74,13 @@ public class ChangePasswordController implements FxController {
 
 	@FXML
 	public void cancel() {
-		window.close();
+		Runnable doneAction = embeddedDoneAction;
+		cleanup();
+		if (doneAction != null) {
+			doneAction.run();
+		} else {
+			window.close();
+		}
 	}
 
 	@FXML
@@ -84,14 +96,50 @@ public class ChangePasswordController implements FxController {
 			Files.write(masterkeyPath, newMasterkeyBytes, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
 			LOG.info("Successfully changed password for {}", vault.getDisplayName());
 			updatePasswordInSystemkeychain();
-			window.close();
+			if (embeddedDoneAction != null) {
+				passwordChanged.set(true);
+				oldPasswordField.wipe();
+				newPasswordController.passwordField.wipe();
+				newPasswordController.reenterField.wipe();
+			} else {
+				window.close();
+			}
 		} catch (InvalidPassphraseException e) {
-			Animations.createShakeWindowAnimation(window).play();
+			oldPasswordInvalid.set(true);
+			if (embeddedDoneAction == null) {
+				Animations.createShakeWindowAnimation(window).play();
+			}
 			oldPasswordField.selectAll();
 			oldPasswordField.requestFocus();
 		} catch (IOException | CryptoException e) {
 			LOG.error("Password change failed. Unable to perform operation.", e);
 			appWindows.showErrorWindow(e, window, window.getScene());
+		}
+	}
+
+	public void prepareEmbedded(Runnable doneAction) {
+		this.embeddedDoneAction = doneAction;
+		oldPasswordInvalid.set(false);
+		passwordChanged.set(false);
+	}
+
+	public void cleanup() {
+		oldPasswordField.wipe();
+		newPasswordController.passwordField.wipe();
+		newPasswordController.reenterField.wipe();
+		oldPasswordInvalid.set(false);
+		passwordChanged.set(false);
+		embeddedDoneAction = null;
+	}
+
+	@FXML
+	public void done() {
+		if (embeddedDoneAction != null) {
+			Runnable doneAction = embeddedDoneAction;
+			cleanup();
+			doneAction.run();
+		} else {
+			window.close();
 		}
 	}
 
@@ -110,6 +158,22 @@ public class ChangePasswordController implements FxController {
 
 	public Vault getVault() {
 		return vault;
+	}
+
+	public BooleanProperty oldPasswordInvalidProperty() {
+		return oldPasswordInvalid;
+	}
+
+	public boolean isOldPasswordInvalid() {
+		return oldPasswordInvalid.get();
+	}
+
+	public BooleanProperty passwordChangedProperty() {
+		return passwordChanged;
+	}
+
+	public boolean isPasswordChanged() {
+		return passwordChanged.get();
 	}
 
 }

@@ -6,6 +6,8 @@
 
 VaultKind is intentionally a Windows desktop product. It does not pursue cross-platform parity, a browser-based experience, or mobile clients. This focus gives the project permission to use Windows-native behavior, terminology, accessibility features, packaging, and system integration whenever they produce a better experience.
 
+The accepted long-term interface direction is documented in [ADR 0001: Move Toward a Native Windows Interface](decisions/0001-native-windows-ui.md). VaultKind will move incrementally toward a WinUI 3 frontend while retaining the proven Java vault engine until a secure, compatible replacement is independently justified.
+
 ## Desktop First
 
 - Design complete desktop workflows instead of shrinking web patterns into a desktop window.

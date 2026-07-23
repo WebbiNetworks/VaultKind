@@ -11,6 +11,8 @@ import org.cryptomator.ui.common.FxmlScene;
 import javax.inject.Named;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import org.cryptomator.cryptolib.api.Masterkey;
+import java.util.concurrent.atomic.AtomicReference;
 
 @HealthCheckScoped
 @Subcomponent(modules = {HealthCheckModule.class})
@@ -21,6 +23,23 @@ public interface HealthCheckComponent {
 
 	@FxmlScene(FxmlFile.HEALTH_START)
 	Lazy<Scene> startScene();
+
+	StartController startController();
+
+	AtomicReference<Masterkey> masterkeyRef();
+
+	default Scene prepareEmbedded(Runnable closeAction, Runnable readyAction) {
+		startController().prepareEmbedded(closeAction, readyAction);
+		return startScene().get();
+	}
+
+	default void cleanupEmbedded() {
+		startController().cleanup();
+		var key = masterkeyRef().getAndSet(null);
+		if (key != null) {
+			key.destroy();
+		}
+	}
 
 	default Stage showHealthCheckWindow() {
 		Stage stage = window();

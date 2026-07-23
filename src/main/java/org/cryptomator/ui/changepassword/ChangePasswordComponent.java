@@ -21,6 +21,14 @@ public interface ChangePasswordComponent {
 	@FxmlScene(FxmlFile.CHANGEPASSWORD)
 	Lazy<Scene> scene();
 
+	ChangePasswordController controller();
+
+	default Scene prepareEmbeddedView(Runnable doneAction) {
+		Scene embeddedScene = scene().get();
+		controller().prepareEmbedded(doneAction);
+		return embeddedScene;
+	}
+
 	default void showChangePasswordWindow() {
 		Stage stage = window();
 		stage.setScene(scene().get());

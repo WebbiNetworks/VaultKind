@@ -3,6 +3,7 @@
 <?import org.cryptomator.ui.controls.FontAwesome5IconView?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Hyperlink?>
+<?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
@@ -89,6 +90,14 @@
 				<Label text="%main.home.dashboard.attention.title" styleClass="home-health-title"/>
 				<Label text="%main.home.dashboard.attention.description" styleClass="home-health-description" wrapText="true"/>
 			</VBox>
+		</HBox>
+		<HBox alignment="CENTER_LEFT" spacing="14" maxWidth="650" styleClass="home-vault-doctor-card">
+			<VBox alignment="CENTER" styleClass="home-vault-doctor-icon"><FontAwesome5IconView glyph="STETHOSCOPE" glyphSize="21" styleClass="glyph-icon-primary"/></VBox>
+			<VBox spacing="3" HBox.hgrow="ALWAYS">
+				<Label text="%main.vaultDoctor" styleClass="home-health-title"/>
+				<Label text="%main.vaultDoctor.dashboardDescription" wrapText="true" styleClass="home-health-description"/>
+			</VBox>
+			<Button text="%main.vaultDoctor.dashboardAction" onAction="#openVaultDoctor" styleClass="home-vault-doctor-button"/>
 		</HBox>
 		<Label text="%main.home.dashboard.selectVault" textAlignment="CENTER" wrapText="true" styleClass="home-dashboard-hint"/>
 		<Region VBox.vgrow="ALWAYS"/>

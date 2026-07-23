@@ -110,7 +110,7 @@ public class VaultListContextMenuController implements FxController {
 	@FXML
 	public void didClickShareVault() {
 		var vault = Objects.requireNonNull(selectedVault.get());
-		appWindows.showShareVaultWindow(vault);
+		navigation.showShareVault(vault.getDisplayName());
 	}
 
 	// Getter and Setter

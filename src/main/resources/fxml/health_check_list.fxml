@@ -6,43 +6,57 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import java.lang.Integer?>
+<?import org.cryptomator.ui.controls.FontAwesome5IconView?>
+
 <VBox xmlns:fx="http://javafx.com/fxml"
 	  xmlns="http://javafx.com/javafx"
 	  fx:controller="org.cryptomator.ui.health.CheckListController"
-	  prefWidth="650"
-	  prefHeight="400"
-	  spacing="12">
-	<padding>
-		<Insets topRightBottomLeft="12"/>
-	</padding>
-	<fx:define>
-		<Integer fx:id="ZERO" fx:value="0"/>
-	</fx:define>
+	  maxWidth="980" spacing="16" styleClass="health-workspace">
+	<padding><Insets top="24" right="28" bottom="24" left="28"/></padding>
+	<fx:define><Integer fx:id="ZERO" fx:value="0"/></fx:define>
 	<children>
-		<HBox spacing="12" VBox.vgrow="ALWAYS">
-			<ListView fx:id="checksListView" VBox.vgrow="ALWAYS" minWidth="175" maxWidth="175"/>
-			<VBox alignment="CENTER" visible="${!controller.mainRunStarted}"  managed="${!controller.mainRunStarted}" HBox.hgrow="ALWAYS" spacing="12">
-				<Label text="%health.checkList.description" wrapText="true"/>
-				<HBox alignment="CENTER" spacing="6">
-					<Button onAction="#selectAllChecks" text="%health.checkList.selectAllButton" />
-					<Button onAction="#deselectAllChecks" text="%health.checkList.deselectAllButton" />
-				</HBox>
+		<HBox spacing="14" alignment="CENTER_LEFT">
+			<VBox alignment="CENTER" styleClass="health-icon-tile">
+				<FontAwesome5IconView glyph="STETHOSCOPE" glyphSize="24" styleClass="glyph-icon-primary"/>
 			</VBox>
-			<StackPane visible="${controller.mainRunStarted}"  managed="${controller.mainRunStarted}" HBox.hgrow="ALWAYS">
-				<VBox minWidth="300" alignment="CENTER" visible="${!controller.anyCheckSelected}" managed="${!controller.anyCheckSelected}" >
-					<Label text="%health.check.detail.noSelectedCheck" wrapText="true" alignment="CENTER" />
+			<VBox spacing="4">
+				<Label text="%health.workspace.checkHeading" styleClass="health-heading"/>
+				<Label text="%health.workspace.checkIntro" wrapText="true" styleClass="health-description"/>
+			</VBox>
+		</HBox>
+
+		<HBox spacing="14" VBox.vgrow="ALWAYS">
+			<VBox spacing="10" minWidth="230" maxWidth="230" styleClass="health-check-sidebar">
+				<Label text="%health.workspace.availableChecks" styleClass="health-section-title"/>
+				<ListView fx:id="checksListView" VBox.vgrow="ALWAYS"/>
+				<VBox spacing="7">
+					<Button onAction="#selectAllChecks" text="%health.checkList.selectAllButton" maxWidth="Infinity" styleClass="health-secondary"/>
+					<Button onAction="#deselectAllChecks" text="%health.checkList.deselectAllButton" maxWidth="Infinity" styleClass="health-secondary"/>
 				</VBox>
-				<fx:include source="health_check_details.fxml" visible="${controller.anyCheckSelected}" managed="${controller.anyCheckSelected}" HBox.hgrow="ALWAYS"/>
+			</VBox>
+
+			<StackPane HBox.hgrow="ALWAYS" styleClass="health-results-card">
+				<VBox alignment="CENTER" spacing="12" visible="${!controller.mainRunStarted}" managed="${!controller.mainRunStarted}">
+					<FontAwesome5IconView glyph="CHECK" glyphSize="34" styleClass="glyph-icon-primary"/>
+					<Label text="%health.checkList.description" wrapText="true" textAlignment="CENTER"/>
+				</VBox>
+				<VBox minWidth="300" alignment="CENTER" visible="${controller.mainRunStarted &amp;&amp; !controller.anyCheckSelected}" managed="${controller.mainRunStarted &amp;&amp; !controller.anyCheckSelected}">
+					<Label text="%health.check.detail.noSelectedCheck" wrapText="true" alignment="CENTER"/>
+				</VBox>
+				<fx:include source="health_check_details.fxml" visible="${controller.mainRunStarted &amp;&amp; controller.anyCheckSelected}" managed="${controller.mainRunStarted &amp;&amp; controller.anyCheckSelected}"/>
 			</StackPane>
 		</HBox>
-		<ButtonBar buttonMinWidth="120" buttonOrder="+CX">
+
+		<ButtonBar buttonMinWidth="130" buttonOrder="+CX">
 			<buttons>
-				<Button text="%generic.button.cancel" ButtonBar.buttonData="CANCEL_CLOSE" onAction="#cancelRun" visible="${controller.running}" managed="${controller.running}" />
-				<Button text="%health.check.exportBtn" ButtonBar.buttonData="NEXT_FORWARD" defaultButton="true" disable="${controller.running}" visible="${controller.mainRunStarted}" managed="${controller.mainRunStarted}" onAction="#exportResults"/>
-				<Button text="%health.check.runBatchBtn" ButtonBar.buttonData="NEXT_FORWARD" defaultButton="true" onAction="#runSelectedChecks" disable="${controller.chosenTaskCount == ZERO}" visible="${!controller.mainRunStarted}" managed="${!controller.mainRunStarted}"/>
+				<Button text="%generic.button.cancel" ButtonBar.buttonData="CANCEL_CLOSE" onAction="#cancelRun" visible="${controller.running}" managed="${controller.running}" styleClass="health-secondary"/>
+				<Button text="%generic.button.done" ButtonBar.buttonData="BACK_PREVIOUS" onAction="#done" disable="${controller.running}" styleClass="health-secondary"/>
+				<Button text="%health.check.exportBtn" ButtonBar.buttonData="NEXT_FORWARD" defaultButton="true" disable="${controller.running}" visible="${controller.mainRunStarted}" managed="${controller.mainRunStarted}" onAction="#exportResults" styleClass="health-secondary"/>
+				<Button text="%health.check.runBatchBtn" ButtonBar.buttonData="NEXT_FORWARD" defaultButton="true" onAction="#runSelectedChecks" disable="${controller.chosenTaskCount == ZERO}" visible="${!controller.mainRunStarted}" managed="${!controller.mainRunStarted}" styleClass="health-primary"/>
 			</buttons>
 		</ButtonBar>
 	</children>

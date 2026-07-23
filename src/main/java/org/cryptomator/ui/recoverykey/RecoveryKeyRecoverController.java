@@ -25,6 +25,7 @@ public class RecoveryKeyRecoverController implements FxController {
 	private final Lazy<Scene> nextScene;
 	private final Lazy<Scene> onBoardingScene;
 	private final ResourceBundle resourceBundle;
+	private Runnable embeddedDoneAction;
 	public ObjectProperty<RecoveryActionType> recoverType;
 
 	@FXML
@@ -78,6 +79,10 @@ public class RecoveryKeyRecoverController implements FxController {
 
 	@FXML
 	public void closeOrReturn() {
+		if (embeddedDoneAction != null && recoverType.get() == RecoveryActionType.RESET_PASSWORD) {
+			embeddedDoneAction.run();
+			return;
+		}
 		switch (recoverType.get()) {
 			case RESET_PASSWORD -> window.close();
 			case RESTORE_MASTERKEY -> {
@@ -106,6 +111,18 @@ public class RecoveryKeyRecoverController implements FxController {
 
 	public RecoveryKeyValidateController getValidateController() {
 		return recoveryKeyValidateController;
+	}
+
+	public Vault getVault() {
+		return vault;
+	}
+
+	public void prepareEmbedded(Runnable doneAction) {
+		this.embeddedDoneAction = doneAction;
+	}
+
+	public void cleanup() {
+		this.embeddedDoneAction = null;
 	}
 
 }

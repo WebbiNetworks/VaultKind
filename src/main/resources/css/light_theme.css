@@ -205,6 +205,7 @@
 .app-header-bar {
 	-fx-pref-height: 34px;
 	-fx-min-height: 34px;
+	-fx-max-height: 34px;
 	-fx-background-color: GRAY_0;
 	-fx-border-color: transparent transparent GRAY_3 transparent;
 }
@@ -230,6 +231,8 @@
 }
 
 .content-context-header {
+	-fx-min-height: 82px;
+	-fx-pref-height: 82px;
 	-fx-padding: 18px 24px 16px 24px;
 	-fx-background-color: MAIN_BG;
 	-fx-border-color: transparent transparent GRAY_3 transparent;
@@ -1133,6 +1136,108 @@
 }
 
 .support-shell {
++
+.vault-doctor-home-scroll {
+	-fx-background-color: MAIN_BG;
+	-fx-background: MAIN_BG;
+}
+
+.vault-doctor-home {
+	-fx-padding: 28px 36px 36px 36px;
+	-fx-background-color: MAIN_BG;
+}
+
+.vault-doctor-home-title {
+	-fx-font-size: 27px;
+	-fx-font-weight: 600;
+	-fx-text-fill: TEXT_FILL;
+}
+
+.vault-doctor-home-description,
+.vault-doctor-last-checked {
+	-fx-text-fill: TEXT_FILL_MUTED;
+}
+
+.vault-doctor-last-checked {
+	-fx-font-size: 12px;
+}
+
+.vault-doctor-summary-card {
+	-fx-min-width: 170px;
+	-fx-padding: 13px 18px;
+	-fx-background-color: GRAY_2;
+	-fx-background-radius: 10px;
+	-fx-border-radius: 10px;
+}
+
+.vault-doctor-summary-healthy {
+	-fx-border-color: rgba(73, 184, 90, 0.45);
+}
+
+.vault-doctor-summary-attention {
+	-fx-border-color: rgba(241, 196, 15, 0.55);
+}
+
+.vault-doctor-summary-information {
+	-fx-border-color: rgba(70, 156, 255, 0.50);
+}
+
+.vault-doctor-results-card,
+.vault-doctor-scope-card {
+	-fx-padding: 18px 20px;
+	-fx-background-color: GRAY_2;
+	-fx-background-radius: 12px;
+	-fx-border-color: GRAY_3;
+	-fx-border-radius: 12px;
+}
+
+.vault-doctor-status-row {
+	-fx-padding: 10px 12px;
+	-fx-background-color: GRAY_1;
+	-fx-background-radius: 7px;
+	-fx-font-size: 14px;
+}
+
+.vault-doctor-status-healthy {
+	-fx-text-fill: GREEN_5;
+}
+
+.vault-doctor-status-attention {
+	-fx-text-fill: ORANGE_5;
+}
+
+.vault-doctor-local-note {
+	-fx-padding: 12px;
+	-fx-background-color: GRAY_1;
+	-fx-background-radius: 8px;
+}
+
+.home-vault-doctor-card {
+	-fx-padding: 13px 15px;
+	-fx-background-color: rgba(31, 120, 232, 0.10);
+	-fx-background-radius: 10px;
+	-fx-border-color: rgba(70, 156, 255, 0.45);
+	-fx-border-radius: 10px;
+}
+
+.home-vault-doctor-icon {
+	-fx-min-width: 42px;
+	-fx-min-height: 42px;
+	-fx-background-color: GRAY_2;
+	-fx-background-radius: 21px;
+}
+
+.home-vault-doctor-button {
+	-fx-background-color: PRIMARY;
+	-fx-text-fill: WHITE;
+	-fx-background-radius: 6px;
+	-fx-padding: 8px 14px;
+}
+
+.home-vault-doctor-button:hover {
+	-fx-background-color: PRIMARY_L1;
+}
+
 	-fx-padding: 42px;
 	-fx-background-color: MAIN_BG;
 }
@@ -1485,6 +1590,343 @@
 	-fx-background-radius: 10px;
 	-fx-border-color: CONTROL_BORDER_NORMAL;
 	-fx-border-radius: 10px;
+}
+
+.share-vault-workspace,
+.share-vault-workspace > .viewport {
+	-fx-background-color: transparent;
+}
+
+.share-vault-workspace {
+	-fx-padding: 0;
+	-fx-background-insets: 0;
+	-fx-border-width: 0;
+}
+
+.share-vault-content {
+	-fx-background-color: CONTROL_BG_NORMAL;
+}
+
+.share-vault-heading {
+	-fx-font-size: 25px;
+	-fx-font-weight: 600;
+}
+
+.share-vault-intro,
+.share-vault-card-copy,
+.share-vault-warning-copy {
+	-fx-text-fill: TEXT_FILL_MUTED;
+	-fx-font-size: 14px;
+}
+
+.share-vault-step-card,
+.share-vault-recipient-card {
+	-fx-padding: 18px;
+	-fx-background-color: GRAY_9;
+	-fx-background-radius: 10px;
+	-fx-border-color: CONTROL_BORDER_NORMAL;
+	-fx-border-radius: 10px;
+}
+
+.share-vault-icon-tile {
+	-fx-background-color: PRIMARY_L2;
+	-fx-background-radius: 24px;
+}
+
+.share-vault-card-title,
+.share-vault-warning-title {
+	-fx-font-size: 17px;
+	-fx-font-weight: 600;
+}
+
+.share-vault-warning-card {
+	-fx-padding: 16px 18px;
+	-fx-background-color: #FFF8D8;
+	-fx-background-radius: 10px;
+	-fx-border-color: YELLOW_4;
+	-fx-border-radius: 10px;
+}
+
+.share-vault-local-note {
+	-fx-padding: 12px 14px;
+	-fx-background-color: #EAF7EC;
+	-fx-background-radius: 8px;
+	-fx-border-color: GREEN_3;
+	-fx-border-radius: 8px;
+}
+
+.change-password-workspace {
+	-fx-background-color: CONTROL_BG_NORMAL;
+	-fx-background-radius: 10px;
+	-fx-border-color: CONTROL_BORDER_NORMAL;
+	-fx-border-radius: 10px;
+}
+
+.change-password-heading,
+.change-password-success-title {
+	-fx-font-size: 25px;
+	-fx-font-weight: 600;
+}
+
+.change-password-description,
+.change-password-success-description {
+	-fx-text-fill: TEXT_FILL_MUTED;
+	-fx-font-size: 14px;
+}
+
+.change-password-current-card,
+.change-password-new-card {
+	-fx-padding: 16px 18px;
+	-fx-background-color: GRAY_9;
+	-fx-background-radius: 10px;
+	-fx-border-color: CONTROL_BORDER_NORMAL;
+	-fx-border-radius: 10px;
+}
+
+.change-password-section-title {
+	-fx-font-size: 15px;
+	-fx-font-weight: 600;
+}
+
+.change-password-inline-error {
+	-fx-padding: 10px 12px;
+	-fx-background-color: #FDECEA;
+	-fx-background-radius: 7px;
+	-fx-border-color: RED_5;
+	-fx-border-radius: 7px;
+}
+
+.change-password-inline-error .label,
+.change-password-inline-error .glyph-icon {
+	-fx-text-fill: RED_5;
+	-fx-fill: RED_5;
+}
+
+.change-password-confirmation {
+	-fx-padding: 4px 2px;
+}
+
+.change-password-primary:hover,
+.change-password-secondary:hover {
+	-fx-translate-y: -2px;
+	-fx-border-color: PRIMARY_D1;
+}
+
+.change-password-primary:armed,
+.change-password-secondary:armed {
+	-fx-translate-y: 0;
+	-fx-opacity: 0.88;
+}
+
+.change-password-success {
+	-fx-padding: 54px 28px;
+}
+
+.change-password-success-icon {
+	-fx-background-color: PRIMARY;
+	-fx-background-radius: 38px;
+}
+
+.recovery-key-workspace {
+	-fx-background-color: CONTROL_BG_NORMAL;
+	-fx-background-radius: 10px;
+	-fx-border-color: CONTROL_BORDER_NORMAL;
+	-fx-border-radius: 10px;
+}
+
+.recovery-key-heading {
+	-fx-font-size: 24px;
+	-fx-font-weight: 600;
+}
+
+.recovery-key-description {
+	-fx-text-fill: TEXT_FILL_MUTED;
+	-fx-font-size: 14px;
+}
+
+.recovery-key-section-title {
+	-fx-font-size: 15px;
+	-fx-font-weight: 600;
+}
+
+.recovery-key-password-card,
+.recovery-key-display-card {
+	-fx-padding: 17px 19px;
+	-fx-background-color: GRAY_9;
+	-fx-background-radius: 10px;
+	-fx-border-color: CONTROL_BORDER_NORMAL;
+	-fx-border-radius: 10px;
+}
+
+.recovery-key-inline-error {
+	-fx-padding: 10px 12px;
+	-fx-background-color: #FDECEA;
+	-fx-background-radius: 7px;
+	-fx-border-color: RED_5;
+	-fx-border-radius: 7px;
+}
+
+.recovery-key-inline-error .label,
+.recovery-key-inline-error .glyph-icon {
+	-fx-text-fill: RED_5;
+	-fx-fill: RED_5;
+}
+
+.recovery-key-privacy-note,
+.recovery-key-storage-hints {
+	-fx-padding: 13px 15px;
+	-fx-background-color: PRIMARY_L2;
+	-fx-background-radius: 8px;
+	-fx-border-color: PRIMARY;
+	-fx-border-radius: 8px;
+}
+
+.recovery-key-icon-tile {
+	-fx-background-color: PRIMARY_L2;
+	-fx-background-radius: 21px;
+	-fx-min-width: 56px;
+	-fx-min-height: 56px;
+	-fx-pref-width: 56px;
+	-fx-pref-height: 56px;
+}
+
+.recovery-key-step-active,
+.recovery-key-step-complete,
+.recovery-key-step-inactive {
+	-fx-min-height: 4px;
+	-fx-pref-height: 4px;
+	-fx-background-radius: 3px;
+}
+
+.recovery-key-step-active,
+.recovery-key-step-complete {
+	-fx-background-color: PRIMARY;
+}
+
+.recovery-key-step-inactive {
+	-fx-background-color: GRAY_7;
+}
+
+.recovery-key-step-label {
+	-fx-text-fill: PRIMARY_D1;
+	-fx-font-weight: 600;
+}
+
+.recovery-key-input {
+	-fx-font-family: 'Fira Code';
+	-fx-font-size: 15px;
+}
+
+.recovery-key-success-pane {
+	-fx-padding: 72px 36px;
+}
+
+.recovery-key-warning-card {
+	-fx-padding: 14px 16px;
+	-fx-background-color: #FFF8D8;
+	-fx-background-radius: 8px;
+	-fx-border-color: YELLOW_4;
+	-fx-border-radius: 8px;
+}
+
+.recovery-key-success-icon {
+	-fx-background-color: PRIMARY;
+	-fx-background-radius: 27px;
+}
+
+.recovery-key-value {
+	-fx-font-family: 'Fira Code';
+	-fx-font-size: 15px;
+}
+
+.recovery-key-primary:hover,
+.recovery-key-secondary:hover {
+	-fx-translate-y: -2px;
+	-fx-border-color: PRIMARY_D1;
+}
+
+.recovery-key-primary:armed,
+.recovery-key-secondary:armed {
+	-fx-translate-y: 0;
+	-fx-opacity: 0.88;
+}
+
+.health-workspace {
+	-fx-background-color: CONTROL_BG_NORMAL;
+	-fx-background-radius: 10px;
+	-fx-border-color: CONTROL_BORDER_NORMAL;
+	-fx-border-radius: 10px;
+}
+
+.health-heading {
+	-fx-font-size: 24px;
+	-fx-font-weight: 600;
+}
+
+.health-description {
+	-fx-text-fill: TEXT_FILL_MUTED;
+	-fx-font-size: 14px;
+}
+
+.health-section-title,
+.health-guidance-title {
+	-fx-font-size: 15px;
+	-fx-font-weight: 600;
+}
+
+.health-icon-tile {
+	-fx-min-width: 56px;
+	-fx-min-height: 56px;
+	-fx-pref-width: 56px;
+	-fx-pref-height: 56px;
+	-fx-background-color: PRIMARY_L2;
+	-fx-background-radius: 21px;
+}
+
+.health-intro-card,
+.health-check-sidebar,
+.health-results-card {
+	-fx-padding: 18px;
+	-fx-background-color: GRAY_9;
+	-fx-background-radius: 10px;
+	-fx-border-color: CONTROL_BORDER_NORMAL;
+	-fx-border-radius: 10px;
+}
+
+.health-guidance-row {
+	-fx-padding: 10px 12px;
+	-fx-background-color: CONTROL_BG_NORMAL;
+	-fx-background-radius: 8px;
+}
+
+.health-number-badge {
+	-fx-min-width: 28px;
+	-fx-min-height: 28px;
+	-fx-alignment: center;
+	-fx-background-color: PRIMARY;
+	-fx-background-radius: 14px;
+	-fx-text-fill: WHITE;
+	-fx-font-weight: 700;
+}
+
+.health-affirmation {
+	-fx-padding: 13px 15px;
+	-fx-background-color: PRIMARY_L2;
+	-fx-background-radius: 8px;
+	-fx-border-color: PRIMARY;
+	-fx-border-radius: 8px;
+}
+
+.health-primary:hover,
+.health-secondary:hover {
+	-fx-translate-y: -2px;
+	-fx-border-color: PRIMARY_D1;
+}
+
+.health-primary:armed,
+.health-secondary:armed {
+	-fx-translate-y: 0;
+	-fx-opacity: 0.88;
 }
 
 .embedded-unlock-content {

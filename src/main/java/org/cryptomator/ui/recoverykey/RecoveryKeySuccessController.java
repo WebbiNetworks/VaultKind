@@ -10,6 +10,7 @@ import javafx.stage.Stage;
 public class RecoveryKeySuccessController implements FxController {
 
 	private final Stage window;
+	private Runnable embeddedDoneAction;
 
 	@Inject
 	public RecoveryKeySuccessController(@RecoveryKeyWindow Stage window) {
@@ -18,7 +19,19 @@ public class RecoveryKeySuccessController implements FxController {
 
 	@FXML
 	public void close() {
-		window.close();
+		if (embeddedDoneAction != null) {
+			embeddedDoneAction.run();
+		} else {
+			window.close();
+		}
+	}
+
+	public void prepareEmbedded(Runnable doneAction) {
+		embeddedDoneAction = doneAction;
+	}
+
+	public void cleanup() {
+		embeddedDoneAction = null;
 	}
 
 }

@@ -5,6 +5,7 @@ import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntoMap;
+import org.apache.commons.lang3.SystemUtils;
 import org.cryptomator.common.vaults.Vault;
 import org.cryptomator.ui.addvaultwizard.AddVaultWizardComponent;
 import org.cryptomator.ui.common.FxController;
@@ -14,6 +15,7 @@ import org.cryptomator.ui.common.FxmlLoaderFactory;
 import org.cryptomator.ui.common.FxmlScene;
 import org.cryptomator.ui.common.StageFactory;
 import org.cryptomator.ui.common.StageInitializer;
+import org.cryptomator.ui.common.WindowsCaptionSupport;
 import org.cryptomator.ui.error.ErrorComponent;
 import org.cryptomator.ui.eventview.EventListCellController;
 import org.cryptomator.ui.eventview.EventViewController;
@@ -39,6 +41,7 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
+import javafx.application.Platform;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import java.util.Map;
@@ -52,6 +55,9 @@ abstract class MainWindowModule {
 	@MainWindowScoped
 	static Stage provideMainWindow(@PrimaryStage Stage stage, StageInitializer initializer, FxApplicationTerminator terminator, Lazy<TrayMenuComponent> trayMenu) {
 		initializer.accept(stage);
+		if (SystemUtils.IS_OS_WINDOWS) {
+			stage.setOnShown(event -> Platform.runLater(WindowsCaptionSupport::applyDarkTitleBar));
+		}
 		stage.setTitle("VaultKind");
 		stage.setMinWidth(1040);
 		stage.setMinHeight(680);

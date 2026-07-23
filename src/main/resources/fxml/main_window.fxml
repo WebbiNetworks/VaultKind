@@ -2,13 +2,13 @@
 
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.layout.HeaderBar?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ScrollPane?>
 <?import org.cryptomator.ui.controls.FontAwesome5IconView?>
 <?import org.cryptomator.ui.controls.InfoBar?>
 <?import org.cryptomator.ui.controls.FormattedLabel?>
@@ -24,16 +24,7 @@
 		   fx:controller="org.cryptomator.ui.mainwindow.MainWindowController"
 		   styleClass="main-window">
 	<VBox minWidth="840">
-		<HeaderBar managed="${controller.windows}" visible="${controller.windows}" styleClass="app-header-bar">
-			<leading>
-				<HBox alignment="CENTER_LEFT" spacing="8" styleClass="app-header-title">
-					<Label text="%app.name" styleClass="app-header-brand"/>
-					<Label text="/" styleClass="app-header-separator"/>
-					<Label text="${controller.contextTitle}" styleClass="app-header-context"/>
-				</HBox>
-			</leading>
-		</HeaderBar>
-		<VBox spacing="3" styleClass="content-context-header">
+		<VBox minHeight="82" prefHeight="82" spacing="3" VBox.vgrow="NEVER" styleClass="content-context-header">
 			<Label text="${controller.contentTitle}" styleClass="content-context-title"/>
 			<Label text="${controller.contentSubtitle}" wrapText="true" styleClass="content-context-subtitle"/>
 		</VBox>
@@ -42,6 +33,68 @@
 				<fx:include source="vault_list.fxml" SplitPane.resizableWithParent="false"/>
 				<fx:include source="vault_detail.fxml" SplitPane.resizableWithParent="true"/>
 			</SplitPane>
+			<HBox fx:id="vaultDoctorPane" visible="false" managed="false" styleClass="embedded-vault-tool">
+				<VBox minWidth="300" prefWidth="300" maxWidth="300" spacing="6" styleClass="preferences-navigation,embedded-preferences-navigation">
+					<Button text="%main.home" onAction="#showDashboard" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="vault-home-button">
+						<VBox.margin><Insets top="12" right="0" bottom="10" left="0"/></VBox.margin>
+						<graphic><FontAwesome5IconView glyph="CHEVRON_LEFT" glyphSize="15"/></graphic>
+					</Button>
+					<Label text="%main.vaultDoctor" styleClass="preferences-navigation-title"/>
+					<Label text="%main.vaultDoctor.navigationSubtitle" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+					<Region VBox.vgrow="ALWAYS"/>
+					<VBox spacing="5" styleClass="vault-doctor-local-note">
+						<Label text="%main.vaultDoctor.localTitle" styleClass="health-section-title"/>
+						<Label text="%main.vaultDoctor.localDescription" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+					</VBox>
+				</VBox>
+				<ScrollPane fitToWidth="true" HBox.hgrow="ALWAYS" styleClass="embedded-vault-tool-content,vault-doctor-home-scroll">
+					<VBox alignment="TOP_CENTER" spacing="16" styleClass="vault-doctor-home">
+						<VBox alignment="CENTER" styleClass="health-icon-tile">
+							<FontAwesome5IconView glyph="STETHOSCOPE" glyphSize="28" styleClass="glyph-icon-primary"/>
+						</VBox>
+						<VBox alignment="CENTER" spacing="6">
+							<Label text="${controller.doctorOverallTitle}" styleClass="vault-doctor-home-title"/>
+							<Label text="${controller.doctorOverallDescription}" textAlignment="CENTER" wrapText="true" maxWidth="760" styleClass="vault-doctor-home-description"/>
+							<Label text="${controller.doctorLastChecked}" styleClass="vault-doctor-last-checked"/>
+						</VBox>
+						<HBox alignment="CENTER" spacing="12" maxWidth="760">
+							<VBox alignment="CENTER" spacing="4" HBox.hgrow="ALWAYS" styleClass="vault-doctor-summary-card,vault-doctor-summary-healthy">
+								<Label text="${controller.doctorHealthyCount}" styleClass="home-stat-value"/>
+								<Label text="%main.vaultDoctor.healthy" styleClass="home-stat-label"/>
+							</VBox>
+							<VBox alignment="CENTER" spacing="4" HBox.hgrow="ALWAYS" styleClass="vault-doctor-summary-card,vault-doctor-summary-attention">
+								<Label text="${controller.doctorAttentionCount}" styleClass="home-stat-value"/>
+								<Label text="%main.vaultDoctor.needsAttention" styleClass="home-stat-label"/>
+							</VBox>
+							<VBox alignment="CENTER" spacing="4" HBox.hgrow="ALWAYS" styleClass="vault-doctor-summary-card,vault-doctor-summary-information">
+								<Label text="${controller.doctorInformationCount}" styleClass="home-stat-value"/>
+								<Label text="%main.vaultDoctor.information" styleClass="home-stat-label"/>
+							</VBox>
+						</HBox>
+						<VBox spacing="10" maxWidth="760" styleClass="vault-doctor-results-card">
+							<HBox alignment="CENTER_LEFT">
+								<Label text="%main.vaultDoctor.automaticChecks" styleClass="health-section-title" HBox.hgrow="ALWAYS"/>
+								<Button text="%main.vaultDoctor.runAgain" onAction="#runVaultDoctor" styleClass="health-secondary">
+									<graphic><FontAwesome5IconView glyph="SYNC" glyphSize="13"/></graphic>
+								</Button>
+							</HBox>
+							<Label fx:id="doctorConfigurationStatus" wrapText="true" styleClass="vault-doctor-status-row"/>
+							<Label fx:id="doctorLocationStatus" wrapText="true" styleClass="vault-doctor-status-row"/>
+							<Label fx:id="doctorStorageStatus" wrapText="true" styleClass="vault-doctor-status-row"/>
+							<Label fx:id="doctorWindowsStatus" wrapText="true" styleClass="vault-doctor-status-row"/>
+							<Label fx:id="doctorMountStatus" wrapText="true" styleClass="vault-doctor-status-row"/>
+							<Label fx:id="doctorSettingsStatus" wrapText="true" styleClass="vault-doctor-status-row"/>
+						</VBox>
+						<HBox alignment="CENTER_LEFT" spacing="12" maxWidth="760" styleClass="vault-doctor-scope-card">
+							<FontAwesome5IconView glyph="INFO_CIRCLE" glyphSize="18" styleClass="glyph-icon-primary"/>
+							<VBox spacing="3">
+								<Label text="%main.vaultDoctor.informationTitle" styleClass="home-health-title"/>
+								<Label text="%main.vaultDoctor.scopeDescription" wrapText="true" styleClass="home-health-description"/>
+							</VBox>
+						</HBox>
+					</VBox>
+				</ScrollPane>
+			</HBox>
 			<fx:include fx:id="settingsPane" source="preferences_embedded.fxml" visible="false" managed="false"/>
 			<fx:include fx:id="activityPane" source="activity_embedded.fxml" visible="false" managed="false"/>
 			<fx:include fx:id="howItWorksPane" source="how_it_works_embedded.fxml" visible="false" managed="false"/>
@@ -101,6 +154,21 @@
 					<Region VBox.vgrow="ALWAYS"/>
 				</VBox>
 				<StackPane fx:id="vaultOptionsContentHost" HBox.hgrow="ALWAYS" styleClass="embedded-vault-options-content"/>
+			</HBox>
+			<HBox fx:id="shareVaultPane" visible="false" managed="false" styleClass="embedded-vault-tool">
+				<VBox minWidth="300" prefWidth="300" maxWidth="300" spacing="6" styleClass="preferences-navigation,embedded-preferences-navigation">
+					<Button text="%main.content.vaults.title" onAction="#showVaults" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="vault-home-button">
+						<VBox.margin><Insets top="12" right="0" bottom="10" left="0"/></VBox.margin>
+						<graphic><FontAwesome5IconView glyph="CHEVRON_LEFT" glyphSize="15"/></graphic>
+					</Button>
+					<Label text="%shareVault.title" wrapText="true" styleClass="preferences-navigation-title"/>
+					<Label text="${controller.shareVaultName}" wrapText="true" styleClass="unlock-navigation-vault"/>
+					<Label text="%shareVault.workspace.subtitle" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+					<Region VBox.vgrow="ALWAYS"/>
+				</VBox>
+				<StackPane HBox.hgrow="ALWAYS" styleClass="embedded-vault-tool-content">
+					<fx:include source="share_vault.fxml"/>
+				</StackPane>
 			</HBox>
 			<HBox fx:id="vaultToolPane" visible="false" managed="false" styleClass="embedded-vault-tool">
 				<VBox minWidth="300" prefWidth="300" maxWidth="300" spacing="6" styleClass="preferences-navigation,embedded-preferences-navigation">

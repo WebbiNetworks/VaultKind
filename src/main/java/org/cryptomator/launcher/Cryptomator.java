@@ -23,7 +23,6 @@ import javax.inject.Singleton;
 import javax.net.ssl.SSLContext;
 import javafx.application.Application;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
@@ -155,9 +154,6 @@ public class Cryptomator {
 		@Override
 		public void start(Stage primaryStage) {
 			LOG.info("JavaFX runtime started after {}ms", System.currentTimeMillis() - STARTUP_TIME);
-			if (SystemUtils.IS_OS_WINDOWS) {
-				primaryStage.initStyle(StageStyle.EXTENDED);
-			}
 			FxApplicationComponent component = CRYPTOMATOR_COMPONENT.fxAppComponentBuilder() //
 					.fxApplication(this) //
 					.primaryStage(primaryStage) //

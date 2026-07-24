@@ -59,6 +59,19 @@ public class RecoveryKeyFactory {
 		}
 	}
 
+	/**
+	 * Creates a recovery key from a master key that is already available in memory.
+	 * This avoids reopening a newly written masterkey file during vault creation.
+	 */
+	public String createRecoveryKey(Masterkey masterkey) {
+		byte[] rawKey = masterkey.getEncoded();
+		try {
+			return createRecoveryKey(rawKey);
+		} finally {
+			Arrays.fill(rawKey, (byte) 0x00);
+		}
+	}
+
 	@VisibleForTesting
 	String createRecoveryKey(byte[] rawKey) {
 		Preconditions.checkArgument(rawKey.length == 64, "key should be 64 bytes");

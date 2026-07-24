@@ -65,6 +65,12 @@ public class Cryptomator {
 	}
 
 	public static void main(String[] args) {
+		if (Arrays.asList(args).contains("--native-backend")) {
+			System.setProperty("vaultkind.nativeBackend", "true");
+			int exitCode = CRYPTOMATOR_COMPONENT.nativeBackendApplication().run();
+			LOG.info("Native backend exit {}", exitCode);
+			System.exit(exitCode);
+		}
 		var printVersion = Optional.ofNullable(args) //
 				.stream() //Streams either one element (the args-array) or zero elements
 				.flatMap(Arrays::stream) //

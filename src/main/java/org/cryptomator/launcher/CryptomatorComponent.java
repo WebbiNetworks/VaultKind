@@ -4,6 +4,7 @@ import dagger.BindsInstance;
 import dagger.Component;
 import org.cryptomator.common.CommonsModule;
 import org.cryptomator.ui.fxapp.FxApplicationComponent;
+import org.cryptomator.nativeui.NativeBackendApplication;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -13,6 +14,8 @@ import javax.inject.Singleton;
 public interface CryptomatorComponent {
 
 	Cryptomator application();
+
+	NativeBackendApplication nativeBackendApplication();
 
 	FxApplicationComponent.Builder fxAppComponentBuilder();
 

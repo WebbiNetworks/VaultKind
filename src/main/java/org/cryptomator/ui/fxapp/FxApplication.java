@@ -3,6 +3,7 @@ package org.cryptomator.ui.fxapp;
 import dagger.Lazy;
 import org.cryptomator.common.settings.Settings;
 import org.cryptomator.common.settings.VaultSettings;
+import org.cryptomator.nativeui.NativeUiBridge;
 import org.cryptomator.ui.traymenu.TrayMenuComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,7 @@ public class FxApplication {
 	private final AutoUnlocker autoUnlocker;
 	private final FxFSEventList fxFSEventList;
 	private final FxNotificationManager notificationManager;
+	private final NativeUiBridge nativeUiBridge;
 
 	@Inject
 	FxApplication(Application fxApp,
@@ -43,7 +45,8 @@ public class FxApplication {
 				  FxApplicationTerminator applicationTerminator, //
 				  AutoUnlocker autoUnlocker, //
 				  FxFSEventList fxFSEventList, //
-				  FxNotificationManager notificationManager) {
+				  FxNotificationManager notificationManager, //
+				  NativeUiBridge nativeUiBridge) {
 		this.startupTime = startupTime;
 		this.settings = settings;
 		this.launchEventHandler = launchEventHandler;
@@ -54,6 +57,7 @@ public class FxApplication {
 		this.autoUnlocker = autoUnlocker;
 		this.fxFSEventList = fxFSEventList;
 		this.notificationManager = notificationManager;
+		this.nativeUiBridge = nativeUiBridge;
 
 		INSTANCE.set(fxApp);
 	}
@@ -63,6 +67,7 @@ public class FxApplication {
 		applicationStyle.initialize();
 		appWindows.initialize();
 		applicationTerminator.initialize();
+		nativeUiBridge.start();
 
 		// init system tray
 		final boolean hasTrayIcon;

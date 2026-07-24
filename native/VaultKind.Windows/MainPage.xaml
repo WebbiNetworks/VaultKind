@@ -1,0 +1,604 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="VaultKind_Windows.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:VaultKind_Windows"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Background="#292D30"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <SolidColorBrush x:Key="SidebarBrush" Color="#1D2022" />
+        <SolidColorBrush x:Key="CardBrush" Color="#3B4145" />
+        <SolidColorBrush x:Key="CardBorderBrush" Color="#535B60" />
+        <SolidColorBrush x:Key="BrandBlueBrush" Color="#4EA1FF" />
+        <SolidColorBrush x:Key="MutedTextBrush" Color="#AEB7BE" />
+        <Style x:Key="SidebarButtonStyle" TargetType="Button">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Height" Value="46" />
+            <Setter Property="Margin" Value="12,3" />
+            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="CornerRadius" Value="7" />
+        </Style>
+        <Style x:Key="VaultSidebarButtonStyle" TargetType="Button" BasedOn="{StaticResource SidebarButtonStyle}">
+            <Setter Property="Height" Value="70" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="MetricCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource CardBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="11" />
+            <Setter Property="Padding" Value="18" />
+        </Style>
+    </Page.Resources>
+
+    <!--
+        This is the main content area of your application.
+        Add your UI elements here — for example, controls, layouts, and data-bound views.
+        Use 'dotnet new winui-page' to create additional pages and navigate to them via
+        the Frame in MainWindow (RootFrame).
+    -->
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0" Background="{StaticResource SidebarBrush}" BorderBrush="#485056" BorderThickness="0,0,1,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Button x:Name="DashboardButton" Grid.Row="0" Style="{StaticResource SidebarButtonStyle}" Background="#3A4248" BorderBrush="{StaticResource BrandBlueBrush}" BorderThickness="3,0,0,0" Click="ShowDashboard" AutomationProperties.Name="Dashboard, selected">
+                    <StackPanel Orientation="Horizontal" Spacing="11">
+                        <FontIcon Glyph="&#xE80F;" FontSize="17" Foreground="{StaticResource BrandBlueBrush}" />
+                        <TextBlock Text="Dashboard" Foreground="{StaticResource BrandBlueBrush}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="DoctorButton" Grid.Row="1" Style="{StaticResource SidebarButtonStyle}" Click="ShowDoctor" AutomationProperties.Name="Vault Doctor">
+                    <StackPanel Orientation="Horizontal" Spacing="11">
+                        <FontIcon Glyph="&#xE9D9;" FontSize="17" />
+                        <TextBlock Text="Vault Doctor" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Grid Grid.Row="2" Margin="0,12,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid Margin="20,0,18,8">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="Vaults" Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center" />
+                        <Button x:Name="AddVaultButton" Grid.Column="1" Content="+ Add Vault" Padding="13,6" CornerRadius="5" Click="ShowAddVault" AutomationProperties.Name="Add Vault" />
+                    </Grid>
+                    <Border Grid.Row="1" BorderBrush="#485056" BorderThickness="0,1,0,0" />
+                    <StackPanel x:Name="EmptyVaultState" Grid.Row="2" Margin="20,24" HorizontalAlignment="Center" Spacing="8">
+                        <FontIcon Glyph="&#xE72E;" FontSize="26" Foreground="#929CA3" />
+                        <TextBlock Text="No vaults connected" Foreground="{StaticResource MutedTextBrush}" />
+                        <TextBlock Text="Start or connect the VaultKind engine to view configured vaults." Width="220" TextAlignment="Center" TextWrapping="Wrap" FontSize="12" Foreground="#7F8990" />
+                    </StackPanel>
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="VaultListPanel" Padding="0,8,0,12" />
+                    </ScrollViewer>
+                </Grid>
+                <StackPanel Grid.Row="3" Padding="0,10,0,14" BorderBrush="#485056" BorderThickness="0,1,0,0">
+                    <Button Style="{StaticResource SidebarButtonStyle}" AutomationProperties.Name="Activity"><StackPanel Orientation="Horizontal" Spacing="11"><FontIcon Glyph="&#xE7ED;" FontSize="16" /><TextBlock Text="Activity" /></StackPanel></Button>
+                    <Button Style="{StaticResource SidebarButtonStyle}" AutomationProperties.Name="Settings"><StackPanel Orientation="Horizontal" Spacing="11"><FontIcon Glyph="&#xE713;" FontSize="16" /><TextBlock Text="Settings" /></StackPanel></Button>
+                    <Button Style="{StaticResource SidebarButtonStyle}" AutomationProperties.Name="Learning Center"><StackPanel Orientation="Horizontal" Spacing="11"><FontIcon Glyph="&#xE897;" FontSize="16" /><TextBlock Text="Learning Center" /></StackPanel></Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions><RowDefinition Height="90" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+            <Border Grid.Row="0" BorderBrush="#4A5257" BorderThickness="0,0,0,1" Padding="26,0">
+                <StackPanel VerticalAlignment="Center" Spacing="4">
+                    <TextBlock x:Name="ContextTitle" Text="Dashboard" FontSize="26" FontWeight="SemiBold" />
+                    <TextBlock x:Name="ContextSubtitle" Text="Your secure workspace at a glance." Foreground="{StaticResource MutedTextBrush}" />
+                </StackPanel>
+            </Border>
+            <ScrollViewer x:Name="DashboardView" Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel MaxWidth="820" Margin="42,30,42,50" HorizontalAlignment="Center" Spacing="18">
+                    <Image Source="Assets/vaultkind_full_lockup.png" Width="500" MaxHeight="190" Stretch="Uniform" AutomationProperties.Name="VaultKind logo" />
+                    <StackPanel HorizontalAlignment="Center" Spacing="5">
+                        <TextBlock Text="Your vaults at a glance" FontSize="27" HorizontalAlignment="Center" />
+                        <TextBlock Text="A quick view of your protected spaces and anything that needs your attention." Foreground="{StaticResource MutedTextBrush}" TextAlignment="Center" />
+                    </StackPanel>
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Style="{StaticResource MetricCardStyle}"><StackPanel HorizontalAlignment="Center" Spacing="5"><FontIcon Glyph="&#xE7C3;" Foreground="{StaticResource BrandBlueBrush}" /><TextBlock x:Name="TotalVaultsCount" Text="0" FontSize="25" HorizontalAlignment="Center" /><TextBlock Text="Total vaults" Foreground="{StaticResource MutedTextBrush}" /></StackPanel></Border>
+                        <Border Grid.Column="1" Style="{StaticResource MetricCardStyle}"><StackPanel HorizontalAlignment="Center" Spacing="5"><FontIcon Glyph="&#xE785;" Foreground="#45C96B" /><TextBlock x:Name="UnlockedVaultsCount" Text="0" FontSize="25" HorizontalAlignment="Center" /><TextBlock Text="Unlocked" Foreground="{StaticResource MutedTextBrush}" /></StackPanel></Border>
+                        <Border Grid.Column="2" Style="{StaticResource MetricCardStyle}"><StackPanel HorizontalAlignment="Center" Spacing="5"><FontIcon Glyph="&#xE72E;" Foreground="{StaticResource BrandBlueBrush}" /><TextBlock x:Name="LockedVaultsCount" Text="0" FontSize="25" HorizontalAlignment="Center" /><TextBlock Text="Locked" Foreground="{StaticResource MutedTextBrush}" /></StackPanel></Border>
+                        <Border Grid.Column="3" Style="{StaticResource MetricCardStyle}"><StackPanel HorizontalAlignment="Center" Spacing="5"><FontIcon Glyph="&#xE7BA;" Foreground="#FF665D" /><TextBlock Text="0" FontSize="25" HorizontalAlignment="Center" /><TextBlock Text="Attention" Foreground="{StaticResource MutedTextBrush}" /></StackPanel></Border>
+                    </Grid>
+                    <Border Background="#293F34" BorderBrush="#3E965B" BorderThickness="1" CornerRadius="10" Padding="18,14">
+                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><FontIcon Glyph="&#xE73E;" Foreground="#49CD70" FontSize="20" VerticalAlignment="Center" /><StackPanel Grid.Column="1" Margin="14,0,0,0" Spacing="3"><TextBlock Text="Everything looks good" FontSize="18" /><TextBlock x:Name="DashboardHealthDescription" Text="Checking the native shell..." Foreground="{StaticResource MutedTextBrush}" FontSize="12" /></StackPanel></Grid>
+                    </Border>
+                    <Border Background="#293A4A" BorderBrush="#367DC2" BorderThickness="1" CornerRadius="10" Padding="17">
+                        <Grid ColumnSpacing="14">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <Border Width="46" Height="46" CornerRadius="23" Background="#394951"><FontIcon Glyph="&#xE9D9;" Foreground="{StaticResource BrandBlueBrush}" FontSize="22" /></Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3"><TextBlock Text="Vault Doctor" FontSize="18" /><TextBlock Text="Automatic, private health checks across VaultKind and your configured vaults." TextTrimming="CharacterEllipsis" Foreground="{StaticResource MutedTextBrush}" FontSize="12" /></StackPanel>
+                            <Button Grid.Column="2" Content="Open Doctor" Padding="18,8" VerticalAlignment="Center" Click="ShowDoctor" AutomationProperties.Name="Open Vault Doctor" />
+                        </Grid>
+                    </Border>
+                    <TextBlock x:Name="EngineStatusFooter" Text="Native Windows shell preview — checking the vault engine." Foreground="#7F8990" HorizontalAlignment="Center" FontSize="12" />
+                </StackPanel>
+            </ScrollViewer>
+
+            <ScrollViewer x:Name="DoctorView" Grid.Row="1" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <StackPanel MaxWidth="820" Margin="42,34,42,50" HorizontalAlignment="Center" Spacing="18">
+                    <Border Background="#202426" BorderBrush="#4E575D" BorderThickness="1" CornerRadius="12" Padding="30">
+                        <Grid ColumnSpacing="20">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <Border Width="62" Height="62" CornerRadius="31" Background="#35444D">
+                                <FontIcon Glyph="&#xE9D9;" FontSize="30" Foreground="{StaticResource BrandBlueBrush}" />
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="5">
+                                <TextBlock Text="Vault Doctor" FontSize="27" FontWeight="SemiBold" />
+                                <TextBlock Text="Automatic, private checks across the native VaultKind shell." Foreground="{StaticResource MutedTextBrush}" />
+                            </StackPanel>
+                            <Border Grid.Column="2" Background="#263F31" BorderBrush="#3F965B" BorderThickness="1" CornerRadius="14" Padding="12,5" VerticalAlignment="Center">
+                                <TextBlock Text="LOCAL &amp; PRIVATE" FontSize="11" FontWeight="SemiBold" Foreground="#51D478" />
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <TextBlock x:Name="DoctorSummary" Text="Vault Doctor didn't find any issues in the checks available to this preview." TextWrapping="Wrap" FontSize="20" TextAlignment="Center" Margin="20,8" />
+
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Style="{StaticResource MetricCardStyle}" BorderBrush="#3F965B"><StackPanel HorizontalAlignment="Center" Spacing="5"><TextBlock Text="3" FontSize="28" /><TextBlock Text="Healthy" Foreground="{StaticResource MutedTextBrush}" /></StackPanel></Border>
+                        <Border Grid.Column="1" Style="{StaticResource MetricCardStyle}" BorderBrush="#B18B20"><StackPanel HorizontalAlignment="Center" Spacing="5"><TextBlock Text="0" FontSize="28" /><TextBlock Text="Needs attention" Foreground="{StaticResource MutedTextBrush}" /></StackPanel></Border>
+                        <Border Grid.Column="2" Style="{StaticResource MetricCardStyle}" BorderBrush="#367DC2"><StackPanel HorizontalAlignment="Center" Spacing="5"><TextBlock Text="1" FontSize="28" /><TextBlock Text="Information" Foreground="{StaticResource MutedTextBrush}" /></StackPanel></Border>
+                    </Grid>
+
+                    <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="11" Padding="22">
+                        <StackPanel Spacing="12">
+                            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><TextBlock Text="Preview checks" FontSize="18" /><Button Grid.Column="1" Content="Run Doctor Again" Click="RunDoctorPreview" Padding="16,7" /></Grid>
+                            <Border Background="#292E31" CornerRadius="7" Padding="14,11"><TextBlock Text="✓  Native Windows windowing is available" Foreground="#51D478" /></Border>
+                            <Border Background="#292E31" CornerRadius="7" Padding="14,11"><TextBlock Text="✓  VaultKind visual resources loaded successfully" Foreground="#51D478" /></Border>
+                            <Border Background="#292E31" CornerRadius="7" Padding="14,11"><TextBlock Text="✓  This preview performs no network operations" Foreground="#51D478" /></Border>
+                            <Border Background="#293A4A" BorderBrush="#367DC2" BorderThickness="1" CornerRadius="7" Padding="14,11"><TextBlock Text="ⓘ  The Java vault engine is intentionally not connected yet" Foreground="#AFC8E2" /></Border>
+                        </StackPanel>
+                    </Border>
+
+                    <Button Content="Back to Dashboard" HorizontalAlignment="Left" Padding="18,8" Click="ShowDashboard" AutomationProperties.Name="Back to Dashboard" />
+                </StackPanel>
+            </ScrollViewer>
+
+            <ScrollViewer x:Name="AddVaultView" Grid.Row="1" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <StackPanel MaxWidth="900" Margin="42,34,42,50" HorizontalAlignment="Center" Spacing="22">
+                    <StackPanel Spacing="5">
+                        <TextBlock Text="How would you like to get started?" FontSize="27" FontWeight="SemiBold" />
+                        <TextBlock Text="Create a new encrypted vault or connect one that already exists." Foreground="{StaticResource MutedTextBrush}" FontSize="15" />
+                    </StackPanel>
+
+                    <Grid ColumnSpacing="18">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Height="270" Padding="24" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" CornerRadius="11" Click="ShowCreateVault" AutomationProperties.Name="Create a new vault">
+                            <Grid>
+                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                <Border Width="52" Height="52" CornerRadius="26" Background="#35444D" HorizontalAlignment="Left"><FontIcon Glyph="&#xE710;" FontSize="25" Foreground="{StaticResource BrandBlueBrush}" /></Border>
+                                <StackPanel Grid.Row="1" Margin="0,18,0,0" Spacing="10"><TextBlock Text="Create a new vault" FontSize="22" FontWeight="SemiBold" /><TextBlock Text="Set up a secure space for files on this computer or in your cloud storage." TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" FontSize="15" /></StackPanel>
+                                <TextBlock Grid.Row="2" Text="Create vault  →" Foreground="{StaticResource BrandBlueBrush}" FontSize="15" />
+                            </Grid>
+                        </Button>
+                        <Button Grid.Column="1" Height="270" Padding="24" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" CornerRadius="11" AutomationProperties.Name="Connect an existing vault">
+                            <Grid>
+                                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                                <Border Width="52" Height="52" CornerRadius="26" Background="#35444D" HorizontalAlignment="Left"><FontIcon Glyph="&#xE8B7;" FontSize="25" Foreground="{StaticResource BrandBlueBrush}" /></Border>
+                                <StackPanel Grid.Row="1" Margin="0,18,0,0" Spacing="10"><TextBlock Text="Connect an existing vault" FontSize="22" FontWeight="SemiBold" /><TextBlock Text="Add a vault you created before, including one stored on another device." TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" FontSize="15" /></StackPanel>
+                                <TextBlock Grid.Row="2" Text="Choose vault  →" Foreground="{StaticResource BrandBlueBrush}" FontSize="15" />
+                            </Grid>
+                        </Button>
+                    </Grid>
+
+                    <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="20,16">
+                        <Grid ColumnSpacing="14">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE777;" Foreground="{StaticResource BrandBlueBrush}" FontSize="21" VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Spacing="3"><TextBlock Text="Having trouble with a vault?" FontSize="17" /><TextBlock Text="Repair or recover access without creating another vault." Foreground="{StaticResource MutedTextBrush}" FontSize="12" /></StackPanel>
+                            <Button Grid.Column="2" Content="Repair or Recover" Padding="17,8" VerticalAlignment="Center" AutomationProperties.Name="Repair or recover a vault" />
+                        </Grid>
+                    </Border>
+                    <Button Content="Back to Dashboard" HorizontalAlignment="Left" Padding="18,8" Click="ShowDashboard" AutomationProperties.Name="Back to Dashboard" />
+                </StackPanel>
+            </ScrollViewer>
+
+            <ScrollViewer x:Name="CreateVaultView" Grid.Row="1" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <Grid MaxWidth="900" Margin="42,30,42,42" HorizontalAlignment="Center">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                    <StackPanel Spacing="10">
+                        <Grid>
+                            <TextBlock Text="CREATE A VAULT" Foreground="{StaticResource BrandBlueBrush}" FontSize="12" FontWeight="SemiBold" />
+                            <TextBlock Text="STEP 1 OF 4" HorizontalAlignment="Right" Foreground="{StaticResource MutedTextBrush}" FontSize="11" />
+                        </Grid>
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Height="4" Background="#2B83E7" CornerRadius="2" />
+                            <Border Grid.Column="1" Height="4" Background="#586168" CornerRadius="2" />
+                            <Border Grid.Column="2" Height="4" Background="#586168" CornerRadius="2" />
+                            <Border Grid.Column="3" Height="4" Background="#586168" CornerRadius="2" />
+                        </Grid>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Margin="0,30,0,34" Spacing="20">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Name your vault" FontSize="29" FontWeight="SemiBold" />
+                            <TextBlock Text="This name helps you recognize the vault in VaultKind. You can change it later." Foreground="{StaticResource MutedTextBrush}" FontSize="14" />
+                        </StackPanel>
+                        <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="26,22">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Vault name" FontSize="14" />
+                                <TextBox x:Name="CreateVaultNameInput" PlaceholderText="For example: Personal files" FontSize="18" TextChanged="CreateVaultNameChanged" KeyDown="CreateVaultNameKeyDown" AutomationProperties.Name="Vault name" />
+                                <Grid ColumnSpacing="18">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="ⓘ  Use letters, numbers, spaces, hyphens, or underscores." Foreground="{StaticResource MutedTextBrush}" FontSize="13" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="CreateVaultNameStatus" Grid.Column="1" Text="" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" Visibility="Collapsed" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <Grid Grid.Row="2">
+                        <Button Content="Back" Padding="28,9" Click="ShowAddVault" AutomationProperties.Name="Back to Add Vault" />
+                        <Button x:Name="CreateVaultNextButton" Content="Next" Padding="30,9" HorizontalAlignment="Right" IsEnabled="False" Background="#2B83E7" Foreground="White" Click="ShowCreateVaultStorage" AutomationProperties.Name="Continue to storage location" />
+                    </Grid>
+                </Grid>
+            </ScrollViewer>
+
+            <ScrollViewer x:Name="CreateVaultStorageView" Grid.Row="1" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <Grid MaxWidth="900" Margin="42,30,42,42" HorizontalAlignment="Center">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                    <StackPanel Spacing="10">
+                        <Grid>
+                            <TextBlock Text="CREATE A VAULT" Foreground="{StaticResource BrandBlueBrush}" FontSize="12" FontWeight="SemiBold" />
+                            <TextBlock Text="STEP 2 OF 4" HorizontalAlignment="Right" Foreground="{StaticResource MutedTextBrush}" FontSize="11" />
+                        </Grid>
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Height="4" Background="#2B83E7" CornerRadius="2" />
+                            <Border Grid.Column="1" Height="4" Background="#2B83E7" CornerRadius="2" />
+                            <Border Grid.Column="2" Height="4" Background="#586168" CornerRadius="2" />
+                            <Border Grid.Column="3" Height="4" Background="#586168" CornerRadius="2" />
+                        </Grid>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Margin="0,30,0,34" Spacing="18">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Choose where to store it" FontSize="29" FontWeight="SemiBold" />
+                            <TextBlock Text="VaultKind encrypts your files before saving them here. Choose a local folder or one that syncs with your cloud service." Foreground="{StaticResource MutedTextBrush}" FontSize="14" TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="26,22" MinHeight="150">
+                            <StackPanel Spacing="18">
+                                <TextBlock Text="Storage provider or folder" FontSize="14" />
+                                <StackPanel Orientation="Horizontal" Spacing="14">
+                                    <RadioButton IsChecked="True" Content="Custom location" FontSize="18" VerticalAlignment="Center" IsTabStop="False" />
+                                    <Button Padding="18,8" Click="ChooseCreateVaultFolder" AutomationProperties.Name="Choose storage folder">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <FontIcon Glyph="&#xE8B7;" />
+                                            <TextBlock Text="Choose folder…" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                                <TextBlock Text="Choose the parent folder. VaultKind will create a new folder inside it using your vault name." Foreground="{StaticResource MutedTextBrush}" FontSize="13" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Storage location" FontSize="14" />
+                            <TextBox x:Name="CreateVaultStoragePath" IsReadOnly="True" PlaceholderText="Choose a folder to continue" FontSize="17" AutomationProperties.Name="Selected vault storage location" />
+                            <TextBlock x:Name="CreateVaultStorageStatus" Text="" HorizontalAlignment="Right" FontSize="14" FontWeight="SemiBold" Visibility="Collapsed" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Grid Grid.Row="2">
+                        <Button Content="Back" Padding="28,9" Click="ReturnToCreateVaultName" AutomationProperties.Name="Back to vault name" />
+                        <Button x:Name="CreateVaultStorageNextButton" Content="Next" Padding="30,9" HorizontalAlignment="Right" IsEnabled="False" Background="#2B83E7" Foreground="White" Click="ShowCreateVaultReview" AutomationProperties.Name="Continue to review" />
+                    </Grid>
+                </Grid>
+            </ScrollViewer>
+
+            <ScrollViewer x:Name="CreateVaultReviewView" Grid.Row="1" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <Grid MaxWidth="900" Margin="42,30,42,42" HorizontalAlignment="Center">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                    <StackPanel Spacing="10">
+                        <Grid>
+                            <TextBlock Text="CREATE A VAULT" Foreground="{StaticResource BrandBlueBrush}" FontSize="12" FontWeight="SemiBold" />
+                            <TextBlock Text="STEP 3 OF 4" HorizontalAlignment="Right" Foreground="{StaticResource MutedTextBrush}" FontSize="11" />
+                        </Grid>
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Height="4" Background="#2B83E7" CornerRadius="2" />
+                            <Border Grid.Column="1" Height="4" Background="#2B83E7" CornerRadius="2" />
+                            <Border Grid.Column="2" Height="4" Background="#2B83E7" CornerRadius="2" />
+                            <Border Grid.Column="3" Height="4" Background="#586168" CornerRadius="2" />
+                        </Grid>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Margin="0,24,0,28" Spacing="14">
+                        <StackPanel Spacing="5">
+                            <TextBlock Text="Review your vault" FontSize="29" FontWeight="SemiBold" />
+                            <TextBlock Text="Check these details before choosing how your vault will be protected. Nothing has been created yet." Foreground="{StaticResource MutedTextBrush}" FontSize="14" TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="18,14">
+                            <StackPanel Spacing="10">
+                                <Grid ColumnSpacing="14">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="38" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                    <Border Width="38" Height="38" CornerRadius="19" Background="#303940"><FontIcon Glyph="&#xE70F;" Foreground="{StaticResource BrandBlueBrush}" /></Border>
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock Text="Vault name" Foreground="{StaticResource MutedTextBrush}" FontSize="11" />
+                                        <TextBlock x:Name="CreateVaultReviewName" Text="Vault" FontSize="17" />
+                                    </StackPanel>
+                                </Grid>
+                                <Border Height="1" Background="{StaticResource CardBorderBrush}" />
+                                <Grid ColumnSpacing="14">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="38" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                    <Border Width="38" Height="38" CornerRadius="19" Background="#303940"><FontIcon Glyph="&#xE7C3;" Foreground="{StaticResource BrandBlueBrush}" /></Border>
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock Text="Encrypted storage location" Foreground="{StaticResource MutedTextBrush}" FontSize="11" />
+                                        <TextBlock x:Name="CreateVaultReviewPath" Text="Storage location" FontSize="17" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Grid>
+                                <Border Background="#2A3034" CornerRadius="8" Padding="14,11">
+                                    <Grid ColumnSpacing="10">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                        <FontIcon Glyph="&#xE946;" Foreground="{StaticResource BrandBlueBrush}" FontSize="15" VerticalAlignment="Top" Margin="0,3,0,0" />
+                                        <TextBlock Grid.Column="1" Text="VaultKind will store encrypted data here. After setup, add and open your files through VaultKind—not directly inside this folder." Foreground="{StaticResource MutedTextBrush}" FontSize="14" TextWrapping="Wrap" />
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="18,14">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Advanced compatibility" FontSize="13" />
+                                <TextBlock Text="Most people should leave this off. Use it only when a storage provider or file system limits encrypted file-name length." Foreground="{StaticResource MutedTextBrush}" FontSize="14" TextWrapping="Wrap" />
+                                <CheckBox x:Name="CreateVaultShortNamesOption" Content="Change encrypted file-name length" FontSize="16" AutomationProperties.Name="Change encrypted file-name length" Checked="CreateVaultShortNamesChanged" Unchecked="CreateVaultShortNamesChanged" />
+                                <Border x:Name="CreateVaultShortNamesNotice" Visibility="Collapsed" Background="#26384A" BorderBrush="#2B83E7" BorderThickness="1" CornerRadius="8" Padding="12,9">
+                                    <Grid ColumnSpacing="9">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                        <FontIcon Glyph="&#xE946;" Foreground="{StaticResource BrandBlueBrush}" FontSize="14" VerticalAlignment="Top" Margin="0,3,0,0" />
+                                        <TextBlock Grid.Column="1" Text="Compatibility mode is on. VaultKind will use shorter encrypted file names for storage providers with stricter limits." Foreground="#C8DDF4" FontSize="13" TextWrapping="Wrap" />
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <Grid Grid.Row="2">
+                        <Button Content="Back" Padding="28,9" Click="ReturnToCreateVaultStorage" AutomationProperties.Name="Back to storage location" />
+                        <Button x:Name="CreateVaultReviewNextButton" Content="Next" Padding="30,9" HorizontalAlignment="Right" Background="#2B83E7" Foreground="White" Click="ShowCreateVaultProtection" AutomationProperties.Name="Continue to vault protection" />
+                    </Grid>
+                </Grid>
+            </ScrollViewer>
+
+            <ScrollViewer x:Name="CreateVaultProtectionView" Grid.Row="1" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <Grid MaxWidth="900" Margin="42,26,42,34" HorizontalAlignment="Center">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                    <StackPanel Spacing="10">
+                        <Grid>
+                            <TextBlock Text="CREATE A VAULT" Foreground="{StaticResource BrandBlueBrush}" FontSize="12" FontWeight="SemiBold" />
+                            <TextBlock Text="STEP 4 OF 4" HorizontalAlignment="Right" Foreground="{StaticResource MutedTextBrush}" FontSize="11" />
+                        </Grid>
+                        <Grid ColumnSpacing="8">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Height="4" Background="#2B83E7" CornerRadius="2" />
+                            <Border Grid.Column="1" Height="4" Background="#2B83E7" CornerRadius="2" />
+                            <Border Grid.Column="2" Height="4" Background="#2B83E7" CornerRadius="2" />
+                            <Border Grid.Column="3" Height="4" Background="#2B83E7" CornerRadius="2" />
+                        </Grid>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Margin="0,20,0,22" Spacing="12">
+                        <StackPanel Spacing="5">
+                            <TextBlock Text="Protect your vault" FontSize="29" FontWeight="SemiBold" />
+                            <TextBlock Text="Choose a strong, memorable password. VaultKind cannot recover it for you." Foreground="{StaticResource MutedTextBrush}" FontSize="14" TextWrapping="Wrap" />
+                        </StackPanel>
+
+                        <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="22,16">
+                            <StackPanel Spacing="11">
+                                <TextBlock Text="Enter a new password" FontSize="16" />
+                                <PasswordBox x:Name="CreateVaultPasswordInput" PasswordRevealMode="Peek" PasswordChanged="CreateVaultPasswordChanged" KeyDown="CreateVaultPasswordKeyDown" AutomationProperties.Name="New vault password" />
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                    <Border x:Name="PasswordStrengthOne" Grid.Column="0" Height="5" Background="#586168" CornerRadius="2" />
+                                    <Border x:Name="PasswordStrengthTwo" Grid.Column="1" Height="5" Background="#586168" CornerRadius="2" />
+                                    <Border x:Name="PasswordStrengthThree" Grid.Column="2" Height="5" Background="#586168" CornerRadius="2" />
+                                    <Border x:Name="PasswordStrengthFour" Grid.Column="3" Height="5" Background="#586168" CornerRadius="2" />
+                                </Grid>
+                                <TextBlock x:Name="CreateVaultPasswordStrength" Text="Use at least 8 characters" HorizontalAlignment="Right" Foreground="{StaticResource MutedTextBrush}" FontSize="13" />
+                                <TextBlock Text="Confirm the new password" FontSize="16" Margin="0,5,0,0" />
+                                <PasswordBox x:Name="CreateVaultPasswordConfirmInput" PasswordRevealMode="Peek" PasswordChanged="CreateVaultPasswordChanged" KeyDown="CreateVaultPasswordKeyDown" AutomationProperties.Name="Confirm new vault password" />
+                                <TextBlock x:Name="CreateVaultPasswordMatchStatus" Text="" HorizontalAlignment="Right" FontSize="14" FontWeight="SemiBold" Visibility="Collapsed" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="22,14">
+                            <StackPanel Spacing="7">
+                                <TextBlock Text="Recovery option" FontSize="13" />
+                                <TextBlock Text="A recovery key can restore access if you forget your password." Foreground="{StaticResource MutedTextBrush}" FontSize="14" TextWrapping="Wrap" />
+                                <RadioButton x:Name="CreateRecoveryKeyOption" GroupName="CreateVaultRecovery" Content="Create a recovery key (recommended)" FontSize="16" Checked="CreateVaultRecoveryChanged" />
+                                <RadioButton x:Name="CreateWithoutRecoveryKeyOption" GroupName="CreateVaultRecovery" Content="Continue without a recovery key" FontSize="16" Checked="CreateVaultRecoveryChanged" />
+                            </StackPanel>
+                        </Border>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+                            <ProgressRing x:Name="CreateVaultCreationProgress" Width="22" Height="22" IsActive="False" Visibility="Collapsed" />
+                            <TextBlock x:Name="CreateVaultCreationStatus" Text="" FontSize="13" VerticalAlignment="Center" Visibility="Collapsed" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Grid Grid.Row="2">
+                        <Button Content="Back" Padding="28,9" Click="ReturnToCreateVaultReview" AutomationProperties.Name="Back to vault review" />
+                        <Button x:Name="CreateVaultFinalButton" Content="Create Vault" Padding="26,9" HorizontalAlignment="Right" IsEnabled="False" Background="#2B83E7" Foreground="White" Click="SubmitCreateVault" AutomationProperties.Name="Create Vault" />
+                    </Grid>
+                </Grid>
+            </ScrollViewer>
+
+            <ScrollViewer x:Name="CreateVaultSuccessView" Grid.Row="1" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <StackPanel MaxWidth="900" Margin="42,36,42,42" HorizontalAlignment="Center" Spacing="16">
+                    <Grid Width="250" Height="118" HorizontalAlignment="Center">
+                        <Image Source="Assets/vaultkind_full_lockup.png" Stretch="Uniform" />
+                        <Border Width="44" Height="44" CornerRadius="22" Background="#2B83E7" HorizontalAlignment="Right" VerticalAlignment="Bottom" BorderBrush="#252A2E" BorderThickness="4">
+                            <FontIcon Glyph="&#xE73E;" Foreground="White" FontSize="20" />
+                        </Border>
+                    </Grid>
+                    <TextBlock Text="Your vault is ready." FontSize="29" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                    <TextBlock HorizontalAlignment="Center" FontSize="17">
+                        <Run x:Name="CreatedVaultNameText" Text="Your vault" FontWeight="SemiBold" />
+                        <Run Text=" has been added successfully." />
+                    </TextBlock>
+                    <TextBlock Text="Unlock it now to start adding files, or choose Done and come back whenever you're ready." Foreground="{StaticResource MutedTextBrush}" FontSize="15" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" />
+
+                    <Border x:Name="CreatedRecoveryKeyPanel" Background="{StaticResource CardBrush}" BorderBrush="#2B83E7" BorderThickness="1" CornerRadius="12" Padding="20,16" Visibility="Collapsed">
+                        <StackPanel Spacing="10">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                <Border Width="44" Height="44" CornerRadius="22" Background="#35444D"><FontIcon Glyph="&#xE192;" Foreground="{StaticResource BrandBlueBrush}" FontSize="22" /></Border>
+                                <StackPanel Grid.Column="1" Spacing="2">
+                                    <TextBlock Text="Save your recovery key" FontSize="18" FontWeight="SemiBold" />
+                                    <TextBlock Text="It can restore access if you forget your password. Keep it somewhere secure and separate from the vault." Foreground="{StaticResource MutedTextBrush}" FontSize="13" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Grid>
+                            <TextBox x:Name="CreatedRecoveryKeyText" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="110" FontFamily="Consolas" AutomationProperties.Name="Recovery key" />
+                            <Button Content="Copy Recovery Key" HorizontalAlignment="Right" Padding="18,8" Click="CopyCreatedRecoveryKey" AutomationProperties.Name="Copy recovery key" />
+                            <CheckBox x:Name="CreatedRecoveryKeySaved" Content="I have saved this recovery key somewhere secure" Checked="CreatedRecoveryKeySavedChanged" Unchecked="CreatedRecoveryKeySavedChanged" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#3B341D" BorderBrush="#D6A900" BorderThickness="1" CornerRadius="10" Padding="16,12">
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE7BA;" Foreground="#FFC107" VerticalAlignment="Top" Margin="0,3,0,0" />
+                            <TextBlock Grid.Column="1" Text="VaultKind cannot recover your password. Anyone with the recovery key can restore access, so treat it like a master key." TextWrapping="Wrap" FontSize="13" />
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+                        <Button x:Name="CreatedVaultDoneButton" Content="Done" Padding="28,9" Click="FinishCreateVault" AutomationProperties.Name="Done" />
+                        <Button x:Name="CreatedVaultUnlockButton" Content="Unlock Now" Padding="24,9" Background="#2B83E7" Foreground="White" Click="UnlockCreatedVault" AutomationProperties.Name="Unlock newly created vault" />
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+            <ScrollViewer x:Name="VaultView" Grid.Row="1" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <StackPanel MaxWidth="860" Margin="36,34,36,50" HorizontalAlignment="Center" Spacing="20">
+                    <Grid ColumnSpacing="18">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border Width="58" Height="58" CornerRadius="29" Background="#35444D">
+                            <FontIcon x:Name="SelectedVaultIcon" Glyph="&#xE72E;" FontSize="27" Foreground="{StaticResource BrandBlueBrush}" />
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
+                            <TextBlock x:Name="SelectedVaultName" Text="Vault" FontSize="27" FontWeight="SemiBold" />
+                            <TextBlock x:Name="SelectedVaultPath" Text="Vault location" FontSize="14" Foreground="{StaticResource MutedTextBrush}" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                        <Border x:Name="SelectedVaultStatusBorder" Grid.Column="2" BorderBrush="{StaticResource BrandBlueBrush}" BorderThickness="1" CornerRadius="14" Padding="12,5" VerticalAlignment="Center">
+                            <TextBlock x:Name="SelectedVaultStatus" Text="LOCKED" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource BrandBlueBrush}" />
+                        </Border>
+                    </Grid>
+
+                    <Border Height="1" Background="#4A5257" />
+
+                    <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="28">
+                        <Grid ColumnSpacing="20">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border Width="64" Height="64" CornerRadius="32" Background="#314239" VerticalAlignment="Center">
+                                <FontIcon x:Name="SelectedVaultStateIcon" Glyph="&#xE72E;" FontSize="30" Foreground="{StaticResource BrandBlueBrush}" />
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="6">
+                                <TextBlock x:Name="SelectedVaultStateTitle" Text="Your vault is protected" FontSize="24" FontWeight="SemiBold" />
+                                <TextBlock x:Name="SelectedVaultStateDescription" Text="Its readable view is closed. The encrypted files remain safely stored." TextWrapping="Wrap" FontSize="16" Foreground="{StaticResource MutedTextBrush}" />
+                            </StackPanel>
+                            <Button x:Name="UnlockVaultButton" Grid.Column="2" Content="Unlock Vault" Padding="22,10" VerticalAlignment="Center" Click="ShowUnlock" AutomationProperties.Name="Unlock Vault" />
+                            <StackPanel x:Name="UnlockedVaultActions" Grid.Column="2" Visibility="Collapsed" VerticalAlignment="Center" Spacing="10">
+                                <Button x:Name="OpenDriveButton" Content="Open Drive" Padding="22,10" HorizontalAlignment="Stretch" Click="OpenDrive" AutomationProperties.Name="Open readable drive" />
+                                <Button x:Name="LockVaultButton" Content="Lock Vault" Padding="22,10" HorizontalAlignment="Stretch" Click="LockVault" AutomationProperties.Name="Lock vault" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border Background="#293A4A" BorderBrush="#367DC2" BorderThickness="1" CornerRadius="10" Padding="18,14">
+                        <Grid ColumnSpacing="14">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <FontIcon Glyph="&#xE946;" Foreground="{StaticResource BrandBlueBrush}" FontSize="20" VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Spacing="3">
+                                <TextBlock Text="Connected to the VaultKind engine" FontSize="17" />
+                                <TextBlock Text="This state and location come directly from the local vault engine. No network service is involved." TextWrapping="Wrap" Foreground="#AFC8E2" FontSize="12" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <ProgressRing x:Name="VaultActionProgress" Width="20" Height="20" IsActive="False" Visibility="Collapsed" />
+                        <TextBlock x:Name="VaultActionStatus" Text="" TextWrapping="Wrap" VerticalAlignment="Center" Visibility="Collapsed" />
+                    </StackPanel>
+
+                    <Button Content="Back to Dashboard" HorizontalAlignment="Left" Padding="18,8" Click="ShowDashboard" AutomationProperties.Name="Back to Dashboard" />
+                </StackPanel>
+            </ScrollViewer>
+
+            <ScrollViewer x:Name="UnlockView" Grid.Row="1" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <StackPanel MaxWidth="760" Margin="42,38,42,50" HorizontalAlignment="Center" Spacing="20">
+                    <Border Background="#202426" BorderBrush="#4E575D" BorderThickness="1" CornerRadius="12" Padding="30">
+                        <StackPanel Spacing="22">
+                            <Grid ColumnSpacing="18">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                <Border Width="58" Height="58" CornerRadius="29" Background="#35444D">
+                                    <FontIcon Glyph="&#xE72E;" FontSize="27" Foreground="{StaticResource BrandBlueBrush}" />
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
+                                    <TextBlock x:Name="UnlockVaultName" Text="Vault" FontSize="25" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="UnlockVaultPath" Text="Vault location" Foreground="{StaticResource MutedTextBrush}" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="Vault password" FontSize="15" />
+                                <PasswordBox x:Name="UnlockPassword" PlaceholderText="Enter your password" PasswordRevealMode="Peek" FontSize="17" Padding="12,9" KeyDown="UnlockPasswordKeyDown" AutomationProperties.Name="Vault password" />
+                                <TextBlock Text="Your password is sent only to the local VaultKind engine on this computer." TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
+                            </StackPanel>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
+                                    <ProgressRing x:Name="UnlockProgress" Width="20" Height="20" IsActive="False" />
+                                    <TextBlock x:Name="UnlockStatus" TextWrapping="Wrap" VerticalAlignment="Center" Visibility="Collapsed" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                                    <Button Content="Cancel" Padding="20,9" Click="CancelUnlock" />
+                                    <Button x:Name="UnlockSubmitButton" Content="Unlock" Padding="24,9" Background="#287FE5" Click="SubmitUnlock" AutomationProperties.Name="Unlock vault" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Page>

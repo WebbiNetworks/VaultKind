@@ -142,6 +142,10 @@ public class VaultState extends ObservableValueBase<VaultState.Value> implements
 	@Override
 	protected void fireValueChangedEvent() {
 		signal();
+		if (Boolean.getBoolean("vaultkind.nativeBackend")) {
+			super.fireValueChangedEvent();
+			return;
+		}
 		if (Platform.isFxApplicationThread()) {
 			super.fireValueChangedEvent();
 		} else {

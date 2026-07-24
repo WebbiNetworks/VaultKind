@@ -17,27 +17,29 @@ public class NativeUiProtocol {
 	private final VaultSummarySource vaultSummarySource;
 	private final VaultCommandSource vaultCommandSource;
 	private final VaultCreateSource vaultCreateSource;
+	private final VaultConnectSource vaultConnectSource;
 	private final ShutdownSource shutdownSource;
 	private final NativeBackendTerminator terminator;
 
 	@Inject
 	public NativeUiProtocol(VaultListSnapshotProvider vaultListSnapshotProvider, NativeVaultOperations vaultOperations, NativeVaultCreator vaultCreator, NativeBackendTerminator terminator) {
-		this(new ObjectMapper(), vaultListSnapshotProvider::get, vaultOperations::execute, vaultCreator::create, vaultOperations::lockAll, terminator);
+		this(new ObjectMapper(), vaultListSnapshotProvider::get, vaultOperations::execute, vaultCreator::create, vaultCreator::connect, vaultOperations::lockAll, terminator);
 	}
 
 	NativeUiProtocol(ObjectMapper objectMapper, VaultSummarySource vaultSummarySource) {
-		this(objectMapper, vaultSummarySource, (operation, vaultId, password) -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), (path, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), () -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), new NativeBackendTerminator());
+		this(objectMapper, vaultSummarySource, (operation, vaultId, password, recoveryKey) -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), (path, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), path -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), () -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), new NativeBackendTerminator());
 	}
 
 	NativeUiProtocol(ObjectMapper objectMapper, VaultSummarySource vaultSummarySource, VaultCommandSource vaultCommandSource) {
-		this(objectMapper, vaultSummarySource, vaultCommandSource, (path, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), () -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), new NativeBackendTerminator());
+		this(objectMapper, vaultSummarySource, vaultCommandSource, (path, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), path -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), () -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), new NativeBackendTerminator());
 	}
 
-	NativeUiProtocol(ObjectMapper objectMapper, VaultSummarySource vaultSummarySource, VaultCommandSource vaultCommandSource, VaultCreateSource vaultCreateSource, ShutdownSource shutdownSource, NativeBackendTerminator terminator) {
+	NativeUiProtocol(ObjectMapper objectMapper, VaultSummarySource vaultSummarySource, VaultCommandSource vaultCommandSource, VaultCreateSource vaultCreateSource, VaultConnectSource vaultConnectSource, ShutdownSource shutdownSource, NativeBackendTerminator terminator) {
 		this.objectMapper = objectMapper;
 		this.vaultSummarySource = vaultSummarySource;
 		this.vaultCommandSource = vaultCommandSource;
 		this.vaultCreateSource = vaultCreateSource;
+		this.vaultConnectSource = vaultConnectSource;
 		this.shutdownSource = shutdownSource;
 		this.terminator = terminator;
 	}
@@ -52,12 +54,15 @@ public class NativeUiProtocol {
 			response = NativeUiResponse.hello(request.requestId());
 		} else if ("vault.list".equals(request.operation())) {
 			response = NativeUiResponse.vaultList(request.requestId(), vaultSummarySource.get());
-		} else if ("vault.unlock".equals(request.operation()) || "vault.lock".equals(request.operation()) || "vault.reveal".equals(request.operation())) {
-			var result = vaultCommandSource.execute(request.operation(), request.vaultId(), request.password());
+		} else if ("vault.unlock".equals(request.operation()) || "vault.lock".equals(request.operation()) || "vault.reveal".equals(request.operation()) || "vault.remove".equals(request.operation()) || "vault.reset_password".equals(request.operation())) {
+			var result = vaultCommandSource.execute(request.operation(), request.vaultId(), request.password(), request.recoveryKey());
 			response = result.ok() ? NativeUiResponse.command(request.requestId(), result.state()) : NativeUiResponse.error(request.requestId(), result.error());
 		} else if ("vault.create".equals(request.operation())) {
 			var result = vaultCreateSource.create(request.vaultPath(), request.password(), request.createRecoveryKey(), request.useShortNames());
 			response = result.ok() ? NativeUiResponse.created(request.requestId(), result.state(), result.vaultId(), result.recoveryKey()) : NativeUiResponse.error(request.requestId(), result.error());
+		} else if ("vault.connect".equals(request.operation())) {
+			var result = vaultConnectSource.connect(request.vaultPath());
+			response = result.ok() ? NativeUiResponse.created(request.requestId(), result.state(), result.vaultId(), null) : NativeUiResponse.error(request.requestId(), result.error());
 		} else if ("backend.shutdown".equals(request.operation())) {
 			var result = shutdownSource.lockAll();
 			response = result.ok() ? NativeUiResponse.command(request.requestId(), result.state()) : NativeUiResponse.error(request.requestId(), result.error());
@@ -89,13 +94,13 @@ public class NativeUiProtocol {
 		out.flush();
 	}
 
-	public record NativeUiRequest(int protocol, String requestId, String operation, String vaultId, char[] password, String vaultPath, boolean createRecoveryKey, boolean useShortNames) {
+	public record NativeUiRequest(int protocol, String requestId, String operation, String vaultId, char[] password, char[] recoveryKey, String vaultPath, boolean createRecoveryKey, boolean useShortNames) {
 		public NativeUiRequest(int protocol, String requestId, String operation) {
-			this(protocol, requestId, operation, null, null, null, false, false);
+			this(protocol, requestId, operation, null, null, null, null, false, false);
 		}
 
 		public NativeUiRequest(int protocol, String requestId, String operation, String vaultId, char[] password) {
-			this(protocol, requestId, operation, vaultId, password, null, false, false);
+			this(protocol, requestId, operation, vaultId, password, null, null, false, false);
 		}
 	}
 
@@ -129,12 +134,17 @@ public class NativeUiProtocol {
 
 	@FunctionalInterface
 	interface VaultCommandSource {
-		NativeVaultOperations.NativeCommandResult execute(String operation, String vaultId, char[] password);
+		NativeVaultOperations.NativeCommandResult execute(String operation, String vaultId, char[] password, char[] recoveryKey);
 	}
 
 	@FunctionalInterface
 	interface VaultCreateSource {
 		NativeVaultCreator.NativeCreateResult create(String path, char[] password, boolean createRecoveryKey, boolean useShortNames);
+	}
+
+	@FunctionalInterface
+	interface VaultConnectSource {
+		NativeVaultCreator.NativeCreateResult connect(String path);
 	}
 
 	@FunctionalInterface

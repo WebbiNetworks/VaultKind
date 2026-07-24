@@ -13,6 +13,7 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.function.Predicate;
 
 public class RecoveryKeyFactoryTest {
@@ -33,6 +34,22 @@ public class RecoveryKeyFactoryTest {
 		String recoveryKey = inTest.createRecoveryKey(pathToVault, "asd");
 		Assertions.assertNotNull(recoveryKey);
 		Assertions.assertEquals(44, Splitter.on(' ').splitToList(recoveryKey).size()); // 66 bytes encoded as 44 words
+	}
+
+	@Test
+	@DisplayName("createRecoveryKey(Masterkey) does not alter the source master key")
+	public void testCreateRecoveryKeyDoesNotAlterSourceMasterkey() {
+		byte[] keyBytes = new byte[64];
+		Arrays.fill(keyBytes, (byte) 0x5A);
+		Masterkey masterkey = Mockito.mock(Masterkey.class);
+		Mockito.when(masterkey.getEncoded()).thenReturn(keyBytes);
+
+		String recoveryKey = inTest.createRecoveryKey(masterkey);
+
+		Assertions.assertNotNull(recoveryKey);
+		byte[] expected = new byte[64];
+		Arrays.fill(expected, (byte) 0x5A);
+		Assertions.assertArrayEquals(expected, keyBytes);
 	}
 
 	@Test

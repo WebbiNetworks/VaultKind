@@ -50,7 +50,7 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return Unavailable("Waiting for the Java vault engine. The native shell remains available.");
+            return Unavailable("Waiting for the local VaultKind engine. The app remains available.");
         }
         catch (Exception)
         {
@@ -66,6 +66,12 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
 
     public async Task<VaultCommandResult> RevealAsync(string vaultId, CancellationToken cancellationToken = default)
         => await ExecuteCommandAsync("vault.reveal", vaultId, null, TimeSpan.FromSeconds(10), cancellationToken);
+
+    public async Task<VaultCommandResult> RemoveAsync(string vaultId, CancellationToken cancellationToken = default)
+        => await ExecuteCommandAsync("vault.remove", vaultId, null, TimeSpan.FromSeconds(10), cancellationToken);
+
+    public async Task<VaultCommandResult> ResetPasswordAsync(string vaultId, string recoveryKey, string newPassword, CancellationToken cancellationToken = default)
+        => await ExecuteCommandAsync("vault.reset_password", vaultId, newPassword, TimeSpan.FromSeconds(45), cancellationToken, recoveryKey);
 
     public async Task<VaultCreateResult> CreateAsync(string path, string password, bool createRecoveryKey, bool useShortNames, CancellationToken cancellationToken = default)
     {
@@ -106,7 +112,43 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
         }
     }
 
-    private static async Task<VaultCommandResult> ExecuteCommandAsync(string operation, string vaultId, string? password, TimeSpan commandTimeout, CancellationToken cancellationToken)
+    public async Task<VaultCreateResult> ConnectAsync(string path, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromSeconds(20));
+            using var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
+            var socketPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultKind", "bridge", "native-bridge-v1.sock");
+            await socket.ConnectAsync(new UnixDomainSocketEndPoint(socketPath), timeout.Token);
+            await using var stream = new NetworkStream(socket, ownsSocket: false);
+
+            var helloId = Guid.NewGuid().ToString("N");
+            await WriteFrameAsync(stream, new ProtocolRequest(ProtocolVersion, helloId, "backend.hello"), timeout.Token);
+            var hello = await ReadFrameAsync<ProtocolResponse>(stream, timeout.Token);
+            if (hello.Protocol != ProtocolVersion || hello.RequestId != helloId || !hello.Ok || hello.Backend != "VaultKind Java Engine")
+            {
+                return new VaultCreateResult(false, "engine_unavailable", null, null, null);
+            }
+
+            var requestId = Guid.NewGuid().ToString("N");
+            await WriteFrameAsync(stream, new ProtocolRequest(ProtocolVersion, requestId, "vault.connect", VaultPath: path), timeout.Token);
+            var response = await ReadFrameAsync<ProtocolResponse>(stream, timeout.Token);
+            return response.Protocol == ProtocolVersion && response.RequestId == requestId
+                ? new VaultCreateResult(response.Ok, response.Error, response.State, response.VaultId, null)
+                : new VaultCreateResult(false, "invalid_response", null, null, null);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return new VaultCreateResult(false, "timeout", null, null, null);
+        }
+        catch (Exception)
+        {
+            return new VaultCreateResult(false, "engine_unavailable", null, null, null);
+        }
+    }
+
+    private static async Task<VaultCommandResult> ExecuteCommandAsync(string operation, string vaultId, string? password, TimeSpan commandTimeout, CancellationToken cancellationToken, string? recoveryKey = null)
     {
         try
         {
@@ -126,7 +168,7 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
             }
 
             var requestId = Guid.NewGuid().ToString("N");
-            await WriteFrameAsync(stream, new ProtocolRequest(ProtocolVersion, requestId, operation, vaultId, password), timeout.Token);
+            await WriteFrameAsync(stream, new ProtocolRequest(ProtocolVersion, requestId, operation, vaultId, password, recoveryKey), timeout.Token);
             var response = await ReadFrameAsync<ProtocolResponse>(stream, timeout.Token);
             if (response.Protocol != ProtocolVersion || response.RequestId != requestId)
             {
@@ -179,7 +221,7 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    private sealed record ProtocolRequest(int Protocol, string RequestId, string Operation, string? VaultId = null, string? Password = null, string? VaultPath = null, bool CreateRecoveryKey = false, bool UseShortNames = false);
+    private sealed record ProtocolRequest(int Protocol, string RequestId, string Operation, string? VaultId = null, string? Password = null, string? RecoveryKey = null, string? VaultPath = null, bool CreateRecoveryKey = false, bool UseShortNames = false);
     private sealed record ProtocolResponse(int Protocol, string RequestId, bool Ok, string? Backend, string? Error, IReadOnlyList<ProtocolVault>? Vaults, string? State, string? VaultId, string? RecoveryKey);
     private sealed record ProtocolVault(string Id, string Name, string State, string Path);
 }

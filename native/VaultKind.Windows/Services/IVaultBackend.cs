@@ -6,7 +6,10 @@ internal interface IVaultBackend
     Task<VaultCommandResult> UnlockAsync(string vaultId, string password, CancellationToken cancellationToken = default);
     Task<VaultCommandResult> LockAsync(string vaultId, CancellationToken cancellationToken = default);
     Task<VaultCommandResult> RevealAsync(string vaultId, CancellationToken cancellationToken = default);
+    Task<VaultCommandResult> RemoveAsync(string vaultId, CancellationToken cancellationToken = default);
+    Task<VaultCommandResult> ResetPasswordAsync(string vaultId, string recoveryKey, string newPassword, CancellationToken cancellationToken = default);
     Task<VaultCreateResult> CreateAsync(string path, string password, bool createRecoveryKey, bool useShortNames, CancellationToken cancellationToken = default);
+    Task<VaultCreateResult> ConnectAsync(string path, CancellationToken cancellationToken = default);
 }
 
 internal enum BackendConnectionState

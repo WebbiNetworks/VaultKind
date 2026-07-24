@@ -64,7 +64,7 @@ public class RecoveryKeyFactory {
 	 * This avoids reopening a newly written masterkey file during vault creation.
 	 */
 	public String createRecoveryKey(Masterkey masterkey) {
-		byte[] rawKey = masterkey.getEncoded();
+		byte[] rawKey = Arrays.copyOf(masterkey.getEncoded(), 64);
 		try {
 			return createRecoveryKey(rawKey);
 		} finally {

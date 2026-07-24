@@ -84,8 +84,10 @@ public class VaultListManager {
 	}
 
 	/**
-	 * Safe to call from any thread: the IO work runs on the calling thread, but the
-	 * {@code ObservableList} mutation is marshaled to the JavaFX application thread.
+	 * Safe to call from any thread: the IO work runs on the calling thread. Desktop UI
+	 * callers marshal the {@code ObservableList} mutation to the JavaFX application
+	 * thread, while the native headless backend updates it synchronously because no
+	 * JavaFX toolkit is running there.
 	 */
 	public Vault add(Path pathToVault) throws IOException {
 		Path normalizedPathToVault = pathToVault.normalize().toAbsolutePath();
@@ -93,7 +95,7 @@ public class VaultListManager {
 
 		return get(normalizedPathToVault).orElseGet(() -> {
 			Vault newVault = create(newVaultSettings(normalizedPathToVault));
-			if (Platform.isFxApplicationThread()) {
+			if (Boolean.getBoolean("vaultkind.nativeBackend") || Platform.isFxApplicationThread()) {
 				addVault(newVault);
 			} else {
 				Platform.runLater(() -> addVault(newVault));

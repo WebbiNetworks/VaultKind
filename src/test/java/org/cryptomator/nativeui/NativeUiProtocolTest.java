@@ -52,7 +52,7 @@ class NativeUiProtocolTest {
 	@Test
 	void dispatchesNativeUnlockWithoutEchoingPassword() throws IOException {
 		var password = "test-password".toCharArray();
-		protocol = new NativeUiProtocol(objectMapper, () -> List.of(), (operation, vaultId, suppliedPassword) -> {
+		protocol = new NativeUiProtocol(objectMapper, () -> List.of(), (operation, vaultId, suppliedPassword, suppliedRecoveryKey) -> {
 			assertEquals("vault-1", vaultId);
 			assertEquals("test-password", new String(suppliedPassword));
 			return NativeVaultOperations.NativeCommandResult.success("unlocked");
@@ -63,6 +63,21 @@ class NativeUiProtocolTest {
 		assertTrue(response.ok());
 		assertEquals("unlocked", response.state());
 		assertEquals(null, response.vaults());
+	}
+
+	@Test
+	void dispatchesNativeVaultRemoval() throws IOException {
+		protocol = new NativeUiProtocol(objectMapper, () -> List.of(), (operation, vaultId, suppliedPassword, suppliedRecoveryKey) -> {
+			assertEquals("vault.remove", operation);
+			assertEquals("vault-1", vaultId);
+			assertEquals(null, suppliedPassword);
+			return NativeVaultOperations.NativeCommandResult.success("removed");
+		});
+
+		var response = exchange(new NativeUiProtocol.NativeUiRequest(1, "request-remove", "vault.remove", "vault-1", null));
+
+		assertTrue(response.ok());
+		assertEquals("removed", response.state());
 	}
 
 	@Test

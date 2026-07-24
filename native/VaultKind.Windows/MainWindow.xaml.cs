@@ -30,13 +30,37 @@ public sealed partial class MainWindow : Window
         AppWindow.Changed += TrackWindowPlacement;
         AppWindow.Closing += SaveWindowPlacement;
         Activated += ApplyInitialPresenterState;
+        Activated += EnsureContentKeyboardFocus;
 
         // Navigate the root frame to the main page on startup.
         RootFrame.Navigate(typeof(MainPage));
     }
 
+    private void EnsureContentKeyboardFocus(object sender, WindowActivatedEventArgs args)
+    {
+        if (args.WindowActivationState == WindowActivationState.Deactivated)
+        {
+            return;
+        }
+
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (RootFrame.Content is MainPage page)
+            {
+                page.EnsureKeyboardEntryPoint();
+            }
+        });
+    }
+
     private void RestoreWindowPlacement()
     {
+        if (!AppPreferencesStore.Load().RememberWindowPlacement)
+        {
+            AppWindow.Resize(new SizeInt32(1200, 800));
+            restoredBounds = new RectInt32(AppWindow.Position.X, AppWindow.Position.Y, 1200, 800);
+            return;
+        }
+
         WindowPlacement? saved = WindowPlacementStore.Load();
         if (saved is null)
         {
@@ -75,6 +99,11 @@ public sealed partial class MainWindow : Window
 
     private void SaveWindowPlacement(AppWindow sender, AppWindowClosingEventArgs args)
     {
+        if (!AppPreferencesStore.Load().RememberWindowPlacement)
+        {
+            return;
+        }
+
         bool maximized = sender.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Maximized };
         WindowPlacementStore.Save(restoredBounds, maximized);
     }

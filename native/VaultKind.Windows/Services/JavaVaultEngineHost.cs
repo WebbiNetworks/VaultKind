@@ -37,6 +37,7 @@ internal sealed class JavaVaultEngineHost : IDisposable
         };
 
         string profileRoot = Path.Combine(repositoryRoot, "target", "ui-dev-profile");
+        startInfo.ArgumentList.Add($"-Dlogback.configurationFile={Path.Combine(repositoryRoot, "target", "classes", "logback-native.xml")}");
         startInfo.ArgumentList.Add($"-Dcryptomator.settingsPath={Path.Combine(profileRoot, "settings.json")}");
         startInfo.ArgumentList.Add($"-Dcryptomator.pluginDir={Path.Combine(profileRoot, "plugins")}");
         startInfo.ArgumentList.Add($"-Dcryptomator.logDir={Path.Combine(profileRoot, "logs")}");

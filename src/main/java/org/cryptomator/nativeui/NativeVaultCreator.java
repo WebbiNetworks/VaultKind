@@ -119,6 +119,31 @@ public class NativeVaultCreator {
 		}
 	}
 
+	public NativeCreateResult connect(String suppliedPath) {
+		if (suppliedPath == null || suppliedPath.isBlank()) {
+			return NativeCreateResult.error("invalid_path");
+		}
+
+		try {
+			Path path = Path.of(suppliedPath).normalize().toAbsolutePath();
+			if (!Files.isDirectory(path)) {
+				return NativeCreateResult.error("location_unavailable");
+			}
+			if (vaultListManager.isAlreadyAdded(path)) {
+				return NativeCreateResult.error("already_connected");
+			}
+
+			var vault = vaultListManager.add(path);
+			LOG.info("Connected existing VaultKind vault at {}", path);
+			return NativeCreateResult.success(vault.getId(), null);
+		} catch (org.cryptomator.common.vaults.NotAVaultDirectoryException e) {
+			return NativeCreateResult.error("not_a_vault");
+		} catch (IOException | RuntimeException e) {
+			LOG.warn("Unable to connect existing vault at {}", suppliedPath, e);
+			return NativeCreateResult.error("connect_failed");
+		}
+	}
+
 	private static void clear(char[] password) {
 		if (password != null) {
 			Arrays.fill(password, '\0');

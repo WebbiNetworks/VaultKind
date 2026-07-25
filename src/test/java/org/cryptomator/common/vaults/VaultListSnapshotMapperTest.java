@@ -29,11 +29,12 @@ class VaultListSnapshotMapperTest {
 
 		var result = mapper.map(List.of(vault));
 
-		assertEquals(List.of(new VaultSummary("vault-1", "Personal", "locked", "F:\\Vaults\\Personal")), result);
+		assertEquals(List.of(new VaultSummary("vault-1", "Personal", "locked", "F:\\Vaults\\Personal", null)), result);
 		verify(vault).getId();
 		verify(vault).getDisplayName();
 		verify(vault).getState();
 		verify(vault).getDisplayablePath();
+		verify(vault).getMountPoint();
 	}
 
 	@Test

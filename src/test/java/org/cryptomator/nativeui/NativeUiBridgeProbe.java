@@ -29,7 +29,7 @@ public class NativeUiBridgeProbe {
 			try (var client = server.accept();
 				 var in = new DataInputStream(Channels.newInputStream(client));
 				 var out = new DataOutputStream(Channels.newOutputStream(client))) {
-				var protocol = new NativeUiProtocol(new ObjectMapper(), () -> List.of(new VaultSummary("probe-vault", "Interop Probe", "locked", "F:\\Vaults\\Interop Probe")));
+				var protocol = new NativeUiProtocol(new ObjectMapper(), () -> List.of(new VaultSummary("probe-vault", "Interop Probe", "locked", "F:\\Vaults\\Interop Probe", null)));
 				protocol.handleOne(in, out);
 				protocol.handleOne(in, out);
 				System.out.println("LIVE_HANDSHAKE_OK");

@@ -13,6 +13,7 @@ public class NativeUiProtocol {
 
 	public static final int VERSION = 1;
 	public static final int MAX_MESSAGE_BYTES = 64 * 1024;
+	public static final List<String> CAPABILITIES = List.of("vault.list", "vault.unlock", "vault.lock", "vault.reveal", "vault.remove", "vault.rename", "vault.stats", "vault.locate_encrypted", "vault.decrypt_filename", "vault.create", "vault.connect", "vault.reset_password", "vault.change_password", "vault.show_recovery_key", "backend.shutdown");
 	private final ObjectMapper objectMapper;
 	private final VaultSummarySource vaultSummarySource;
 	private final VaultCommandSource vaultCommandSource;
@@ -27,7 +28,7 @@ public class NativeUiProtocol {
 	}
 
 	NativeUiProtocol(ObjectMapper objectMapper, VaultSummarySource vaultSummarySource) {
-		this(objectMapper, vaultSummarySource, (operation, vaultId, password, recoveryKey) -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), (path, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), path -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), () -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), new NativeBackendTerminator());
+		this(objectMapper, vaultSummarySource, (operation, vaultId, password, recoveryKey, newPassword, displayName, vaultPath) -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), (path, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), path -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), () -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), new NativeBackendTerminator());
 	}
 
 	NativeUiProtocol(ObjectMapper objectMapper, VaultSummarySource vaultSummarySource, VaultCommandSource vaultCommandSource) {
@@ -54,9 +55,9 @@ public class NativeUiProtocol {
 			response = NativeUiResponse.hello(request.requestId());
 		} else if ("vault.list".equals(request.operation())) {
 			response = NativeUiResponse.vaultList(request.requestId(), vaultSummarySource.get());
-		} else if ("vault.unlock".equals(request.operation()) || "vault.lock".equals(request.operation()) || "vault.reveal".equals(request.operation()) || "vault.remove".equals(request.operation()) || "vault.reset_password".equals(request.operation())) {
-			var result = vaultCommandSource.execute(request.operation(), request.vaultId(), request.password(), request.recoveryKey());
-			response = result.ok() ? NativeUiResponse.command(request.requestId(), result.state()) : NativeUiResponse.error(request.requestId(), result.error());
+		} else if ("vault.unlock".equals(request.operation()) || "vault.lock".equals(request.operation()) || "vault.reveal".equals(request.operation()) || "vault.remove".equals(request.operation()) || "vault.rename".equals(request.operation()) || "vault.stats".equals(request.operation()) || "vault.locate_encrypted".equals(request.operation()) || "vault.decrypt_filename".equals(request.operation()) || "vault.reset_password".equals(request.operation()) || "vault.change_password".equals(request.operation()) || "vault.show_recovery_key".equals(request.operation())) {
+			var result = vaultCommandSource.execute(request.operation(), request.vaultId(), request.password(), request.recoveryKey(), request.newPassword(), request.displayName(), request.vaultPath());
+			response = result.ok() ? NativeUiResponse.command(request.requestId(), result.state(), result.recoveryKey(), result.statistics(), result.fileNameMapping()) : NativeUiResponse.error(request.requestId(), result.error());
 		} else if ("vault.create".equals(request.operation())) {
 			var result = vaultCreateSource.create(request.vaultPath(), request.password(), request.createRecoveryKey(), request.useShortNames());
 			response = result.ok() ? NativeUiResponse.created(request.requestId(), result.state(), result.vaultId(), result.recoveryKey()) : NativeUiResponse.error(request.requestId(), result.error());
@@ -94,36 +95,44 @@ public class NativeUiProtocol {
 		out.flush();
 	}
 
-	public record NativeUiRequest(int protocol, String requestId, String operation, String vaultId, char[] password, char[] recoveryKey, String vaultPath, boolean createRecoveryKey, boolean useShortNames) {
+	public record NativeUiRequest(int protocol, String requestId, String operation, String vaultId, char[] password, char[] recoveryKey, char[] newPassword, String displayName, String vaultPath, boolean createRecoveryKey, boolean useShortNames) {
 		public NativeUiRequest(int protocol, String requestId, String operation) {
-			this(protocol, requestId, operation, null, null, null, null, false, false);
+			this(protocol, requestId, operation, null, null, null, null, null, null, false, false);
 		}
 
 		public NativeUiRequest(int protocol, String requestId, String operation, String vaultId, char[] password) {
-			this(protocol, requestId, operation, vaultId, password, null, null, false, false);
+			this(protocol, requestId, operation, vaultId, password, null, null, null, null, false, false);
 		}
 	}
 
-	public record NativeUiResponse(int protocol, String requestId, boolean ok, String backend, String error, List<VaultSummary> vaults, String state, String vaultId, String recoveryKey) {
+	public record NativeUiResponse(int protocol, String requestId, boolean ok, String backend, String error, List<VaultSummary> vaults, String state, String vaultId, String recoveryKey, org.cryptomator.common.vaults.VaultStats.NativeSnapshot statistics, NativeVaultOperations.FileNameMapping fileNameMapping, List<String> capabilities) {
 
 		static NativeUiResponse hello(String requestId) {
-			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, null, null, null);
+			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, null, null, null, null, null, CAPABILITIES);
 		}
 
 		static NativeUiResponse vaultList(String requestId, List<VaultSummary> vaults) {
-			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, List.copyOf(vaults), null, null, null);
+			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, List.copyOf(vaults), null, null, null, null, null, null);
 		}
 
 		static NativeUiResponse command(String requestId, String state) {
-			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, state, null, null);
+			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, state, null, null, null, null, null);
+		}
+
+		static NativeUiResponse command(String requestId, String state, String recoveryKey) {
+			return command(requestId, state, recoveryKey, null, null);
+		}
+
+		static NativeUiResponse command(String requestId, String state, String recoveryKey, org.cryptomator.common.vaults.VaultStats.NativeSnapshot statistics, NativeVaultOperations.FileNameMapping fileNameMapping) {
+			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, state, null, recoveryKey, statistics, fileNameMapping, null);
 		}
 
 		static NativeUiResponse created(String requestId, String state, String vaultId, String recoveryKey) {
-			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, state, vaultId, recoveryKey);
+			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, state, vaultId, recoveryKey, null, null, null);
 		}
 
 		static NativeUiResponse error(String requestId, String error) {
-			return new NativeUiResponse(VERSION, requestId, false, null, error, null, null, null, null);
+			return new NativeUiResponse(VERSION, requestId, false, null, error, null, null, null, null, null, null, null);
 		}
 	}
 
@@ -134,7 +143,7 @@ public class NativeUiProtocol {
 
 	@FunctionalInterface
 	interface VaultCommandSource {
-		NativeVaultOperations.NativeCommandResult execute(String operation, String vaultId, char[] password, char[] recoveryKey);
+		NativeVaultOperations.NativeCommandResult execute(String operation, String vaultId, char[] password, char[] recoveryKey, char[] newPassword, String displayName, String vaultPath);
 	}
 
 	@FunctionalInterface

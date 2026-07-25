@@ -104,6 +104,39 @@ public class VaultStats {
 		}
 	}
 
+	/**
+	 * Takes one transport-safe snapshot for the native Windows frontend without
+	 * requiring the JavaFX application thread. The per-interval counters are
+	 * consumed once, just as they are by the JavaFX statistics screen.
+	 */
+	public NativeSnapshot nativeSnapshot() {
+		var fileSystem = fs.get();
+		if (fileSystem == null) {
+			return NativeSnapshot.empty();
+		}
+		var stats = fileSystem.getStats();
+		long cacheAccesses = stats.pollChunkCacheAccesses();
+		long cacheHits = stats.pollChunkCacheHits();
+		double currentCacheHitRate = cacheAccesses == 0 ? 0.0 : cacheHits / (double) cacheAccesses;
+		return new NativeSnapshot(
+				stats.pollBytesRead(),
+				stats.pollBytesWritten(),
+				stats.pollBytesDecrypted(),
+				stats.pollBytesEncrypted(),
+				currentCacheHitRate,
+				stats.pollTotalBytesRead(),
+				stats.pollTotalBytesWritten(),
+				stats.pollTotalBytesDecrypted(),
+				stats.pollTotalBytesEncrypted(),
+				stats.pollTotalAmountOfAccesses());
+	}
+
+	public record NativeSnapshot(long bytesPerSecondRead, long bytesPerSecondWritten, long bytesPerSecondDecrypted, long bytesPerSecondEncrypted, double cacheHitRate, long totalBytesRead, long totalBytesWritten, long totalBytesDecrypted, long totalBytesEncrypted, long totalFilesAccessed) {
+		private static NativeSnapshot empty() {
+			return new NativeSnapshot(0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0);
+		}
+	}
+
 	private class UpdateStatsService extends ScheduledService<Optional<CryptoFileSystemStats>> {
 
 		private UpdateStatsService() {

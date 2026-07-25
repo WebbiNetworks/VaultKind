@@ -25,7 +25,7 @@ class NativeUiProtocolTest {
 	@BeforeEach
 	void setUp() {
 		objectMapper = new ObjectMapper();
-		protocol = new NativeUiProtocol(objectMapper, () -> List.of(new VaultSummary("vault-1", "Personal", "locked", "F:\\Vaults\\Personal")));
+		protocol = new NativeUiProtocol(objectMapper, () -> List.of(new VaultSummary("vault-1", "Personal", "locked", "F:\\Vaults\\Personal", null)));
 	}
 
 	@Test
@@ -36,6 +36,12 @@ class NativeUiProtocolTest {
 		assertEquals(1, response.protocol());
 		assertEquals("request-1", response.requestId());
 		assertEquals("VaultKind Java Engine", response.backend());
+		assertTrue(response.capabilities().contains("vault.show_recovery_key"));
+		assertTrue(response.capabilities().contains("vault.reset_password"));
+		assertTrue(response.capabilities().contains("vault.rename"));
+		assertTrue(response.capabilities().contains("vault.stats"));
+		assertTrue(response.capabilities().contains("vault.locate_encrypted"));
+		assertTrue(response.capabilities().contains("vault.decrypt_filename"));
 	}
 
 	@Test
@@ -52,7 +58,7 @@ class NativeUiProtocolTest {
 	@Test
 	void dispatchesNativeUnlockWithoutEchoingPassword() throws IOException {
 		var password = "test-password".toCharArray();
-		protocol = new NativeUiProtocol(objectMapper, () -> List.of(), (operation, vaultId, suppliedPassword, suppliedRecoveryKey) -> {
+		protocol = new NativeUiProtocol(objectMapper, () -> List.of(), (operation, vaultId, suppliedPassword, suppliedRecoveryKey, suppliedNewPassword, suppliedDisplayName, suppliedVaultPath) -> {
 			assertEquals("vault-1", vaultId);
 			assertEquals("test-password", new String(suppliedPassword));
 			return NativeVaultOperations.NativeCommandResult.success("unlocked");
@@ -67,7 +73,7 @@ class NativeUiProtocolTest {
 
 	@Test
 	void dispatchesNativeVaultRemoval() throws IOException {
-		protocol = new NativeUiProtocol(objectMapper, () -> List.of(), (operation, vaultId, suppliedPassword, suppliedRecoveryKey) -> {
+		protocol = new NativeUiProtocol(objectMapper, () -> List.of(), (operation, vaultId, suppliedPassword, suppliedRecoveryKey, suppliedNewPassword, suppliedDisplayName, suppliedVaultPath) -> {
 			assertEquals("vault.remove", operation);
 			assertEquals("vault-1", vaultId);
 			assertEquals(null, suppliedPassword);
@@ -81,11 +87,113 @@ class NativeUiProtocolTest {
 	}
 
 	@Test
+	void dispatchesVaultRename() throws IOException {
+		protocol = new NativeUiProtocol(objectMapper, () -> List.of(), (operation, vaultId, suppliedPassword, suppliedRecoveryKey, suppliedNewPassword, suppliedDisplayName, suppliedVaultPath) -> {
+			assertEquals("vault.rename", operation);
+			assertEquals("vault-1", vaultId);
+			assertEquals("Family files", suppliedDisplayName);
+			return NativeVaultOperations.NativeCommandResult.success("renamed");
+		});
+
+		var request = new NativeUiProtocol.NativeUiRequest(1, "request-rename", "vault.rename", "vault-1", null, null, null, "Family files", null, false, false);
+		var response = exchange(request);
+
+		assertTrue(response.ok());
+		assertEquals("renamed", response.state());
+	}
+
+	@Test
+	void returnsVaultStatisticsForRequestedCommand() throws IOException {
+		var statistics = new org.cryptomator.common.vaults.VaultStats.NativeSnapshot(12, 8, 10, 6, 0.75, 120, 80, 100, 60, 9);
+		protocol = new NativeUiProtocol(objectMapper, () -> List.of(), (operation, vaultId, suppliedPassword, suppliedRecoveryKey, suppliedNewPassword, suppliedDisplayName, suppliedVaultPath) -> {
+			assertEquals("vault.stats", operation);
+			assertEquals("vault-1", vaultId);
+			return NativeVaultOperations.NativeCommandResult.statistics(statistics);
+		});
+
+		var response = exchange(new NativeUiProtocol.NativeUiRequest(1, "request-stats", "vault.stats", "vault-1", null));
+
+		assertTrue(response.ok());
+		assertEquals("statistics_ready", response.state());
+		assertEquals(statistics, response.statistics());
+	}
+
+	@Test
+	void returnsDecryptedFileNameForRequestedCommand() throws IOException {
+		var mapping = new NativeVaultOperations.FileNameMapping("ABCD.c9r", "Budget.xlsx");
+		protocol = new NativeUiProtocol(objectMapper, () -> List.of(), (operation, vaultId, suppliedPassword, suppliedRecoveryKey, suppliedNewPassword, suppliedDisplayName, suppliedVaultPath) -> {
+			assertEquals("vault.decrypt_filename", operation);
+			assertEquals("vault-1", vaultId);
+			assertEquals("F:\\Vaults\\Personal\\d\\ABCD.c9r", suppliedVaultPath);
+			return NativeVaultOperations.NativeCommandResult.fileName(mapping);
+		});
+
+		var request = new NativeUiProtocol.NativeUiRequest(1, "request-filename", "vault.decrypt_filename", "vault-1", null, null, null, null, "F:\\Vaults\\Personal\\d\\ABCD.c9r", false, false);
+		var response = exchange(request);
+
+		assertTrue(response.ok());
+		assertEquals("filename_ready", response.state());
+		assertEquals(mapping, response.fileNameMapping());
+	}
+
+	@Test
+	void returnsEncryptedLocationForRequestedCommand() throws IOException {
+		var mapping = new NativeVaultOperations.FileNameMapping("F:\\Vaults\\Personal\\d\\AB\\ENTRY.c9r", "Budget.xlsx");
+		protocol = new NativeUiProtocol(objectMapper, () -> List.of(), (operation, vaultId, suppliedPassword, suppliedRecoveryKey, suppliedNewPassword, suppliedDisplayName, suppliedVaultPath) -> {
+			assertEquals("vault.locate_encrypted", operation);
+			assertEquals("vault-1", vaultId);
+			assertEquals("H:\\Budget.xlsx", suppliedVaultPath);
+			return NativeVaultOperations.NativeCommandResult.fileName(mapping);
+		});
+
+		var request = new NativeUiProtocol.NativeUiRequest(1, "request-location", "vault.locate_encrypted", "vault-1", null, null, null, null, "H:\\Budget.xlsx", false, false);
+		var response = exchange(request);
+
+		assertTrue(response.ok());
+		assertEquals(mapping, response.fileNameMapping());
+	}
+
+	@Test
+	void dispatchesPasswordChangeWithoutEchoingSecrets() throws IOException {
+		var currentPassword = "current-password".toCharArray();
+		var newPassword = "new-password".toCharArray();
+		protocol = new NativeUiProtocol(objectMapper, () -> List.of(), (operation, vaultId, suppliedPassword, suppliedRecoveryKey, suppliedNewPassword, suppliedDisplayName, suppliedVaultPath) -> {
+			assertEquals("vault.change_password", operation);
+			assertEquals("vault-1", vaultId);
+			assertEquals("current-password", new String(suppliedPassword));
+			assertEquals("new-password", new String(suppliedNewPassword));
+			return NativeVaultOperations.NativeCommandResult.success("password_changed");
+		});
+
+		var request = new NativeUiProtocol.NativeUiRequest(1, "request-change", "vault.change_password", "vault-1", currentPassword, null, newPassword, null, null, false, false);
+		var response = exchange(request);
+
+		assertTrue(response.ok());
+		assertEquals("password_changed", response.state());
+	}
+
+	@Test
+	void returnsRecoveryKeyOnlyForRequestedCommand() throws IOException {
+		protocol = new NativeUiProtocol(objectMapper, () -> List.of(), (operation, vaultId, suppliedPassword, suppliedRecoveryKey, suppliedNewPassword, suppliedDisplayName, suppliedVaultPath) -> {
+			assertEquals("vault.show_recovery_key", operation);
+			assertEquals("vault-1", vaultId);
+			assertEquals("current-password", new String(suppliedPassword));
+			return NativeVaultOperations.NativeCommandResult.recoveryKey("word one two three");
+		});
+
+		var response = exchange(new NativeUiProtocol.NativeUiRequest(1, "request-key", "vault.show_recovery_key", "vault-1", "current-password".toCharArray()));
+
+		assertTrue(response.ok());
+		assertEquals("recovery_key_ready", response.state());
+		assertEquals("word one two three", response.recoveryKey());
+	}
+
+	@Test
 	void returnsSafeVaultSummaries() throws IOException {
 		var response = exchange(new NativeUiProtocol.NativeUiRequest(1, "request-4", "vault.list"));
 
 		assertTrue(response.ok());
-		assertEquals(List.of(new VaultSummary("vault-1", "Personal", "locked", "F:\\Vaults\\Personal")), response.vaults());
+		assertEquals(List.of(new VaultSummary("vault-1", "Personal", "locked", "F:\\Vaults\\Personal", null)), response.vaults());
 	}
 
 	@Test

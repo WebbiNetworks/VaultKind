@@ -7,6 +7,7 @@ using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage.Pickers;
 using Windows.System;
 using Windows.UI;
+using System.Globalization;
 using System.IO;
 using System.Text.Json;
 using VaultKind_Windows.Services;
@@ -30,6 +31,7 @@ public sealed partial class MainPage : Page
     private string? selectedConnectVaultPath;
     private IReadOnlyList<VaultSummary> knownVaults = [];
     private readonly List<SessionActivity> activityHistory = [];
+    private string selectedActivityCategory = "all";
     private Microsoft.UI.Dispatching.DispatcherQueueTimer? navigationFocusTimer;
     private bool initializingPreferences = true;
     private static readonly string ActivityHistoryPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultKind", "activity.json");
@@ -39,6 +41,7 @@ public sealed partial class MainPage : Page
     private string selectedAssistantCategory = "all";
     private string doctorAssistantQuery = string.Empty;
     private string? recoveryTargetVaultId;
+    private bool recoveryOpenedFromVaultManagement;
     private string? doctorFocusVaultId;
 
     private static readonly IReadOnlyList<AssistantCase> AssistantCases =
@@ -134,6 +137,10 @@ public sealed partial class MainPage : Page
             nameof(CreateVaultPasswordConfirmInput) => CreateVaultPasswordConfirmInput,
             nameof(RecoveryNewPassword) => RecoveryNewPassword,
             nameof(RecoveryConfirmPassword) => RecoveryConfirmPassword,
+            nameof(ChangeCurrentPassword) => ChangeCurrentPassword,
+            nameof(ChangeNewPassword) => ChangeNewPassword,
+            nameof(ChangeConfirmPassword) => ChangeConfirmPassword,
+            nameof(RecoveryKeyPassword) => RecoveryKeyPassword,
             _ => null
         };
         if (passwordBox is null)
@@ -216,12 +223,93 @@ public sealed partial class MainPage : Page
             {
                 Style = (Style)Resources["VaultSidebarButtonStyle"],
                 Content = content,
-                Tag = vault.Id
+                Tag = vault.Id,
+                ContextFlyout = BuildVaultContextMenu(vault)
             };
             AutomationProperties.SetName(vaultButton, $"{vault.Name}, {FriendlyVaultState(vault.State)}, {vault.Path}");
             vaultButton.Click += (_, _) => ShowVault(vault, vaultButton);
             vaultButtons.Add(vaultButton);
             VaultListPanel.Children.Add(vaultButton);
+        }
+    }
+
+    private MenuFlyout BuildVaultContextMenu(VaultSummary vault)
+    {
+        var menu = new MenuFlyout();
+        bool unlocked = vault.State.Equals("unlocked", StringComparison.OrdinalIgnoreCase);
+
+        if (unlocked)
+        {
+            menu.Items.Add(CreateVaultMenuItem("Open Drive", "\uE838", (_, e) =>
+            {
+                SelectVaultForContextAction(vault);
+                OpenDrive(menu, e);
+            }));
+            menu.Items.Add(CreateVaultMenuItem("Lock", "\uE72E", (_, e) =>
+            {
+                SelectVaultForContextAction(vault);
+                LockVault(menu, e);
+            }));
+        }
+        else
+        {
+            menu.Items.Add(CreateVaultMenuItem("Unlock\u2026", "\uE785", (_, e) =>
+            {
+                SelectVaultForContextAction(vault);
+                ShowUnlock(menu, e);
+            }));
+            menu.Items.Add(CreateVaultMenuItem("Share\u2026", "\uE72D", (_, e) =>
+            {
+                SelectVaultForContextAction(vault);
+                ShowVaultManagement(menu, e);
+                ShowVaultShareGuide(menu, e);
+            }));
+        }
+
+        if (unlocked)
+        {
+            menu.Items.Add(CreateVaultMenuItem("Share\u2026", "\uE72D", (_, e) =>
+            {
+                SelectVaultForContextAction(vault);
+                ShowVaultManagement(menu, e);
+                ShowVaultShareGuide(menu, e);
+            }));
+        }
+
+        menu.Items.Add(CreateVaultMenuItem("Manage Vault", "\uE713", (_, e) =>
+        {
+            SelectVaultForContextAction(vault);
+            ShowVaultManagement(menu, e);
+        }));
+
+        if (!unlocked)
+        {
+            menu.Items.Add(CreateVaultMenuItem("Remove from VaultKind\u2026", "\uE74D", (_, e) =>
+            {
+                SelectVaultForContextAction(vault);
+                ShowRemoveVaultConfirmation(menu, e);
+            }));
+        }
+
+        return menu;
+    }
+
+    private static MenuFlyoutItem CreateVaultMenuItem(string text, string glyph, RoutedEventHandler action)
+    {
+        var item = new MenuFlyoutItem
+        {
+            Text = text,
+            Icon = new FontIcon { Glyph = glyph }
+        };
+        item.Click += action;
+        return item;
+    }
+
+    private void SelectVaultForContextAction(VaultSummary vault)
+    {
+        if (FindVaultButton(vault.Id) is Button button)
+        {
+            ShowVault(vault, button);
         }
     }
 
@@ -310,6 +398,7 @@ public sealed partial class MainPage : Page
 
     private void ShowAddVault(object sender, RoutedEventArgs e)
     {
+        recoveryOpenedFromVaultManagement = false;
         activeVault = null;
         DashboardView.Visibility = Visibility.Collapsed;
         DoctorView.Visibility = Visibility.Collapsed;
@@ -340,6 +429,7 @@ public sealed partial class MainPage : Page
         AddVaultButton.BorderBrush = new SolidColorBrush(Color.FromArgb(255, 78, 161, 255));
         AddVaultButton.BorderThickness = new Thickness(1);
         AutomationProperties.SetName(AddVaultButton, "Add Vault, selected");
+        DispatcherQueue.TryEnqueue(() => AddVaultView.ChangeView(null, 0, null, true));
     }
 
     private void ShowConnectVault(object sender, RoutedEventArgs e)
@@ -409,6 +499,18 @@ public sealed partial class MainPage : Page
         activityHistory.Clear();
         SaveActivityHistory();
         RenderActivity();
+    }
+
+    private void SelectActivityCategory(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string category })
+        {
+            return;
+        }
+
+        selectedActivityCategory = category;
+        RenderActivity();
+        ActivityView.ChangeView(null, 0, null, true);
     }
 
     private void ShowSettings(object sender, RoutedEventArgs e)
@@ -869,6 +971,7 @@ public sealed partial class MainPage : Page
 
     private void ShowRecoveryHub(object sender, RoutedEventArgs e)
     {
+        recoveryOpenedFromVaultManagement = false;
         activeVault = null;
         DashboardView.Visibility = Visibility.Collapsed;
         DoctorView.Visibility = Visibility.Collapsed;
@@ -896,6 +999,7 @@ public sealed partial class MainPage : Page
         SetDestinationUnselected(LearningButton, "Learning Center");
         ClearVaultSelection();
         SetAddVaultUnselected();
+        DispatcherQueue.TryEnqueue(() => RecoveryHubView.ChangeView(null, 0, null, true));
     }
 
     private async void ShowRecoveryReset(object sender, RoutedEventArgs e)
@@ -957,11 +1061,38 @@ public sealed partial class MainPage : Page
             : string.Empty;
         RecoveryStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 102, 93));
         RecoveryStatus.Visibility = RecoveryVaultPicker.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        RecoveryResetBackButton.Content = recoveryOpenedFromVaultManagement ? "‹ Back to Vault Management" : "Back";
+        AutomationProperties.SetName(RecoveryResetBackButton, recoveryOpenedFromVaultManagement ? "Back to Vault Management" : "Back to recovery choices");
         UpdateRecoveryForm();
+        DispatcherQueue.TryEnqueue(() => RecoveryResetView.ChangeView(null, 0, null, true));
         FocusAfterNavigation(RecoveryKeyInput);
     }
 
+    private void LeaveRecoveryReset(object sender, RoutedEventArgs e)
+    {
+        if (recoveryOpenedFromVaultManagement && activeVault is not null)
+        {
+            RecoveryResetView.Visibility = Visibility.Collapsed;
+            recoveryOpenedFromVaultManagement = false;
+            ShowVaultManagement(sender, e);
+            VaultManagementView.ChangeView(null, 0, null, true);
+            FocusAfterNavigation(ManagedRecoveryButton);
+            return;
+        }
+
+        ShowRecoveryHub(sender, e);
+    }
+
     private void RecoveryFormChanged(object sender, RoutedEventArgs e) => UpdateRecoveryForm();
+
+    private void RecoveryPasswordKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == Windows.System.VirtualKey.Enter && RecoveryResetButton.IsEnabled)
+        {
+            e.Handled = true;
+            ResetVaultPassword(sender, new RoutedEventArgs());
+        }
+    }
 
     private void UpdateRecoveryForm()
     {
@@ -1014,6 +1145,8 @@ public sealed partial class MainPage : Page
                 "vault_unlocked" => "Lock this vault before restoring password access.",
                 "vault_not_found" => "This vault is no longer connected to VaultKind.",
                 "recovery_write_failed" => "VaultKind could not safely update the master-key file. Nothing was intentionally changed; review the vault folder and try again.",
+                "unknown_operation" => "The local vault engine is from an older build. Restart VaultKind, then try again.",
+                "engine_unavailable" => "The local vault engine is unavailable. Restart VaultKind, then try again.",
                 "timeout" => "Password recovery took too long. Return to the vault and verify its state before trying again.",
                 _ => "VaultKind could not restore password access. Nothing was intentionally changed."
             };
@@ -1551,6 +1684,7 @@ public sealed partial class MainPage : Page
             ? Visibility.Visible
             : Visibility.Collapsed;
         UnlockedVaultActions.Visibility = unlocked ? Visibility.Visible : Visibility.Collapsed;
+        UnlockedVaultTools.Visibility = unlocked ? Visibility.Visible : Visibility.Collapsed;
         OpenDriveButton.IsEnabled = true;
         LockVaultButton.IsEnabled = true;
         VaultActionProgress.IsActive = false;
@@ -1586,10 +1720,18 @@ public sealed partial class MainPage : Page
         VaultManagementView.Visibility = Visibility.Visible;
         VaultManagementHome.Visibility = Visibility.Visible;
         VaultShareGuide.Visibility = Visibility.Collapsed;
+        VaultChangePassword.Visibility = Visibility.Collapsed;
+        VaultRecoveryKeyDisplay.Visibility = Visibility.Collapsed;
+        VaultStatisticsPanel.Visibility = Visibility.Collapsed;
+        VaultLocateEncryptedFilePanel.Visibility = Visibility.Collapsed;
+        VaultDecryptFileNamePanel.Visibility = Visibility.Collapsed;
         ContextTitle.Text = "Manage Vault";
         ContextSubtitle.Text = "Share, recover, inspect, or remove this vault without leaving the main window.";
 
         ManagedVaultName.Text = activeVault.Name;
+        ManagedVaultNameDisplay.Visibility = Visibility.Visible;
+        ManagedVaultRenameEditor.Visibility = Visibility.Collapsed;
+        ManagedVaultRenameStatus.Visibility = Visibility.Collapsed;
         ManagedVaultPath.Text = activeVault.Path;
         ToolTipService.SetToolTip(ManagedVaultPath, activeVault.Path);
         ManagedVaultStatus.Text = FriendlyVaultState(activeVault.State).ToUpperInvariant();
@@ -1603,8 +1745,599 @@ public sealed partial class MainPage : Page
         ManagedVaultStatusBorder.BorderBrush = stateColor;
         ManagedRecoveryButton.IsEnabled = !unlocked;
         ManagedRecoveryButton.Content = unlocked ? "Lock Vault to Recover" : "Use Recovery Key";
+        ManagedChangePasswordButton.IsEnabled = !unlocked;
+        ManagedChangePasswordButton.Content = unlocked ? "Lock Vault to Change" : "Change Password";
         ManagedRemoveButton.IsEnabled = !unlocked;
         ManagedRemoveHint.Visibility = unlocked ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private async void ShowVaultStatistics(object sender, RoutedEventArgs e)
+    {
+        if (activeVault is null || !activeVault.State.Equals("unlocked", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        VaultView.Visibility = Visibility.Collapsed;
+        VaultManagementView.Visibility = Visibility.Visible;
+        VaultManagementHome.Visibility = Visibility.Collapsed;
+        VaultShareGuide.Visibility = Visibility.Collapsed;
+        VaultChangePassword.Visibility = Visibility.Collapsed;
+        VaultRecoveryKeyDisplay.Visibility = Visibility.Collapsed;
+        VaultLocateEncryptedFilePanel.Visibility = Visibility.Collapsed;
+        VaultDecryptFileNamePanel.Visibility = Visibility.Collapsed;
+        VaultStatisticsPanel.Visibility = Visibility.Visible;
+        ContextTitle.Text = "Vault Statistics";
+        ContextSubtitle.Text = "View local read, write, cache, and access activity for this vault.";
+        VaultStatisticsSubtitle.Text = $"Current local activity for {activeVault.Name}.";
+        VaultManagementView.ChangeView(null, 0, null, true);
+        await RefreshVaultStatisticsAsync();
+    }
+
+    private void HideVaultStatistics(object sender, RoutedEventArgs e)
+    {
+        VaultStatisticsPanel.Visibility = Visibility.Collapsed;
+        if (activeVault is not null && FindVaultButton(activeVault.Id) is Button button)
+        {
+            ShowVault(activeVault, button);
+        }
+    }
+
+    private void ShowLocateEncryptedFile(object sender, RoutedEventArgs e)
+    {
+        if (activeVault is null || !activeVault.State.Equals("unlocked", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        VaultView.Visibility = Visibility.Collapsed;
+        VaultManagementView.Visibility = Visibility.Visible;
+        VaultManagementHome.Visibility = Visibility.Collapsed;
+        VaultShareGuide.Visibility = Visibility.Collapsed;
+        VaultChangePassword.Visibility = Visibility.Collapsed;
+        VaultRecoveryKeyDisplay.Visibility = Visibility.Collapsed;
+        VaultStatisticsPanel.Visibility = Visibility.Collapsed;
+        VaultDecryptFileNamePanel.Visibility = Visibility.Collapsed;
+        VaultLocateEncryptedFilePanel.Visibility = Visibility.Visible;
+        ContextTitle.Text = "Locate Encrypted File";
+        ContextSubtitle.Text = "Find the encrypted storage entry behind a readable file.";
+        LocateEncryptedFileSubtitle.Text = $"Trace a readable file through {activeVault.Name} without changing it.";
+        LocateReadableDriveHint.Text = $"The file picker opens directly in {activeVault.Name}'s readable drive. Choose the file by its familiar name; VaultKind will find its encrypted entry for you.";
+        LocateEncryptedFileResult.Visibility = Visibility.Collapsed;
+        LocateEncryptedFileStatusBorder.Visibility = Visibility.Collapsed;
+        LocateEncryptedFileProgress.Visibility = Visibility.Collapsed;
+        LocateEncryptedFileProgress.IsActive = false;
+        ChooseReadableFileButton.IsEnabled = true;
+        VaultManagementView.ChangeView(null, 0, null, true);
+        FocusAfterNavigation(ChooseReadableFileButton);
+    }
+
+    private async void OpenReadableDriveForLocate(object sender, RoutedEventArgs e)
+    {
+        if (activeVault is null)
+        {
+            return;
+        }
+
+        ShowLocateEncryptedFileStatus("Opening this vault's readable Windows drive...", true);
+        VaultCommandResult result = await backend.RevealAsync(activeVault.Id);
+        ShowLocateEncryptedFileStatus(
+            result.Succeeded
+                ? "Readable drive opened. Choose a normal file from that drive, then return here for step 2."
+                : FriendlyVaultActionError(result.Error, false),
+            result.Succeeded);
+    }
+
+    private void HideLocateEncryptedFile(object sender, RoutedEventArgs e)
+    {
+        VaultLocateEncryptedFilePanel.Visibility = Visibility.Collapsed;
+        if (activeVault is not null && FindVaultButton(activeVault.Id) is Button button)
+        {
+            ShowVault(activeVault, button);
+        }
+    }
+
+    private async void ChooseReadableFileToLocate(object sender, RoutedEventArgs e)
+    {
+        if (activeVault is null)
+        {
+            return;
+        }
+
+        if (((App)Application.Current).MainWindow is not Window window)
+        {
+            ShowLocateEncryptedFileStatus("VaultKind could not open the Windows file picker.", false);
+            return;
+        }
+
+        VaultBackendSnapshot snapshot = await backend.GetSnapshotAsync();
+        VaultSummary? currentVault = snapshot.Vaults.FirstOrDefault(vault => vault.Id == activeVault.Id);
+        string? readableRoot = currentVault?.MountPath;
+        if (string.IsNullOrWhiteSpace(readableRoot))
+        {
+            ShowLocateEncryptedFileStatus("VaultKind could not determine this vault's readable Windows drive. Lock and unlock the vault, then try again.", false);
+            return;
+        }
+
+        string? selectedPath;
+        try
+        {
+            selectedPath = NativeFilePicker.PickFile(
+                WinRT.Interop.WindowNative.GetWindowHandle(window),
+                readableRoot,
+                $"Choose a file from {activeVault.Name}",
+                "Choose File");
+        }
+        catch (Exception)
+        {
+            ShowLocateEncryptedFileStatus("Windows could not open this vault's readable file picker. Lock and unlock the vault, then try again.", false);
+            return;
+        }
+
+        if (selectedPath is null)
+        {
+            return;
+        }
+
+        ChooseReadableFileButton.IsEnabled = false;
+        LocateEncryptedFileResult.Visibility = Visibility.Collapsed;
+        LocateEncryptedFileProgress.IsActive = true;
+        LocateEncryptedFileProgress.Visibility = Visibility.Visible;
+        LocateEncryptedFileStatus.Text = "Locating the matching encrypted entry locally...";
+        LocateEncryptedFileStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 174, 183, 190));
+        LocateEncryptedFileStatusBorder.Background = new SolidColorBrush(Color.FromArgb(255, 41, 58, 74));
+        LocateEncryptedFileStatusBorder.BorderBrush = new SolidColorBrush(Color.FromArgb(255, 54, 125, 194));
+        LocateEncryptedFileStatusBorder.Visibility = Visibility.Visible;
+
+        FileNameDecryptResult result = await backend.LocateEncryptedFileAsync(activeVault.Id, selectedPath);
+        ChooseReadableFileButton.IsEnabled = true;
+        LocateEncryptedFileProgress.IsActive = false;
+        LocateEncryptedFileProgress.Visibility = Visibility.Collapsed;
+
+        if (!result.Succeeded || result.Mapping is null)
+        {
+            bool selectedEncryptedEntry = selectedPath.EndsWith(".c9r", StringComparison.OrdinalIgnoreCase);
+            ShowLocateEncryptedFileStatus(result.Error switch
+            {
+                "foreign_file" when selectedEncryptedEntry => "That is an encrypted .c9r storage entry. Use Decrypt File Name for that file, or choose a normal file from the readable drive here.",
+                "foreign_file" => "That file is outside this vault's open readable drive. Use step 1, then choose a normal file from the drive VaultKind opens.",
+                "unsupported_mount" => "This vault's current drive type cannot expose an encrypted storage path.",
+                "vault_locked" => "This vault is no longer open. Unlock it before locating an encrypted file.",
+                "vault_not_found" => "This vault is no longer connected to VaultKind.",
+                "invalid_request" => "Choose an existing file from the open readable drive.",
+                "timeout" => "The local vault engine took too long to locate the encrypted entry.",
+                _ => "VaultKind could not locate the encrypted entry. The readable file was not changed."
+            }, false);
+            return;
+        }
+
+        LocatedReadableFileNameText.Text = result.Mapping.CleartextName;
+        LocatedEncryptedFilePathText.Text = result.Mapping.EncryptedName;
+        LocateEncryptedFileResult.Visibility = Visibility.Visible;
+        ShowLocateEncryptedFileStatus("Encrypted storage entry identified locally. Neither file nor path was changed.", true);
+        FocusAfterNavigation(CopyLocatedEncryptedPathButton);
+    }
+
+    private void CopyLocatedEncryptedPath(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            DataPackage package = new();
+            package.SetText(LocatedEncryptedFilePathText.Text);
+            Clipboard.SetContent(package);
+            ShowLocateEncryptedFileStatus("Encrypted path copied to the Windows clipboard.", true);
+        }
+        catch (Exception)
+        {
+            ShowLocateEncryptedFileStatus("VaultKind could not copy the path. You can still select it above.", false);
+        }
+    }
+
+    private async void OpenLocatedEncryptedFolder(object sender, RoutedEventArgs e)
+    {
+        string? folderPath = Path.GetDirectoryName(LocatedEncryptedFilePathText.Text);
+        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+        {
+            ShowLocateEncryptedFileStatus("The encrypted entry's containing folder is not currently available.", false);
+            return;
+        }
+
+        try
+        {
+            Windows.Storage.StorageFolder folder = await Windows.Storage.StorageFolder.GetFolderFromPathAsync(folderPath);
+            bool opened = await Launcher.LaunchFolderAsync(folder);
+            ShowLocateEncryptedFileStatus(opened
+                ? "Opened the encrypted entry's containing folder."
+                : "Windows could not open the encrypted entry's containing folder.", opened);
+        }
+        catch (Exception)
+        {
+            ShowLocateEncryptedFileStatus("Windows could not open the encrypted entry's containing folder.", false);
+        }
+    }
+
+    private void ShowLocateEncryptedFileStatus(string message, bool success)
+    {
+        LocateEncryptedFileStatus.Text = message;
+        LocateEncryptedFileStatus.Foreground = new SolidColorBrush(success
+            ? Color.FromArgb(255, 185, 234, 199)
+            : Color.FromArgb(255, 255, 172, 166));
+        LocateEncryptedFileStatusBorder.Background = new SolidColorBrush(success
+            ? Color.FromArgb(255, 30, 56, 41)
+            : Color.FromArgb(255, 62, 39, 40));
+        LocateEncryptedFileStatusBorder.BorderBrush = new SolidColorBrush(success
+            ? Color.FromArgb(255, 38, 139, 69)
+            : Color.FromArgb(255, 201, 83, 75));
+        LocateEncryptedFileStatusBorder.Visibility = Visibility.Visible;
+    }
+
+    private void ShowDecryptFileName(object sender, RoutedEventArgs e)
+    {
+        if (activeVault is null || !activeVault.State.Equals("unlocked", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        VaultView.Visibility = Visibility.Collapsed;
+        VaultManagementView.Visibility = Visibility.Visible;
+        VaultManagementHome.Visibility = Visibility.Collapsed;
+        VaultShareGuide.Visibility = Visibility.Collapsed;
+        VaultChangePassword.Visibility = Visibility.Collapsed;
+        VaultRecoveryKeyDisplay.Visibility = Visibility.Collapsed;
+        VaultStatisticsPanel.Visibility = Visibility.Collapsed;
+        VaultLocateEncryptedFilePanel.Visibility = Visibility.Collapsed;
+        VaultDecryptFileNamePanel.Visibility = Visibility.Visible;
+        ContextTitle.Text = "Decrypt File Name";
+        ContextSubtitle.Text = "Identify a readable name from this vault's encrypted storage.";
+        DecryptFileNameSubtitle.Text = $"Translate an encrypted .c9r file name through {activeVault.Name}.";
+        DecryptFileNameResult.Visibility = Visibility.Collapsed;
+        DecryptFileNameStatus.Visibility = Visibility.Collapsed;
+        DecryptFileNameProgress.Visibility = Visibility.Collapsed;
+        DecryptFileNameProgress.IsActive = false;
+        FindEncryptedFileButton.IsEnabled = true;
+        ChooseEncryptedFileButton.IsEnabled = true;
+        VaultManagementView.ChangeView(null, 0, null, true);
+        FocusAfterNavigation(FindEncryptedFileButton);
+    }
+
+    private void HideDecryptFileName(object sender, RoutedEventArgs e)
+    {
+        VaultDecryptFileNamePanel.Visibility = Visibility.Collapsed;
+        if (activeVault is not null && FindVaultButton(activeVault.Id) is Button button)
+        {
+            ShowVault(activeVault, button);
+        }
+    }
+
+    private async void ChooseEncryptedFileForDecryption(object sender, RoutedEventArgs e)
+    {
+        if (activeVault is null)
+        {
+            return;
+        }
+
+        if (((App)Application.Current).MainWindow is not Window window)
+        {
+            ShowDecryptFileNameStatus("VaultKind could not open the Windows file picker.", false);
+            return;
+        }
+
+        string? selectedPath;
+        try
+        {
+            selectedPath = NativeFilePicker.PickFile(
+                WinRT.Interop.WindowNative.GetWindowHandle(window),
+                activeVault.Path,
+                $"Choose an encrypted file from {activeVault.Name}",
+                "Choose Encrypted File");
+        }
+        catch (Exception)
+        {
+            ShowDecryptFileNameStatus("Windows could not open this vault's encrypted storage picker.", false);
+            return;
+        }
+
+        if (selectedPath is null)
+        {
+            return;
+        }
+
+        await DecryptSelectedFileAsync(selectedPath);
+    }
+
+    private async void FindEncryptedFileForDecryption(object sender, RoutedEventArgs e)
+    {
+        if (activeVault is null)
+        {
+            return;
+        }
+
+        FindEncryptedFileButton.IsEnabled = false;
+        ChooseEncryptedFileButton.IsEnabled = false;
+        DecryptFileNameResult.Visibility = Visibility.Collapsed;
+        DecryptFileNameProgress.IsActive = true;
+        DecryptFileNameProgress.Visibility = Visibility.Visible;
+        DecryptFileNameStatus.Text = "Searching this vault for a readable encrypted entry...";
+        DecryptFileNameStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 174, 183, 190));
+        DecryptFileNameStatus.Visibility = Visibility.Visible;
+
+        FileNameDecryptResult? result = null;
+        try
+        {
+            string dataPath = Path.Combine(activeVault.Path, "d");
+            IEnumerable<string> candidates = Directory
+                .EnumerateFiles(dataPath, "*.c9r", SearchOption.AllDirectories)
+                .Where(path => !Path.GetFileName(path).Equals("dirid.c9r", StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .Take(100);
+
+            foreach (string candidate in candidates)
+            {
+                FileNameDecryptResult attempt = await backend.DecryptFileNameAsync(activeVault.Id, candidate);
+                if (attempt.Succeeded && attempt.Mapping is not null)
+                {
+                    result = attempt;
+                    break;
+                }
+
+                if (attempt.Error is "vault_locked" or "vault_not_found" or "timeout")
+                {
+                    result = attempt;
+                    break;
+                }
+            }
+        }
+        catch (IOException)
+        {
+            ShowDecryptFileNameStatus("VaultKind could not read this vault's encrypted storage right now.", false);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            ShowDecryptFileNameStatus("Windows did not allow VaultKind to inspect this vault's encrypted storage.", false);
+        }
+
+        if (result is null)
+        {
+            FindEncryptedFileButton.IsEnabled = true;
+            ChooseEncryptedFileButton.IsEnabled = true;
+            DecryptFileNameProgress.IsActive = false;
+            DecryptFileNameProgress.Visibility = Visibility.Collapsed;
+            if (DecryptFileNameStatus.Visibility != Visibility.Visible ||
+                DecryptFileNameStatus.Text.StartsWith("Searching", StringComparison.Ordinal))
+            {
+                ShowDecryptFileNameStatus("No readable encrypted file entries were found. Add a file to the unlocked drive, then try again.", false);
+            }
+            return;
+        }
+
+        await DisplayDecryptedFileNameResultAsync(result);
+    }
+
+    private async Task DecryptSelectedFileAsync(string filePath)
+    {
+        if (activeVault is null)
+        {
+            return;
+        }
+
+        FindEncryptedFileButton.IsEnabled = false;
+        ChooseEncryptedFileButton.IsEnabled = false;
+        DecryptFileNameResult.Visibility = Visibility.Collapsed;
+        DecryptFileNameProgress.IsActive = true;
+        DecryptFileNameProgress.Visibility = Visibility.Visible;
+        DecryptFileNameStatus.Text = "Identifying the readable name locally...";
+        DecryptFileNameStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 174, 183, 190));
+        DecryptFileNameStatus.Visibility = Visibility.Visible;
+
+        FileNameDecryptResult result = await backend.DecryptFileNameAsync(activeVault.Id, filePath);
+        await DisplayDecryptedFileNameResultAsync(result);
+    }
+
+    private Task DisplayDecryptedFileNameResultAsync(FileNameDecryptResult result)
+    {
+        FindEncryptedFileButton.IsEnabled = true;
+        ChooseEncryptedFileButton.IsEnabled = true;
+        DecryptFileNameProgress.IsActive = false;
+        DecryptFileNameProgress.Visibility = Visibility.Collapsed;
+
+        if (!result.Succeeded || result.Mapping is null)
+        {
+            ShowDecryptFileNameStatus(result.Error switch
+            {
+                "foreign_file" => "Choose a .c9r file from this vault's encrypted storage folder.",
+                "vault_internal_file" => "That is an internal vault file without a readable file name.",
+                "vault_locked" => "This vault is no longer open. Unlock it before identifying a file name.",
+                "vault_not_found" => "This vault is no longer connected to VaultKind.",
+                "invalid_request" => "Choose an existing .c9r file from the encrypted vault folder.",
+                "timeout" => "The local vault engine took too long to identify this file name.",
+                _ => "VaultKind could not identify this encrypted file name. The file was not changed."
+            }, false);
+            return Task.CompletedTask;
+        }
+
+        EncryptedFileNameText.Text = result.Mapping.EncryptedName;
+        ReadableFileNameText.Text = result.Mapping.CleartextName;
+        DecryptFileNameResult.Visibility = Visibility.Visible;
+        ShowDecryptFileNameStatus("Readable name identified locally. The encrypted file was not changed.", true);
+        return Task.CompletedTask;
+    }
+
+    private void CopyReadableFileName(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            DataPackage package = new();
+            package.SetText(ReadableFileNameText.Text);
+            Clipboard.SetContent(package);
+            ShowDecryptFileNameStatus("Readable name copied to the Windows clipboard.", true);
+        }
+        catch (Exception)
+        {
+            ShowDecryptFileNameStatus("VaultKind could not copy the readable name. You can still select it above.", false);
+        }
+    }
+
+    private void ShowDecryptFileNameStatus(string message, bool success)
+    {
+        DecryptFileNameStatus.Text = message;
+        DecryptFileNameStatus.Foreground = new SolidColorBrush(success
+            ? Color.FromArgb(255, 73, 205, 112)
+            : Color.FromArgb(255, 255, 102, 93));
+        DecryptFileNameStatus.Visibility = Visibility.Visible;
+    }
+
+    private async void RefreshVaultStatistics(object sender, RoutedEventArgs e) => await RefreshVaultStatisticsAsync();
+
+    private async Task RefreshVaultStatisticsAsync()
+    {
+        if (activeVault is null)
+        {
+            return;
+        }
+
+        RefreshVaultStatisticsButton.IsEnabled = false;
+        VaultStatisticsProgress.IsActive = true;
+        VaultStatisticsProgress.Visibility = Visibility.Visible;
+        VaultStatisticsStatus.Text = "Reading current activity from the local vault engine...";
+        VaultStatisticsStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 174, 183, 190));
+        VaultStatisticsStatus.Visibility = Visibility.Visible;
+
+        VaultStatisticsResult result = await backend.GetStatisticsAsync(activeVault.Id);
+        VaultStatisticsProgress.IsActive = false;
+        VaultStatisticsProgress.Visibility = Visibility.Collapsed;
+        RefreshVaultStatisticsButton.IsEnabled = true;
+
+        if (!result.Succeeded || result.Statistics is null)
+        {
+            VaultStatisticsStatus.Text = result.Error switch
+            {
+                "vault_locked" => "Lock state changed. Unlock this vault to view its current statistics.",
+                "vault_not_found" => "This vault is no longer connected to VaultKind.",
+                "timeout" => "The vault engine took too long to return its activity counters.",
+                _ => "VaultKind could not read statistics for this vault right now. No vault data was changed."
+            };
+            VaultStatisticsStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 102, 93));
+            return;
+        }
+
+        VaultStatistics statistics = result.Statistics;
+        StatsCacheHitRate.Text = $"{Math.Clamp(statistics.CacheHitRate, 0d, 1d):P0}";
+        StatsReadRate.Text = $"{FormatBytes(statistics.BytesPerSecondRead)}/s";
+        StatsWriteRate.Text = $"{FormatBytes(statistics.BytesPerSecondWritten)}/s";
+        StatsTotalAccesses.Text = statistics.TotalFilesAccessed.ToString("N0", CultureInfo.CurrentCulture);
+        StatsTotalRead.Text = FormatBytes(statistics.TotalBytesRead);
+        StatsTotalWritten.Text = FormatBytes(statistics.TotalBytesWritten);
+        StatsTotalDecrypted.Text = FormatBytes(statistics.TotalBytesDecrypted);
+        StatsTotalEncrypted.Text = FormatBytes(statistics.TotalBytesEncrypted);
+        VaultStatisticsStatus.Text = $"Updated locally at {DateTime.Now:t}. No information was sent anywhere.";
+        VaultStatisticsStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 73, 205, 112));
+    }
+
+    private static string FormatBytes(long value)
+    {
+        double size = Math.Max(0, value);
+        string[] units = ["B", "KiB", "MiB", "GiB", "TiB"];
+        int unit = 0;
+        while (size >= 1024 && unit < units.Length - 1)
+        {
+            size /= 1024;
+            unit++;
+        }
+
+        string format = unit == 0 ? "N0" : size >= 100 ? "N0" : size >= 10 ? "N1" : "N2";
+        return $"{size.ToString(format, CultureInfo.CurrentCulture)} {units[unit]}";
+    }
+
+    private void BeginManagedVaultRename(object sender, RoutedEventArgs e)
+    {
+        if (activeVault is null)
+        {
+            return;
+        }
+
+        ManagedVaultRenameInput.Text = activeVault.Name;
+        ManagedVaultRenameStatus.Visibility = Visibility.Collapsed;
+        ManagedVaultNameDisplay.Visibility = Visibility.Collapsed;
+        ManagedVaultRenameEditor.Visibility = Visibility.Visible;
+        FocusAfterNavigation(ManagedVaultRenameInput);
+        ManagedVaultRenameInput.SelectAll();
+    }
+
+    private void CancelManagedVaultRename(object sender, RoutedEventArgs e)
+    {
+        ManagedVaultRenameEditor.Visibility = Visibility.Collapsed;
+        ManagedVaultNameDisplay.Visibility = Visibility.Visible;
+        ManagedVaultRenameStatus.Visibility = Visibility.Collapsed;
+    }
+
+    private void ManagedVaultRenameKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == VirtualKey.Enter)
+        {
+            e.Handled = true;
+            SaveManagedVaultRename(sender, e);
+        }
+        else if (e.Key == VirtualKey.Escape)
+        {
+            e.Handled = true;
+            CancelManagedVaultRename(sender, e);
+        }
+    }
+
+    private async void SaveManagedVaultRename(object sender, RoutedEventArgs e)
+    {
+        if (activeVault is null)
+        {
+            return;
+        }
+
+        string newName = ManagedVaultRenameInput.Text.Trim();
+        if (newName.Length == 0 || newName.Length > 50)
+        {
+            ShowManagedRenameStatus("Enter a name between 1 and 50 characters.", false);
+            return;
+        }
+
+        string vaultId = activeVault.Id;
+        string oldName = activeVault.Name;
+        ManagedVaultRenameSave.IsEnabled = false;
+        VaultCommandResult result = await backend.RenameAsync(vaultId, newName);
+        ManagedVaultRenameSave.IsEnabled = true;
+        if (!result.Succeeded)
+        {
+            ShowManagedRenameStatus(result.Error switch
+            {
+                "invalid_name" => "Enter a name between 1 and 50 characters.",
+                "vault_not_found" => "This vault is no longer connected to VaultKind.",
+                "invalid_state" => "Wait for the current vault operation to finish, then try again.",
+                "timeout" => "Renaming took too long. The vault files were not changed.",
+                _ => "VaultKind could not rename this vault. Its encrypted files were not changed."
+            }, false);
+            return;
+        }
+
+        VaultBackendSnapshot snapshot = await backend.GetSnapshotAsync();
+        ApplySnapshot(snapshot);
+        VaultSummary? renamed = snapshot.Vaults.FirstOrDefault(vault => vault.Id == vaultId);
+        if (renamed is null)
+        {
+            ShowDashboard(sender, e);
+            return;
+        }
+
+        activeVault = renamed;
+        ShowVaultManagement(sender, e);
+        ShowManagedRenameStatus($"Renamed from {oldName} to {renamed.Name}. The encrypted storage folder was not renamed.", true);
+        LogActivity("Vault renamed", $"{oldName} is now shown as {renamed.Name}. Its encrypted storage folder was unchanged.", "manage");
+    }
+
+    private void ShowManagedRenameStatus(string message, bool success)
+    {
+        ManagedVaultRenameStatus.Text = message;
+        ManagedVaultRenameStatus.Foreground = new SolidColorBrush(success
+            ? Color.FromArgb(255, 73, 205, 112)
+            : Color.FromArgb(255, 255, 102, 93));
+        ManagedVaultRenameStatus.Visibility = Visibility.Visible;
     }
 
     private void ReturnToManagedVault(object sender, RoutedEventArgs e)
@@ -1619,6 +2352,8 @@ public sealed partial class MainPage : Page
     {
         VaultManagementHome.Visibility = Visibility.Collapsed;
         VaultShareGuide.Visibility = Visibility.Visible;
+        VaultChangePassword.Visibility = Visibility.Collapsed;
+        VaultRecoveryKeyDisplay.Visibility = Visibility.Collapsed;
         ContextTitle.Text = "Share Vault";
         ContextSubtitle.Text = "Share encrypted storage safely without exposing readable files.";
         VaultManagementView.ChangeView(null, 0, null, true);
@@ -1627,10 +2362,268 @@ public sealed partial class MainPage : Page
     private void HideVaultShareGuide(object sender, RoutedEventArgs e)
     {
         VaultShareGuide.Visibility = Visibility.Collapsed;
+        VaultChangePassword.Visibility = Visibility.Collapsed;
+        VaultRecoveryKeyDisplay.Visibility = Visibility.Collapsed;
         VaultManagementHome.Visibility = Visibility.Visible;
         ContextTitle.Text = "Manage Vault";
         ContextSubtitle.Text = "Share, recover, inspect, or remove this vault without leaving the main window.";
         VaultManagementView.ChangeView(null, 0, null, true);
+    }
+
+    private void ShowManagedChangePassword(object sender, RoutedEventArgs e)
+    {
+        if (activeVault is null || activeVault.State.Equals("unlocked", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        VaultManagementHome.Visibility = Visibility.Collapsed;
+        VaultShareGuide.Visibility = Visibility.Collapsed;
+        VaultChangePassword.Visibility = Visibility.Visible;
+        VaultRecoveryKeyDisplay.Visibility = Visibility.Collapsed;
+        ChangePasswordForm.Visibility = Visibility.Visible;
+        ChangePasswordSuccess.Visibility = Visibility.Collapsed;
+        ChangeCurrentPassword.Password = string.Empty;
+        ChangeNewPassword.Password = string.Empty;
+        ChangeConfirmPassword.Password = string.Empty;
+        ChangePasswordAcknowledge.IsChecked = false;
+        ChangePasswordStatus.Text = string.Empty;
+        ChangePasswordStatus.Visibility = Visibility.Collapsed;
+        ChangePasswordProgress.IsActive = false;
+        ChangePasswordProgress.Visibility = Visibility.Collapsed;
+        ChangeCurrentPasswordLabel.Text = $"Current password for {activeVault.Name}";
+        ContextTitle.Text = "Change Password";
+        ContextSubtitle.Text = "Replace this vault's password without changing its encrypted files.";
+        UpdateManagedChangePasswordForm();
+        VaultManagementView.ChangeView(null, 0, null, true);
+        FocusAfterNavigation(ChangeCurrentPassword);
+    }
+
+    private void HideManagedChangePassword(object sender, RoutedEventArgs e)
+    {
+        ChangeCurrentPassword.Password = string.Empty;
+        ChangeNewPassword.Password = string.Empty;
+        ChangeConfirmPassword.Password = string.Empty;
+        ChangePasswordAcknowledge.IsChecked = false;
+        VaultChangePassword.Visibility = Visibility.Collapsed;
+        VaultShareGuide.Visibility = Visibility.Collapsed;
+        VaultRecoveryKeyDisplay.Visibility = Visibility.Collapsed;
+        VaultManagementHome.Visibility = Visibility.Visible;
+        ContextTitle.Text = "Manage Vault";
+        ContextSubtitle.Text = "Share, recover, inspect, or remove this vault without leaving the main window.";
+        VaultManagementView.ChangeView(null, 0, null, true);
+        FocusAfterNavigation(ManagedChangePasswordButton);
+    }
+
+    private void ChangePasswordFormChanged(object sender, RoutedEventArgs e) => UpdateManagedChangePasswordForm();
+
+    private void UpdateManagedChangePasswordForm()
+    {
+        bool newPasswordValid = ChangeNewPassword.Password.Length >= 8;
+        bool passwordsMatch = newPasswordValid && ChangeNewPassword.Password == ChangeConfirmPassword.Password;
+        ChangePasswordMatchStatus.Text = ChangeNewPassword.Password.Length == 0 && ChangeConfirmPassword.Password.Length == 0
+            ? "Use at least 8 characters."
+            : !newPasswordValid
+                ? "Use at least 8 characters."
+                : passwordsMatch
+                    ? "Passwords match"
+                    : "The passwords do not match yet.";
+        ChangePasswordMatchStatus.Foreground = new SolidColorBrush(passwordsMatch
+            ? Color.FromArgb(255, 73, 205, 112)
+            : Color.FromArgb(255, 174, 183, 190));
+        ChangePasswordSubmitButton.IsEnabled = ChangeCurrentPassword.Password.Length > 0
+            && passwordsMatch
+            && ChangePasswordAcknowledge.IsChecked == true
+            && !ChangePasswordProgress.IsActive;
+    }
+
+    private void ChangePasswordKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == VirtualKey.Enter && ChangePasswordSubmitButton.IsEnabled)
+        {
+            e.Handled = true;
+            SubmitManagedChangePassword(sender, new RoutedEventArgs());
+        }
+    }
+
+    private async void SubmitManagedChangePassword(object sender, RoutedEventArgs e)
+    {
+        if (activeVault is null || !ChangePasswordSubmitButton.IsEnabled)
+        {
+            return;
+        }
+
+        string vaultId = activeVault.Id;
+        string vaultName = activeVault.Name;
+        string currentPassword = ChangeCurrentPassword.Password;
+        string newPassword = ChangeNewPassword.Password;
+        ChangePasswordSubmitButton.IsEnabled = false;
+        ChangePasswordProgress.IsActive = true;
+        ChangePasswordProgress.Visibility = Visibility.Visible;
+        ChangePasswordStatus.Text = "Changing the password and preserving a protected master-key backup...";
+        ChangePasswordStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 174, 183, 190));
+        ChangePasswordStatus.Visibility = Visibility.Visible;
+
+        VaultCommandResult result = await backend.ChangePasswordAsync(vaultId, currentPassword, newPassword);
+        currentPassword = string.Empty;
+        newPassword = string.Empty;
+        ChangePasswordProgress.IsActive = false;
+        ChangePasswordProgress.Visibility = Visibility.Collapsed;
+
+        if (!result.Succeeded)
+        {
+            ChangePasswordStatus.Text = result.Error switch
+            {
+                "wrong_password" => "The current password is incorrect. Nothing was changed.",
+                "vault_unlocked" => "Lock this vault before changing its password.",
+                "vault_not_found" => "This vault is no longer connected to VaultKind.",
+                "password_change_failed" => "VaultKind could not safely change this password. Nothing was intentionally changed.",
+                "timeout" => "The password change took too long. Verify the vault state before trying again.",
+                _ => "VaultKind could not change this password. Nothing was changed."
+            };
+            ChangePasswordStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 102, 93));
+            ChangeCurrentPassword.Password = string.Empty;
+            UpdateManagedChangePasswordForm();
+            FocusAfterNavigation(ChangeCurrentPassword);
+            return;
+        }
+
+        ChangeCurrentPassword.Password = string.Empty;
+        ChangeNewPassword.Password = string.Empty;
+        ChangeConfirmPassword.Password = string.Empty;
+        ChangePasswordAcknowledge.IsChecked = false;
+        ChangePasswordForm.Visibility = Visibility.Collapsed;
+        ChangePasswordSuccess.Visibility = Visibility.Visible;
+        LogActivity("Vault password changed", $"{vaultName} now uses a new password.", "security");
+    }
+
+    private void ShowManagedRecoveryKey(object sender, RoutedEventArgs e)
+    {
+        if (activeVault is null)
+        {
+            return;
+        }
+
+        VaultManagementHome.Visibility = Visibility.Collapsed;
+        VaultShareGuide.Visibility = Visibility.Collapsed;
+        VaultChangePassword.Visibility = Visibility.Collapsed;
+        VaultRecoveryKeyDisplay.Visibility = Visibility.Visible;
+        RecoveryKeyPasswordForm.Visibility = Visibility.Visible;
+        RecoveryKeyDisplayResult.Visibility = Visibility.Collapsed;
+        RecoveryKeyPassword.Password = string.Empty;
+        ManagedRecoveryKeyText.Text = string.Empty;
+        ManagedRecoveryKeyCopyStatus.Text = string.Empty;
+        ManagedRecoveryKeyCopyStatus.Visibility = Visibility.Collapsed;
+        RecoveryKeyDisplayStatus.Text = string.Empty;
+        RecoveryKeyDisplayStatus.Visibility = Visibility.Collapsed;
+        RecoveryKeyDisplayProgress.IsActive = false;
+        RecoveryKeyDisplayProgress.Visibility = Visibility.Collapsed;
+        RecoveryKeyPasswordLabel.Text = $"Password for {activeVault.Name}";
+        RecoveryKeyDisplaySubmitButton.IsEnabled = false;
+        ContextTitle.Text = "Show Recovery Key";
+        ContextSubtitle.Text = "View and securely store the emergency recovery key for this vault.";
+        VaultManagementView.ChangeView(null, 0, null, true);
+        FocusAfterNavigation(RecoveryKeyPassword);
+    }
+
+    private void HideManagedRecoveryKey(object sender, RoutedEventArgs e)
+    {
+        RecoveryKeyPassword.Password = string.Empty;
+        ManagedRecoveryKeyText.Text = string.Empty;
+        VaultRecoveryKeyDisplay.Visibility = Visibility.Collapsed;
+        VaultChangePassword.Visibility = Visibility.Collapsed;
+        VaultShareGuide.Visibility = Visibility.Collapsed;
+        VaultManagementHome.Visibility = Visibility.Visible;
+        ContextTitle.Text = "Manage Vault";
+        ContextSubtitle.Text = "Share, recover, inspect, or remove this vault without leaving the main window.";
+        VaultManagementView.ChangeView(null, 0, null, true);
+        FocusAfterNavigation(ManagedShowRecoveryKeyButton);
+    }
+
+    private void RecoveryKeyPasswordChanged(object sender, RoutedEventArgs e)
+    {
+        RecoveryKeyDisplaySubmitButton.IsEnabled = RecoveryKeyPassword.Password.Length > 0 && !RecoveryKeyDisplayProgress.IsActive;
+    }
+
+    private void RecoveryKeyPasswordKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == VirtualKey.Enter && RecoveryKeyDisplaySubmitButton.IsEnabled)
+        {
+            e.Handled = true;
+            SubmitManagedRecoveryKey(sender, new RoutedEventArgs());
+        }
+    }
+
+    private async void SubmitManagedRecoveryKey(object sender, RoutedEventArgs e)
+    {
+        if (activeVault is null || !RecoveryKeyDisplaySubmitButton.IsEnabled)
+        {
+            return;
+        }
+
+        string vaultId = activeVault.Id;
+        string vaultName = activeVault.Name;
+        string password = RecoveryKeyPassword.Password;
+        RecoveryKeyPassword.Password = string.Empty;
+        RecoveryKeyDisplaySubmitButton.IsEnabled = false;
+        RecoveryKeyDisplayProgress.IsActive = true;
+        RecoveryKeyDisplayProgress.Visibility = Visibility.Visible;
+        RecoveryKeyDisplayStatus.Text = "Confirming the password and deriving the recovery key locally...";
+        RecoveryKeyDisplayStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 174, 183, 190));
+        RecoveryKeyDisplayStatus.Visibility = Visibility.Visible;
+
+        VaultCommandResult result = await backend.ShowRecoveryKeyAsync(vaultId, password);
+        password = string.Empty;
+        RecoveryKeyDisplayProgress.IsActive = false;
+        RecoveryKeyDisplayProgress.Visibility = Visibility.Collapsed;
+
+        if (!result.Succeeded || string.IsNullOrWhiteSpace(result.RecoveryKey))
+        {
+            RecoveryKeyDisplayStatus.Text = result.Error switch
+            {
+                "wrong_password" => "That password is incorrect. The recovery key was not shown.",
+                "vault_not_found" => "This vault is no longer connected to VaultKind.",
+                "recovery_key_failed" => "VaultKind could not derive the recovery key. No vault data was changed.",
+                "unknown_operation" => "The local vault engine is from an older build. Restart VaultKind, then try again.",
+                "engine_unavailable" => "The local vault engine is unavailable. Restart VaultKind, then try again.",
+                "timeout" => "The request took too long. Verify the vault state before trying again.",
+                _ => "VaultKind could not show the recovery key. No vault data was changed."
+            };
+            RecoveryKeyDisplayStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 102, 93));
+            RecoveryKeyDisplaySubmitButton.IsEnabled = false;
+            FocusAfterNavigation(RecoveryKeyPassword);
+            return;
+        }
+
+        ManagedRecoveryKeyText.Text = result.RecoveryKey;
+        RecoveryKeyPasswordForm.Visibility = Visibility.Collapsed;
+        RecoveryKeyDisplayResult.Visibility = Visibility.Visible;
+        LogActivity("Recovery key viewed", $"The recovery key for {vaultName} was displayed locally.", "recovery");
+    }
+
+    private void CopyManagedRecoveryKey(object sender, RoutedEventArgs e)
+    {
+        ManagedRecoveryKeyCopyStatus.Text = string.Empty;
+        ManagedRecoveryKeyCopyStatus.Visibility = Visibility.Collapsed;
+        if (string.IsNullOrWhiteSpace(ManagedRecoveryKeyText.Text))
+        {
+            return;
+        }
+
+        try
+        {
+            DataPackage package = new();
+            package.SetText(ManagedRecoveryKeyText.Text);
+            Clipboard.SetContent(package);
+            ManagedRecoveryKeyCopyStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 58, 211, 111));
+            ManagedRecoveryKeyCopyStatus.Text = "Recovery key copied.";
+        }
+        catch (Exception)
+        {
+            ManagedRecoveryKeyCopyStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 91, 82));
+            ManagedRecoveryKeyCopyStatus.Text = "Clipboard unavailable. Select the key and press Ctrl+C.";
+        }
+        ManagedRecoveryKeyCopyStatus.Visibility = Visibility.Visible;
     }
 
     private void ShowManagedRecovery(object sender, RoutedEventArgs e)
@@ -1640,6 +2633,7 @@ public sealed partial class MainPage : Page
             return;
         }
 
+        recoveryOpenedFromVaultManagement = true;
         recoveryTargetVaultId = activeVault.Id;
         ShowRecoveryReset(sender, e);
     }
@@ -2090,10 +3084,35 @@ public sealed partial class MainPage : Page
     private void RenderActivity()
     {
         ActivityEventsPanel.Children.Clear();
-        ActivityEmptyState.Visibility = activityHistory.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        ActivityEventsPanel.Visibility = activityHistory.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+        List<SessionActivity> visibleActivity = activityHistory
+            .Where(activity => selectedActivityCategory == "all" || ActivitySectionFor(activity.Category) == selectedActivityCategory)
+            .Reverse()
+            .ToList();
 
-        foreach (SessionActivity activity in activityHistory.AsEnumerable().Reverse())
+        UpdateActivityCategoryButtons();
+        ActivityEmptyState.Visibility = visibleActivity.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        ActivityEventsPanel.Visibility = visibleActivity.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+        ActivityFilterSummary.Text = selectedActivityCategory switch
+        {
+            "vaults" => $"Showing {visibleActivity.Count} vault event{(visibleActivity.Count == 1 ? string.Empty : "s")}",
+            "recovery" => $"Showing {visibleActivity.Count} recovery event{(visibleActivity.Count == 1 ? string.Empty : "s")}",
+            "passwords" => $"Showing {visibleActivity.Count} password event{(visibleActivity.Count == 1 ? string.Empty : "s")}",
+            "doctor" => $"Showing {visibleActivity.Count} Vault Doctor event{(visibleActivity.Count == 1 ? string.Empty : "s")}",
+            _ => $"Showing all {visibleActivity.Count} event{(visibleActivity.Count == 1 ? string.Empty : "s")}"
+        };
+        ActivityEmptyTitle.Text = selectedActivityCategory == "all"
+            ? "No activity yet"
+            : $"No {ActivityCategoryLabel(selectedActivityCategory).ToLowerInvariant()} activity yet";
+        ActivityEmptyDescription.Text = selectedActivityCategory switch
+        {
+            "vaults" => "Creating, connecting, unlocking, locking, renaming, and removing vaults will appear here.",
+            "recovery" => "Recovery-key and restored-access events will appear here.",
+            "passwords" => "Successful vault password changes will appear here. Passwords themselves are never recorded.",
+            "doctor" => "Completed Vault Doctor checks will appear here as the diagnostic history grows.",
+            _ => "Important vault, recovery, password, and Doctor actions will appear here."
+        };
+
+        foreach (SessionActivity activity in visibleActivity)
         {
             (string glyph, Color color) = activity.Category switch
             {
@@ -2157,6 +3176,50 @@ public sealed partial class MainPage : Page
             ActivityEventsPanel.Children.Add(card);
         }
     }
+
+    private void UpdateActivityCategoryButtons()
+    {
+        Button[] buttons = [ActivityAllButton, ActivityVaultsButton, ActivityRecoveryButton, ActivityPasswordsButton, ActivityDoctorButton];
+        foreach (Button button in buttons)
+        {
+            string category = button.Tag as string ?? "all";
+            int count = category == "all"
+                ? activityHistory.Count
+                : activityHistory.Count(activity => ActivitySectionFor(activity.Category) == category);
+            button.Content = $"{ActivityCategoryLabel(category)}  {count}";
+
+            bool selected = category == selectedActivityCategory;
+            button.Background = new SolidColorBrush(selected
+                ? Color.FromArgb(255, 45, 63, 78)
+                : Color.FromArgb(255, 45, 50, 53));
+            button.BorderBrush = new SolidColorBrush(selected
+                ? Color.FromArgb(255, 78, 161, 255)
+                : Color.FromArgb(255, 82, 93, 101));
+            button.BorderThickness = new Thickness(selected ? 2 : 1);
+            button.Foreground = new SolidColorBrush(selected
+                ? Color.FromArgb(255, 78, 161, 255)
+                : Color.FromArgb(255, 236, 239, 241));
+            AutomationProperties.SetName(button, $"{ActivityCategoryLabel(category)}, {count} events{(selected ? ", selected" : string.Empty)}");
+        }
+    }
+
+    private static string ActivitySectionFor(string category) => category switch
+    {
+        "recovery" => "recovery",
+        "security" => "passwords",
+        "doctor" => "doctor",
+        "unlock" or "lock" or "create" or "connect" or "remove" or "manage" => "vaults",
+        _ => "vaults"
+    };
+
+    private static string ActivityCategoryLabel(string category) => category switch
+    {
+        "vaults" => "Vaults",
+        "recovery" => "Recovery",
+        "passwords" => "Passwords",
+        "doctor" => "Doctor",
+        _ => "All"
+    };
 
     private void LoadActivityHistory()
     {

@@ -26,6 +26,24 @@ internal sealed class DisconnectedVaultBackend : IVaultBackend
     public Task<VaultCommandResult> RemoveAsync(string vaultId, CancellationToken cancellationToken = default) =>
         Task.FromResult(new VaultCommandResult(false, "engine_unavailable", null));
 
+    public Task<VaultCommandResult> RenameAsync(string vaultId, string displayName, CancellationToken cancellationToken = default) =>
+        Task.FromResult(new VaultCommandResult(false, "engine_unavailable", null));
+
+    public Task<VaultStatisticsResult> GetStatisticsAsync(string vaultId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(new VaultStatisticsResult(false, "engine_unavailable", null));
+
+    public Task<FileNameDecryptResult> DecryptFileNameAsync(string vaultId, string filePath, CancellationToken cancellationToken = default) =>
+        Task.FromResult(new FileNameDecryptResult(false, "engine_unavailable", null));
+
+    public Task<FileNameDecryptResult> LocateEncryptedFileAsync(string vaultId, string filePath, CancellationToken cancellationToken = default) =>
+        Task.FromResult(new FileNameDecryptResult(false, "engine_unavailable", null));
+
+    public Task<VaultCommandResult> ChangePasswordAsync(string vaultId, string currentPassword, string newPassword, CancellationToken cancellationToken = default) =>
+        Task.FromResult(new VaultCommandResult(false, "engine_unavailable", null));
+
+    public Task<VaultCommandResult> ShowRecoveryKeyAsync(string vaultId, string password, CancellationToken cancellationToken = default) =>
+        Task.FromResult(new VaultCommandResult(false, "engine_unavailable", null));
+
     public Task<VaultCommandResult> ResetPasswordAsync(string vaultId, string recoveryKey, string newPassword, CancellationToken cancellationToken = default) =>
         Task.FromResult(new VaultCommandResult(false, "engine_unavailable", null));
 

@@ -1,5 +1,7 @@
 package org.cryptomator.common.vaults;
 
+import org.cryptomator.integrations.mount.Mountpoint;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -23,6 +25,13 @@ public class VaultListSnapshotMapper {
 	}
 
 	private VaultSummary map(Vault vault) {
-		return new VaultSummary(vault.getId(), vault.getDisplayName(), vault.getState().name().toLowerCase(Locale.ROOT), vault.getDisplayablePath());
+		String mountPath = vault.getMountPoint() instanceof Mountpoint.WithPath mountpoint
+				? normalizeWindowsDriveRoot(mountpoint.path().toString())
+				: null;
+		return new VaultSummary(vault.getId(), vault.getDisplayName(), vault.getState().name().toLowerCase(Locale.ROOT), vault.getDisplayablePath(), mountPath);
+	}
+
+	private String normalizeWindowsDriveRoot(String mountPath) {
+		return mountPath.matches("(?i)^[a-z]:$") ? mountPath + "\\" : mountPath;
 	}
 }

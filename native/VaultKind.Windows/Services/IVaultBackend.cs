@@ -7,6 +7,12 @@ internal interface IVaultBackend
     Task<VaultCommandResult> LockAsync(string vaultId, CancellationToken cancellationToken = default);
     Task<VaultCommandResult> RevealAsync(string vaultId, CancellationToken cancellationToken = default);
     Task<VaultCommandResult> RemoveAsync(string vaultId, CancellationToken cancellationToken = default);
+    Task<VaultCommandResult> RenameAsync(string vaultId, string displayName, CancellationToken cancellationToken = default);
+    Task<VaultStatisticsResult> GetStatisticsAsync(string vaultId, CancellationToken cancellationToken = default);
+    Task<FileNameDecryptResult> LocateEncryptedFileAsync(string vaultId, string filePath, CancellationToken cancellationToken = default);
+    Task<FileNameDecryptResult> DecryptFileNameAsync(string vaultId, string filePath, CancellationToken cancellationToken = default);
+    Task<VaultCommandResult> ChangePasswordAsync(string vaultId, string currentPassword, string newPassword, CancellationToken cancellationToken = default);
+    Task<VaultCommandResult> ShowRecoveryKeyAsync(string vaultId, string password, CancellationToken cancellationToken = default);
     Task<VaultCommandResult> ResetPasswordAsync(string vaultId, string recoveryKey, string newPassword, CancellationToken cancellationToken = default);
     Task<VaultCreateResult> CreateAsync(string path, string password, bool createRecoveryKey, bool useShortNames, CancellationToken cancellationToken = default);
     Task<VaultCreateResult> ConnectAsync(string path, CancellationToken cancellationToken = default);
@@ -20,11 +26,29 @@ internal enum BackendConnectionState
     Unavailable
 }
 
-internal sealed record VaultSummary(string Id, string Name, string State, string Path);
+internal sealed record VaultSummary(string Id, string Name, string State, string Path, string? MountPath);
 
-internal sealed record VaultCommandResult(bool Succeeded, string? Error, string? State);
+internal sealed record VaultCommandResult(bool Succeeded, string? Error, string? State, string? RecoveryKey = null);
 
 internal sealed record VaultCreateResult(bool Succeeded, string? Error, string? State, string? VaultId, string? RecoveryKey);
+
+internal sealed record VaultStatisticsResult(bool Succeeded, string? Error, VaultStatistics? Statistics);
+
+internal sealed record FileNameDecryptResult(bool Succeeded, string? Error, FileNameMapping? Mapping);
+
+internal sealed record FileNameMapping(string EncryptedName, string CleartextName);
+
+internal sealed record VaultStatistics(
+    long BytesPerSecondRead,
+    long BytesPerSecondWritten,
+    long BytesPerSecondDecrypted,
+    long BytesPerSecondEncrypted,
+    double CacheHitRate,
+    long TotalBytesRead,
+    long TotalBytesWritten,
+    long TotalBytesDecrypted,
+    long TotalBytesEncrypted,
+    long TotalFilesAccessed);
 
 internal sealed record VaultBackendSnapshot(
     BackendConnectionState ConnectionState,

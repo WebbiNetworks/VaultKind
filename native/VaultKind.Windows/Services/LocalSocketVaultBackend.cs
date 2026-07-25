@@ -9,6 +9,7 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
     private const int ProtocolVersion = 1;
     private const int MaxMessageBytes = 64 * 1024;
     private static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(2);
+    private static readonly string[] RequiredCapabilities = ["vault.list", "vault.unlock", "vault.lock", "vault.reveal", "vault.remove", "vault.rename", "vault.stats", "vault.locate_encrypted", "vault.decrypt_filename", "vault.create", "vault.connect", "vault.reset_password", "vault.change_password", "vault.show_recovery_key", "backend.shutdown"];
 
     public async Task<VaultBackendSnapshot> GetSnapshotAsync(CancellationToken cancellationToken = default)
     {
@@ -25,7 +26,7 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
             await WriteFrameAsync(stream, new ProtocolRequest(ProtocolVersion, requestId, "backend.hello"), timeout.Token);
             var response = await ReadFrameAsync<ProtocolResponse>(stream, timeout.Token);
 
-            if (response.Protocol != ProtocolVersion || response.RequestId != requestId || !response.Ok || response.Backend != "VaultKind Java Engine")
+            if (!IsValidHello(response, requestId))
             {
                 return Unavailable("The Java vault engine returned an invalid identity or protocol response.");
             }
@@ -40,7 +41,7 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
 
             var vaults = listResponse.Vaults
                 .Where(vault => !string.IsNullOrWhiteSpace(vault.Id) && !string.IsNullOrWhiteSpace(vault.Name) && !string.IsNullOrWhiteSpace(vault.State) && !string.IsNullOrWhiteSpace(vault.Path))
-                .Select(vault => new VaultSummary(vault.Id, vault.Name, vault.State, vault.Path))
+                .Select(vault => new VaultSummary(vault.Id, vault.Name, vault.State, vault.Path, vault.MountPath))
                 .ToArray();
 
             return new VaultBackendSnapshot(
@@ -70,8 +71,51 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
     public async Task<VaultCommandResult> RemoveAsync(string vaultId, CancellationToken cancellationToken = default)
         => await ExecuteCommandAsync("vault.remove", vaultId, null, TimeSpan.FromSeconds(10), cancellationToken);
 
+    public async Task<VaultCommandResult> RenameAsync(string vaultId, string displayName, CancellationToken cancellationToken = default)
+        => await ExecuteCommandAsync("vault.rename", vaultId, null, TimeSpan.FromSeconds(10), cancellationToken, displayName: displayName);
+
+    public async Task<VaultStatisticsResult> GetStatisticsAsync(string vaultId, CancellationToken cancellationToken = default)
+    {
+        ProtocolResponse response = await ExecuteRawCommandAsync("vault.stats", vaultId, null, TimeSpan.FromSeconds(10), cancellationToken);
+        return new VaultStatisticsResult(response.Ok, response.Error, response.Statistics is null
+            ? null
+            : new VaultStatistics(
+                response.Statistics.BytesPerSecondRead,
+                response.Statistics.BytesPerSecondWritten,
+                response.Statistics.BytesPerSecondDecrypted,
+                response.Statistics.BytesPerSecondEncrypted,
+                response.Statistics.CacheHitRate,
+                response.Statistics.TotalBytesRead,
+                response.Statistics.TotalBytesWritten,
+                response.Statistics.TotalBytesDecrypted,
+                response.Statistics.TotalBytesEncrypted,
+                response.Statistics.TotalFilesAccessed));
+    }
+
+    public async Task<FileNameDecryptResult> DecryptFileNameAsync(string vaultId, string filePath, CancellationToken cancellationToken = default)
+    {
+        ProtocolResponse response = await ExecuteRawCommandAsync("vault.decrypt_filename", vaultId, null, TimeSpan.FromSeconds(15), cancellationToken, vaultPath: filePath);
+        return new FileNameDecryptResult(response.Ok, response.Error, response.FileNameMapping is null
+            ? null
+            : new FileNameMapping(response.FileNameMapping.EncryptedName, response.FileNameMapping.CleartextName));
+    }
+
+    public async Task<FileNameDecryptResult> LocateEncryptedFileAsync(string vaultId, string filePath, CancellationToken cancellationToken = default)
+    {
+        ProtocolResponse response = await ExecuteRawCommandAsync("vault.locate_encrypted", vaultId, null, TimeSpan.FromSeconds(15), cancellationToken, vaultPath: filePath);
+        return new FileNameDecryptResult(response.Ok, response.Error, response.FileNameMapping is null
+            ? null
+            : new FileNameMapping(response.FileNameMapping.EncryptedName, response.FileNameMapping.CleartextName));
+    }
+
+    public async Task<VaultCommandResult> ChangePasswordAsync(string vaultId, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
+        => await ExecuteCommandAsync("vault.change_password", vaultId, currentPassword, TimeSpan.FromSeconds(45), cancellationToken, newPassword: newPassword);
+
+    public async Task<VaultCommandResult> ShowRecoveryKeyAsync(string vaultId, string password, CancellationToken cancellationToken = default)
+        => await ExecuteCommandAsync("vault.show_recovery_key", vaultId, password, TimeSpan.FromSeconds(45), cancellationToken);
+
     public async Task<VaultCommandResult> ResetPasswordAsync(string vaultId, string recoveryKey, string newPassword, CancellationToken cancellationToken = default)
-        => await ExecuteCommandAsync("vault.reset_password", vaultId, newPassword, TimeSpan.FromSeconds(45), cancellationToken, recoveryKey);
+        => await ExecuteCommandAsync("vault.reset_password", vaultId, null, TimeSpan.FromSeconds(45), cancellationToken, recoveryKey, newPassword);
 
     public async Task<VaultCreateResult> CreateAsync(string path, string password, bool createRecoveryKey, bool useShortNames, CancellationToken cancellationToken = default)
     {
@@ -87,7 +131,7 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
             var helloId = Guid.NewGuid().ToString("N");
             await WriteFrameAsync(stream, new ProtocolRequest(ProtocolVersion, helloId, "backend.hello"), timeout.Token);
             var hello = await ReadFrameAsync<ProtocolResponse>(stream, timeout.Token);
-            if (hello.Protocol != ProtocolVersion || hello.RequestId != helloId || !hello.Ok || hello.Backend != "VaultKind Java Engine")
+            if (!IsValidHello(hello, helloId))
             {
                 return new VaultCreateResult(false, "engine_unavailable", null, null, null);
             }
@@ -126,7 +170,7 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
             var helloId = Guid.NewGuid().ToString("N");
             await WriteFrameAsync(stream, new ProtocolRequest(ProtocolVersion, helloId, "backend.hello"), timeout.Token);
             var hello = await ReadFrameAsync<ProtocolResponse>(stream, timeout.Token);
-            if (hello.Protocol != ProtocolVersion || hello.RequestId != helloId || !hello.Ok || hello.Backend != "VaultKind Java Engine")
+            if (!IsValidHello(hello, helloId))
             {
                 return new VaultCreateResult(false, "engine_unavailable", null, null, null);
             }
@@ -148,7 +192,13 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
         }
     }
 
-    private static async Task<VaultCommandResult> ExecuteCommandAsync(string operation, string vaultId, string? password, TimeSpan commandTimeout, CancellationToken cancellationToken, string? recoveryKey = null)
+    private static async Task<VaultCommandResult> ExecuteCommandAsync(string operation, string vaultId, string? password, TimeSpan commandTimeout, CancellationToken cancellationToken, string? recoveryKey = null, string? newPassword = null, string? displayName = null)
+    {
+        ProtocolResponse response = await ExecuteRawCommandAsync(operation, vaultId, password, commandTimeout, cancellationToken, recoveryKey, newPassword, displayName);
+        return new VaultCommandResult(response.Ok, response.Error, response.State, response.RecoveryKey);
+    }
+
+    private static async Task<ProtocolResponse> ExecuteRawCommandAsync(string operation, string vaultId, string? password, TimeSpan commandTimeout, CancellationToken cancellationToken, string? recoveryKey = null, string? newPassword = null, string? displayName = null, string? vaultPath = null)
     {
         try
         {
@@ -162,32 +212,40 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
             var helloId = Guid.NewGuid().ToString("N");
             await WriteFrameAsync(stream, new ProtocolRequest(ProtocolVersion, helloId, "backend.hello"), timeout.Token);
             var hello = await ReadFrameAsync<ProtocolResponse>(stream, timeout.Token);
-            if (hello.Protocol != ProtocolVersion || hello.RequestId != helloId || !hello.Ok || hello.Backend != "VaultKind Java Engine")
+            if (!IsValidHello(hello, helloId))
             {
-                return new VaultCommandResult(false, "engine_unavailable", null);
+                return ProtocolResponse.Failure("engine_unavailable");
             }
 
             var requestId = Guid.NewGuid().ToString("N");
-            await WriteFrameAsync(stream, new ProtocolRequest(ProtocolVersion, requestId, operation, vaultId, password, recoveryKey), timeout.Token);
+            await WriteFrameAsync(stream, new ProtocolRequest(ProtocolVersion, requestId, operation, vaultId, password, recoveryKey, newPassword, displayName, vaultPath), timeout.Token);
             var response = await ReadFrameAsync<ProtocolResponse>(stream, timeout.Token);
             if (response.Protocol != ProtocolVersion || response.RequestId != requestId)
             {
-                return new VaultCommandResult(false, "invalid_response", null);
+                return ProtocolResponse.Failure("invalid_response");
             }
 
-            return new VaultCommandResult(response.Ok, response.Error, response.State);
+            return response;
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return new VaultCommandResult(false, "timeout", null);
+            return ProtocolResponse.Failure("timeout");
         }
         catch (Exception)
         {
-            return new VaultCommandResult(false, "engine_unavailable", null);
+            return ProtocolResponse.Failure("engine_unavailable");
         }
     }
 
     private static VaultBackendSnapshot Unavailable(string message) => new(BackendConnectionState.Unavailable, [], message);
+
+    private static bool IsValidHello(ProtocolResponse response, string requestId) =>
+        response.Protocol == ProtocolVersion &&
+        response.RequestId == requestId &&
+        response.Ok &&
+        response.Backend == "VaultKind Java Engine" &&
+        response.Capabilities is not null &&
+        RequiredCapabilities.All(capability => response.Capabilities.Contains(capability, StringComparer.Ordinal));
 
     private static async Task WriteFrameAsync<T>(Stream stream, T message, CancellationToken cancellationToken)
     {
@@ -221,7 +279,12 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    private sealed record ProtocolRequest(int Protocol, string RequestId, string Operation, string? VaultId = null, string? Password = null, string? RecoveryKey = null, string? VaultPath = null, bool CreateRecoveryKey = false, bool UseShortNames = false);
-    private sealed record ProtocolResponse(int Protocol, string RequestId, bool Ok, string? Backend, string? Error, IReadOnlyList<ProtocolVault>? Vaults, string? State, string? VaultId, string? RecoveryKey);
-    private sealed record ProtocolVault(string Id, string Name, string State, string Path);
+    private sealed record ProtocolRequest(int Protocol, string RequestId, string Operation, string? VaultId = null, string? Password = null, string? RecoveryKey = null, string? NewPassword = null, string? DisplayName = null, string? VaultPath = null, bool CreateRecoveryKey = false, bool UseShortNames = false);
+    private sealed record ProtocolResponse(int Protocol, string RequestId, bool Ok, string? Backend, string? Error, IReadOnlyList<ProtocolVault>? Vaults, string? State, string? VaultId, string? RecoveryKey, ProtocolStatistics? Statistics, ProtocolFileNameMapping? FileNameMapping, IReadOnlyList<string>? Capabilities)
+    {
+        internal static ProtocolResponse Failure(string error) => new(ProtocolVersion, string.Empty, false, null, error, null, null, null, null, null, null, null);
+    }
+    private sealed record ProtocolVault(string Id, string Name, string State, string Path, string? MountPath);
+    private sealed record ProtocolStatistics(long BytesPerSecondRead, long BytesPerSecondWritten, long BytesPerSecondDecrypted, long BytesPerSecondEncrypted, double CacheHitRate, long TotalBytesRead, long TotalBytesWritten, long TotalBytesDecrypted, long TotalBytesEncrypted, long TotalFilesAccessed);
+    private sealed record ProtocolFileNameMapping(string EncryptedName, string CleartextName);
 }

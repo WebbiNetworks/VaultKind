@@ -15,6 +15,18 @@ The accepted long-term interface direction is documented in [ADR 0001: Move Towa
 - Prefer clear navigation, keyboard access, responsive layouts, and useful use of available screen space.
 - Treat offline operation as the normal state, not a degraded fallback.
 
+### VaultKind UI Law #1: The main window is the workspace
+
+All routine tasks remain inside the VaultKind shell. The user should never lose context because of an unnecessary popup window.
+
+Popup dialogs are reserved for operating-system functions that cannot reasonably be embedded, including:
+
+- Windows file and folder pickers.
+- Windows authentication or permission prompts.
+- Critical confirmations that must interrupt the current action to prevent harm or data loss.
+
+Application pages, vault management, settings, guidance, diagnostics, progress, results, and recoverable errors belong inside the main window. Before introducing a popup, the design must establish why an embedded workspace view cannot serve the user safely and clearly.
+
 ## Windows Focused
 
 - Windows is the only supported operating-system target.

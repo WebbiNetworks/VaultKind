@@ -12,13 +12,26 @@ namespace VaultKind_Windows.Services;
 /// </summary>
 internal sealed class JavaVaultEngineHost : IDisposable
 {
+    private static readonly string[] RequiredCapabilities = ["vault.list", "vault.unlock", "vault.lock", "vault.reveal", "vault.remove", "vault.rename", "vault.stats", "vault.locate_encrypted", "vault.decrypt_filename", "vault.create", "vault.connect", "vault.reset_password", "vault.change_password", "vault.show_recovery_key", "backend.shutdown"];
     private Process? ownedProcess;
 
     internal bool StartIfNeeded()
     {
-        if (IsBackendListening())
+        if (IsCompatibleBackendListening(out bool backendListening))
         {
             return true;
+        }
+
+        if (backendListening)
+        {
+            if (!TryRequestGracefulShutdown())
+            {
+                return false;
+            }
+            if (!WaitForBackendToStop())
+            {
+                return false;
+            }
         }
 
         string? repositoryRoot = FindRepositoryRoot();
@@ -121,7 +134,7 @@ internal sealed class JavaVaultEngineHost : IDisposable
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private sealed record EngineRequest(int Protocol, string RequestId, string Operation);
-    private sealed record EngineResponse(int Protocol, string RequestId, bool Ok, string? Backend, string? Error);
+    private sealed record EngineResponse(int Protocol, string RequestId, bool Ok, string? Backend, string? Error, IReadOnlyList<string>? Capabilities);
 
     private static string SocketPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -129,8 +142,9 @@ internal sealed class JavaVaultEngineHost : IDisposable
         "bridge",
         "native-bridge-v1.sock");
 
-    private static bool IsBackendListening()
+    private static bool IsCompatibleBackendListening(out bool backendListening)
     {
+        backendListening = false;
         if (!File.Exists(SocketPath))
         {
             return false;
@@ -141,12 +155,35 @@ internal sealed class JavaVaultEngineHost : IDisposable
             using var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
             using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
             socket.ConnectAsync(new UnixDomainSocketEndPoint(SocketPath), timeout.Token).AsTask().GetAwaiter().GetResult();
-            return socket.Connected;
+            backendListening = socket.Connected;
+            using var stream = new NetworkStream(socket, ownsSocket: false);
+            string helloId = Guid.NewGuid().ToString("N");
+            WriteFrame(stream, new EngineRequest(1, helloId, "backend.hello"));
+            EngineResponse hello = ReadFrame(stream);
+            return hello.Ok &&
+                   hello.RequestId == helloId &&
+                   hello.Backend == "VaultKind Java Engine" &&
+                   hello.Capabilities is not null &&
+                   RequiredCapabilities.All(capability => hello.Capabilities.Contains(capability, StringComparer.Ordinal));
         }
         catch (Exception)
         {
             return false;
         }
+    }
+
+    private static bool WaitForBackendToStop()
+    {
+        for (int attempt = 0; attempt < 50; attempt++)
+        {
+            if (!File.Exists(SocketPath))
+            {
+                return true;
+            }
+            Thread.Sleep(100);
+        }
+
+        return !File.Exists(SocketPath);
     }
 
     private static string? FindRepositoryRoot()

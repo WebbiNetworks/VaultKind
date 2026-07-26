@@ -75,6 +75,18 @@ The goal is a smaller, clearer Windows codebase—not deletion for its own sake.
 - Prefer calm confidence over fear-based security messaging.
 - Preserve compatibility with supported Cryptomator vault formats while keeping security-sensitive changes reviewable against upstream.
 
+### Three signature sounds, used sparingly
+
+VaultKind has exactly three sound identities:
+
+- **Vault Open** acknowledges a successful transition from locked encrypted storage to the readable Windows drive.
+- **Vault Locked** acknowledges a successful transition back to the protected locked state.
+- **Warning** calls attention to a confirmed caution or danger that could affect vault access, integrity, or a consequential user decision. A caution may use a brief, quieter presentation of the same warning identity; critical danger uses the unmistakable full warning.
+
+Sound reinforces state and safety; it does not decorate the interface. Navigation, hover, ordinary button presses, routine validation, informational messages, and general success feedback remain silent. A red or amber visual treatment alone does not justify audio. Every new warning trigger must identify the concrete risk and show why visual feedback is insufficient.
+
+All sounds are brief, local, user-controllable, and optional. Audio failure must never delay, interrupt, or change a vault operation. VaultKind must remain fully understandable and operable with signature sounds disabled.
+
 ## Decision Filter
 
 When evaluating a feature or technical change, ask:
@@ -84,5 +96,6 @@ When evaluating a feature or technical change, ask:
 3. Is it accessible to someone unfamiliar with encryption software?
 4. Does it avoid unnecessary change to security-sensitive upstream code?
 5. Can its behavior and limitations be explained honestly?
+6. If it adds sound, does it fit one of the three signature identities and communicate a meaningful state or safety event?
 
 If a proposal primarily serves cross-platform parity, online engagement, telemetry, or a web/mobile expansion, it is outside VaultKind's product direction unless this philosophy is explicitly revised.

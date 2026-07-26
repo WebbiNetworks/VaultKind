@@ -166,6 +166,10 @@
                         <Setter Target="DashboardDoctorButton.(Grid.Column)" Value="1" />
                         <Setter Target="DashboardDoctorButton.HorizontalAlignment" Value="Left" />
                         <Setter Target="DashboardDoctorButton.Margin" Value="0,10,0,0" />
+                        <Setter Target="DashboardLearningButton.(Grid.Row)" Value="1" />
+                        <Setter Target="DashboardLearningButton.(Grid.Column)" Value="1" />
+                        <Setter Target="DashboardLearningButton.HorizontalAlignment" Value="Left" />
+                        <Setter Target="DashboardLearningButton.Margin" Value="0,10,0,0" />
                         <Setter Target="DoctorContent.Margin" Value="24,26,24,46" />
                         <Setter Target="DoctorPrivacyBadge.(Grid.Row)" Value="1" />
                         <Setter Target="DoctorPrivacyBadge.(Grid.Column)" Value="1" />
@@ -384,6 +388,10 @@
                         <Setter Target="DashboardDoctorButton.(Grid.Column)" Value="2" />
                         <Setter Target="DashboardDoctorButton.HorizontalAlignment" Value="Stretch" />
                         <Setter Target="DashboardDoctorButton.Margin" Value="0" />
+                        <Setter Target="DashboardLearningButton.(Grid.Row)" Value="0" />
+                        <Setter Target="DashboardLearningButton.(Grid.Column)" Value="2" />
+                        <Setter Target="DashboardLearningButton.HorizontalAlignment" Value="Stretch" />
+                        <Setter Target="DashboardLearningButton.Margin" Value="0" />
                         <Setter Target="DoctorContent.Margin" Value="42,34,42,50" />
                         <Setter Target="DoctorPrivacyBadge.(Grid.Row)" Value="0" />
                         <Setter Target="DoctorPrivacyBadge.(Grid.Column)" Value="2" />
@@ -597,6 +605,9 @@
                     <StackPanel Orientation="Horizontal" Spacing="11">
                         <FontIcon Glyph="&#xE9D9;" FontSize="17" />
                         <TextBlock x:Name="DoctorNavText" Text="Vault Doctor" VerticalAlignment="Center" />
+                        <Border x:Name="DoctorNavStatusBadge" Visibility="Collapsed" Width="24" Height="24" CornerRadius="12" BorderThickness="1" VerticalAlignment="Center">
+                            <FontIcon x:Name="DoctorNavStatusIcon" Glyph="&#xE73E;" FontSize="13" />
+                        </Border>
                     </StackPanel>
                 </Button>
                 <Grid Grid.Row="2" Margin="0,12,0,0">
@@ -667,13 +678,29 @@
                             <Button x:Name="DashboardRecentActivityButton" Grid.Column="2" Content="View Activity" Padding="18,8" VerticalAlignment="Center" Click="ShowRecentActivity" AutomationProperties.Name="View recent activity in the full Activity workspace" />
                         </Grid>
                     </Border>
-                    <Border Background="{StaticResource InfoSurfaceBrush}" BorderBrush="{StaticResource InfoBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="17">
+                    <Border x:Name="DashboardDoctorCard" Background="{StaticResource InfoSurfaceBrush}" BorderBrush="{StaticResource InfoBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="17">
                         <Grid ColumnSpacing="14">
                             <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                            <Border Width="46" Height="46" CornerRadius="23" Background="{StaticResource IconSurfaceBrush}"><FontIcon Glyph="&#xE9D9;" Foreground="{StaticResource BrandBlueBrush}" FontSize="22" /></Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3"><TextBlock Text="Vault Doctor" FontSize="18" /><TextBlock Text="Automatic, private health checks across VaultKind and your configured vaults." TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" FontSize="12" /></StackPanel>
-                            <Button x:Name="DashboardDoctorButton" Grid.Column="2" Content="Open Doctor" Padding="18,8" VerticalAlignment="Center" Click="ShowDoctor" AutomationProperties.Name="Open Vault Doctor" />
+                            <Border Width="46" Height="46" CornerRadius="23" Background="{StaticResource IconSurfaceBrush}"><FontIcon x:Name="DashboardDoctorIcon" Glyph="&#xE9D9;" Foreground="{StaticResource BrandBlueBrush}" FontSize="22" /></Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
+                                <TextBlock x:Name="DashboardDoctorTitle" Text="Vault Doctor is ready" FontSize="18" TextWrapping="Wrap" />
+                                <TextBlock x:Name="DashboardDoctorDescription" Text="Run automatic, private checks across VaultKind and your configured vaults." TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
+                            </StackPanel>
+                            <Button x:Name="DashboardDoctorButton" Grid.Column="2" Content="Run Doctor" Padding="18,8" VerticalAlignment="Center" Click="ShowDoctor" AutomationProperties.Name="Run Vault Doctor" />
+                        </Grid>
+                    </Border>
+                    <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="10" Padding="17">
+                        <Grid ColumnSpacing="14">
+                            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                            <Border Width="46" Height="46" CornerRadius="23" Background="{StaticResource IconSurfaceBrush}"><FontIcon x:Name="DashboardLearningIcon" Glyph="&#xE82D;" Foreground="{StaticResource BrandBlueBrush}" FontSize="21" /></Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="5">
+                                <TextBlock x:Name="DashboardLearningTitle" Text="Continue learning" FontSize="18" TextWrapping="Wrap" />
+                                <TextBlock x:Name="DashboardLearningDescription" Text="Explore short, practical guidance for using VaultKind safely." Foreground="{StaticResource MutedTextBrush}" FontSize="12" TextWrapping="Wrap" />
+                                <ProgressBar x:Name="DashboardLearningProgressBar" Minimum="0" Maximum="7" Value="0" Height="7" Foreground="{StaticResource BrandBlueBrush}" AutomationProperties.Name="Learning Center progress, 0 of 7 topics viewed" />
+                            </StackPanel>
+                            <Button x:Name="DashboardLearningButton" Grid.Column="2" Content="Continue" Padding="18,8" VerticalAlignment="Center" Click="ContinueLearning" AutomationProperties.Name="Continue to the next Learning Center topic" />
                         </Grid>
                     </Border>
                     <TextBlock x:Name="EngineStatusFooter" Text="Checking the local vault engine." Foreground="{StaticResource MutedTextBrush}" HorizontalAlignment="Center" FontSize="12" />
@@ -700,9 +727,23 @@
                     </Border>
 
                     <StackPanel Spacing="5" Margin="20,8">
+                        <ProgressRing x:Name="DoctorProgressRing" Width="30" Height="30" HorizontalAlignment="Center" IsActive="False" Visibility="Collapsed" AutomationProperties.Name="Vault Doctor is running" />
                         <TextBlock x:Name="DoctorSummary" Text="Vault Doctor is ready to run local checks." TextWrapping="Wrap" FontSize="20" TextAlignment="Center" />
                         <TextBlock x:Name="DoctorScope" Text="All configured vaults" Foreground="{StaticResource MutedTextBrush}" TextAlignment="Center" />
                     </StackPanel>
+
+                    <Border x:Name="DoctorCompletionCard" Visibility="Collapsed" Background="{StaticResource InfoSurfaceBrush}" BorderBrush="{StaticResource InfoBorderBrush}" BorderThickness="2" CornerRadius="11" Padding="18,15">
+                        <Grid ColumnSpacing="14">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <Border Width="48" Height="48" CornerRadius="24" Background="{StaticResource IconSurfaceBrush}">
+                                <FontIcon x:Name="DoctorCompletionIcon" Glyph="&#xE73E;" FontSize="23" Foreground="#49CD70" />
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+                                <TextBlock x:Name="DoctorCompletionTitle" Text="Check complete" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                <TextBlock x:Name="DoctorCompletionDescription" Text="Read-only checks completed locally. No vault data was changed." Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
 
                     <Grid x:Name="DoctorMetrics" ColumnSpacing="12">
                         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
@@ -794,6 +835,24 @@
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3"><TextBlock Text="Larger text" FontSize="17" /><TextBlock Text="Increases text throughout VaultKind while preserving the familiar layout." Foreground="{StaticResource MutedTextBrush}" FontSize="12" TextWrapping="Wrap" /></StackPanel>
                                 <ToggleSwitch x:Name="LargerTextToggle" Grid.Column="2" OnContent="On" OffContent="Off" Toggled="LargerTextChanged" VerticalAlignment="Center" AutomationProperties.Name="Use larger text throughout VaultKind" />
                             </Grid>
+                            <Border BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,1,0,0" />
+                            <Grid ColumnSpacing="16">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                <Border Width="48" Height="48" CornerRadius="24" Background="{StaticResource InfoSurfaceBrush}"><FontIcon Glyph="&#xE767;" FontSize="21" Foreground="{StaticResource BrandBlueBrush}" /></Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3"><TextBlock Text="Signature sounds" FontSize="17" /><TextBlock Text="Brief local sounds for opening, locking, and moments that need your attention." Foreground="{StaticResource MutedTextBrush}" FontSize="12" TextWrapping="Wrap" /></StackPanel>
+                                <ToggleSwitch x:Name="SignatureSoundsToggle" Grid.Column="2" IsOn="True" OnContent="On" OffContent="Off" Toggled="SignatureSoundsChanged" VerticalAlignment="Center" AutomationProperties.Name="Use VaultKind signature sounds" />
+                            </Grid>
+                            <Border Background="{StaticResource DeepSurfaceBrush}" CornerRadius="9" Padding="16,13">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                                    <StackPanel Spacing="3"><TextBlock Text="Preview the three sounds" FontSize="15" FontWeight="SemiBold" /><TextBlock Text="Short, calm, and designed to stay out of the way." Foreground="{StaticResource MutedTextBrush}" FontSize="12" TextWrapping="Wrap" /></StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                        <Button Content="Vault Open" Tag="open" Click="PreviewSignatureSound" AutomationProperties.Name="Preview Vault Open sound" />
+                                        <Button Content="Vault Locked" Tag="locked" Click="PreviewSignatureSound" AutomationProperties.Name="Preview Vault Locked sound" />
+                                        <Button Content="Warning" Tag="warning" Click="PreviewSignatureSound" AutomationProperties.Name="Preview Warning sound" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
                             <Border Background="{StaticResource DeepSurfaceBrush}" CornerRadius="8" Padding="15,11"><TextBlock Text="Light and Dark are included for everyone. VaultKind never requires a paid theme unlock." Foreground="{StaticResource InfoTextBrush}" TextWrapping="Wrap" FontSize="12" /></Border>
                         </StackPanel>
                     </Border>
@@ -948,7 +1007,12 @@
                         </StackPanel>
                         </ScrollViewer>
                         <Button Grid.Row="3" Margin="0,10,0,8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="12,10" Click="ShowAssistant" AutomationProperties.Name="Open VaultKind Assistant"><StackPanel Orientation="Horizontal" Spacing="9"><FontIcon Glyph="&#xE946;" Foreground="{StaticResource BrandBlueBrush}" /><TextBlock Text="VaultKind Assistant" FontWeight="SemiBold" /></StackPanel></Button>
-                        <StackPanel Grid.Row="4" Spacing="8"><TextBlock x:Name="LearningProgressText" Text="0 of 7 topics viewed" Foreground="{StaticResource MutedTextBrush}" FontSize="12" /><Button Content="Reset viewed topics" HorizontalAlignment="Stretch" Click="ResetLearningProgress" AutomationProperties.Name="Reset viewed Learning Center topics" /></StackPanel>
+                        <StackPanel Grid.Row="4" Spacing="8">
+                            <TextBlock Text="YOUR PROGRESS" Foreground="{StaticResource MutedTextBrush}" FontSize="11" FontWeight="SemiBold" />
+                            <ProgressBar x:Name="LearningProgressBar" Minimum="0" Maximum="7" Value="0" Height="8" Foreground="{StaticResource BrandBlueBrush}" AutomationProperties.Name="Learning Center progress, 0 of 7 topics viewed" />
+                            <TextBlock x:Name="LearningProgressText" Text="0 of 7 topics viewed" Foreground="{StaticResource MutedTextBrush}" FontSize="12" TextWrapping="Wrap" />
+                            <Button Content="Reset viewed topics" HorizontalAlignment="Stretch" Click="ResetLearningProgress" AutomationProperties.Name="Reset viewed Learning Center topics" />
+                        </StackPanel>
                     </Grid>
 
                     <Grid x:Name="AssistantNavigationPanel" Visibility="Collapsed"><Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>

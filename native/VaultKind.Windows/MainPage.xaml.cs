@@ -26,6 +26,7 @@ public sealed partial class MainPage : Page
 {
     private readonly IVaultBackend backend = new LocalSocketVaultBackend();
     private readonly LocalizationService localization = new();
+    private readonly SignatureSoundService signatureSounds = new();
     private readonly List<Button> vaultButtons = [];
     private VaultSummary? activeVault;
     private VaultSummary? createdVault;
@@ -60,6 +61,7 @@ public sealed partial class MainPage : Page
     private string doctorAssistantEvidence = string.Empty;
     private IReadOnlyList<DoctorCheck> latestDoctorChecks = [];
     private DateTime? latestDoctorRunAt;
+    private bool doctorRunInProgress;
     private string? recoveryTargetVaultId;
     private bool recoveryOpenedFromVaultManagement;
     private string? doctorFocusVaultId;
@@ -233,7 +235,17 @@ public sealed partial class MainPage : Page
         }
         LoadActivityHistory();
         LoadLearningProgress();
+        UpdateLearningProgressDisplay();
         AppPreferences preferences = AppPreferencesStore.Load();
+        DoctorRunSummary? doctorSummary = DoctorSummaryStore.Load();
+        if (doctorSummary is not null)
+        {
+            UpdateDashboardDoctorStatus(
+                doctorSummary.Healthy,
+                doctorSummary.Attention,
+                doctorSummary.Information,
+                doctorSummary.CompletedAt);
+        }
         localization.SelectLanguage(preferences.LanguageCode);
         LanguageSelector.ItemsSource = localization.GetLanguageOptions();
         LanguageSelector.SelectedItem = ((IEnumerable<LanguageOption>)LanguageSelector.ItemsSource)
@@ -247,6 +259,8 @@ public sealed partial class MainPage : Page
         LaunchWithWindowsToggle.IsOn = WindowsStartupService.IsEnabled();
         RememberWindowPlacementToggle.IsOn = preferences.RememberWindowPlacement;
         RecordActivityHistoryToggle.IsOn = preferences.RecordActivityHistory;
+        SignatureSoundsToggle.IsOn = preferences.SignatureSoundsEnabled;
+        signatureSounds.IsEnabled = preferences.SignatureSoundsEnabled;
         initializingPreferences = false;
         Loaded += LoadBackendSnapshot;
         Loaded += EnsureInitialKeyboardTarget;
@@ -636,7 +650,15 @@ public sealed partial class MainPage : Page
         SetDestinationUnselected(LearningButton, "Learning Center");
         ClearVaultSelection();
         SetAddVaultUnselected();
-        _ = RunDoctorChecksAsync();
+        if (!string.IsNullOrWhiteSpace(doctorFocusVaultId) || latestDoctorChecks.Count == 0)
+        {
+            _ = RunDoctorChecksAsync();
+        }
+        else
+        {
+            DispatcherQueue.TryEnqueue(() => DoctorView.ChangeView(null, 0, null, true));
+            FocusAfterNavigation(DoctorRunAgainButton);
+        }
     }
 
     private void ShowAddVault(object sender, RoutedEventArgs e)
@@ -1118,7 +1140,29 @@ public sealed partial class MainPage : Page
             RecordActivityHistoryToggle.IsOn,
             DarkAppearanceToggle.IsOn ? "dark" : "light",
             LargerTextToggle.IsOn,
-            LanguageSelector.SelectedItem is LanguageOption language ? language.Code : "system"));
+            LanguageSelector.SelectedItem is LanguageOption language ? language.Code : "system",
+            SignatureSoundsToggle.IsOn));
+    }
+
+    private void SignatureSoundsChanged(object sender, RoutedEventArgs e)
+    {
+        signatureSounds.IsEnabled = SignatureSoundsToggle.IsOn;
+        SavePreferences();
+    }
+
+    private void PreviewSignatureSound(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string sound })
+        {
+            return;
+        }
+
+        signatureSounds.Play(sound switch
+        {
+            "open" => SignatureSound.VaultOpen,
+            "locked" => SignatureSound.VaultLocked,
+            _ => SignatureSound.Warning
+        }, sound == "warning" ? SoundEmphasis.Strong : SoundEmphasis.Standard);
     }
 
     private void LanguageSelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1451,6 +1495,19 @@ public sealed partial class MainPage : Page
         FocusAfterNavigation(LearningSearch);
     }
 
+    private void ContinueLearning(object sender, RoutedEventArgs e)
+    {
+        string? nextTopic = LearningTopicButtons()
+            .Select(topic => topic.Id)
+            .FirstOrDefault(topic => !viewedLearningTopics.Contains(topic));
+        if (!string.IsNullOrWhiteSpace(nextTopic))
+        {
+            selectedLearningTopic = nextTopic;
+        }
+
+        ShowLearningCenter(sender, e);
+    }
+
     private void SelectLearningTopic(object sender, RoutedEventArgs e)
     {
         if (sender is Button { Tag: string topic })
@@ -1602,7 +1659,7 @@ public sealed partial class MainPage : Page
             check.Visibility = viewedLearningTopics.Contains(id) ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        LearningProgressText.Text = $"{viewedLearningTopics.Count} of 7 topics viewed";
+        UpdateLearningProgressDisplay();
         if (string.IsNullOrWhiteSpace(sectionTitle))
         {
             double targetOffset = learningTopicScrollOffsets.GetValueOrDefault(topic, 0);
@@ -2071,7 +2128,43 @@ public sealed partial class MainPage : Page
         {
             check.Visibility = Visibility.Collapsed;
         }
-        LearningProgressText.Text = "0 of 7 topics viewed";
+        UpdateLearningProgressDisplay();
+    }
+
+    private void UpdateLearningProgressDisplay()
+    {
+        int viewed = viewedLearningTopics.Count;
+        bool complete = viewed == 7;
+        LearningProgressBar.Value = viewed;
+        LearningProgressBar.Foreground = complete
+            ? new SolidColorBrush(Color.FromArgb(255, 73, 205, 112))
+            : PaletteBrush("BrandBlueBrush");
+        LearningProgressText.Text = complete
+            ? "All 7 topics viewed — nice work"
+            : $"{viewed} of 7 topics viewed";
+        LearningProgressText.Foreground = complete
+            ? new SolidColorBrush(Color.FromArgb(255, 73, 205, 112))
+            : PaletteBrush("MutedTextBrush");
+        DashboardLearningProgressBar.Value = viewed;
+        DashboardLearningProgressBar.Foreground = LearningProgressBar.Foreground;
+        DashboardLearningTitle.Text = complete ? "Learning Center complete" : "Continue learning";
+        DashboardLearningDescription.Text = complete
+            ? "You have viewed all seven practical VaultKind topics. Revisit them whenever you need a refresher."
+            : $"{viewed} of 7 topics viewed. Continue with the next short, practical guide.";
+        DashboardLearningButton.Content = complete ? "Review Topics" : "Continue";
+        DashboardLearningIcon.Glyph = complete ? "\uE73E" : "\uE82D";
+        DashboardLearningIcon.Foreground = complete
+            ? new SolidColorBrush(Color.FromArgb(255, 73, 205, 112))
+            : PaletteBrush("BrandBlueBrush");
+        AutomationProperties.SetName(DashboardLearningProgressBar, complete
+            ? "Learning Center progress complete, all 7 topics viewed"
+            : $"Learning Center progress, {viewed} of 7 topics viewed");
+        AutomationProperties.SetName(DashboardLearningButton, complete
+            ? "Review Learning Center topics"
+            : "Continue to the next Learning Center topic");
+        AutomationProperties.SetName(LearningProgressBar, complete
+            ? "Learning Center progress complete, all 7 topics viewed"
+            : $"Learning Center progress, {viewed} of 7 topics viewed");
     }
 
     private void LoadLearningProgress()
@@ -4272,6 +4365,7 @@ public sealed partial class MainPage : Page
         }
 
         string unlockedVaultName = activeVault.Name;
+        signatureSounds.Play(SignatureSound.VaultOpen);
         VaultBackendSnapshot snapshot = await backend.GetSnapshotAsync();
         ApplySnapshot(snapshot);
         LogActivity("Vault unlocked", $"{unlockedVaultName}'s readable Windows drive is now open.", "unlock");
@@ -4336,10 +4430,16 @@ public sealed partial class MainPage : Page
         VaultCommandResult result = await backend.LockAsync(vaultId);
         if (!result.Succeeded)
         {
+            if (result.Error == "vault_in_use")
+            {
+                signatureSounds.Play(SignatureSound.Warning, SoundEmphasis.Strong);
+            }
+
             SetVaultActionBusy(false, FriendlyVaultActionError(result.Error, true));
             return;
         }
 
+        signatureSounds.Play(SignatureSound.VaultLocked);
         VaultBackendSnapshot snapshot = await backend.GetSnapshotAsync();
         ApplySnapshot(snapshot);
         LogActivity("Vault locked", $"{vaultName}'s readable Windows drive was closed securely.", "lock");
@@ -4447,6 +4547,17 @@ public sealed partial class MainPage : Page
 
     private async Task RunDoctorChecksAsync()
     {
+        if (doctorRunInProgress)
+        {
+            return;
+        }
+
+        doctorRunInProgress = true;
+        DoctorProgressRing.Visibility = Visibility.Visible;
+        DoctorProgressRing.IsActive = true;
+        DoctorRunAgainButton.IsEnabled = false;
+        DoctorRunAgainButton.Content = "Running…";
+        DoctorCompletionCard.Visibility = Visibility.Collapsed;
         DoctorSummary.Text = "Vault Doctor is running local, read-only checks...";
         DoctorChecksPanel.Children.Clear();
         DoctorSaveReportButton.IsEnabled = false;
@@ -4492,14 +4603,7 @@ public sealed partial class MainPage : Page
                 ? new($"{vault.Name}: encrypted storage location is present", "healthy")
                 : new($"{vault.Name}: encrypted storage location could not be found", "attention", "VK-1002"));
 
-            bool stateNeedsAttention = vault.State.Equals("missing", StringComparison.OrdinalIgnoreCase)
-                || vault.State.Equals("error", StringComparison.OrdinalIgnoreCase)
-                || vault.State.Contains("missing", StringComparison.OrdinalIgnoreCase);
-            checks.Add(stateNeedsAttention
-                ? new($"{vault.Name}: the local engine reports {FriendlyVaultState(vault.State).ToLowerInvariant()}", "attention", "VK-1003")
-                : new($"{vault.Name}: vault configuration is available to the local engine", "healthy"));
-
-            checks.Add(new($"{vault.Name}: currently {FriendlyVaultState(vault.State).ToLowerInvariant()}", "information"));
+            checks.Add(CheckEngineVaultState(vault.Name, vault.State));
 
             if (pathExists)
             {
@@ -4507,9 +4611,7 @@ public sealed partial class MainPage : Page
                 checks.Add(CheckVaultConfiguration(vault.Name, configurationPath));
 
                 string encryptedDataPath = Path.Combine(vault.Path, "d");
-                checks.Add(Directory.Exists(encryptedDataPath)
-                    ? new($"{vault.Name}: encrypted data directory is present", "healthy")
-                    : new($"{vault.Name}: encrypted data directory is missing", "attention", "VK-3002"));
+                checks.Add(CheckEncryptedDataDirectory(vault.Name, encryptedDataPath));
 
                 try
                 {
@@ -4523,6 +4625,10 @@ public sealed partial class MainPage : Page
                             checks.Add(freeGigabytes < 1d
                                 ? new($"{vault.Name}: only {freeGigabytes:N1} GB is available on {root}", "attention", "VK-2002")
                                 : new($"{vault.Name}: {freeGigabytes:N1} GB available on {root}", "information"));
+                        }
+                        else
+                        {
+                            checks.Add(new($"{vault.Name}: Windows reports the storage device is not ready", "attention", "VK-1002"));
                         }
                     }
                 }
@@ -4538,16 +4644,44 @@ public sealed partial class MainPage : Page
         }
 
         latestDoctorChecks = checks.ToList();
-        latestDoctorRunAt = DateTime.Now;
+        DateTimeOffset completedAt = DateTimeOffset.Now;
+        latestDoctorRunAt = completedAt.LocalDateTime;
         int healthy = checks.Count(check => check.Kind == "healthy");
         int attention = checks.Count(check => check.Kind == "attention");
         int information = checks.Count(check => check.Kind == "information");
+        if (checks.Any(IsCriticalDoctorFinding))
+        {
+            signatureSounds.Play(SignatureSound.Warning, SoundEmphasis.Strong);
+        }
+
         DoctorHealthyCount.Text = healthy.ToString();
         DoctorAttentionCount.Text = attention.ToString();
         DoctorInformationCount.Text = information.ToString();
         DoctorSummary.Text = attention == 0
             ? $"Vault Doctor didn't find any issues in the checks it completed at {DateTime.Now:h:mm tt}."
             : $"Vault Doctor found {attention} item{(attention == 1 ? string.Empty : "s")} worth reviewing.";
+        bool needsAttention = attention > 0;
+        DoctorCompletionTitle.Text = needsAttention
+            ? $"Check complete — {attention} item{(attention == 1 ? string.Empty : "s")} worth reviewing"
+            : "Check complete — no issues found";
+        DoctorCompletionDescription.Text = $"Completed locally at {completedAt.LocalDateTime:h:mm tt}. Read-only checks made no changes to your vault data.";
+        DoctorCompletionIcon.Glyph = needsAttention ? "\uE7BA" : "\uE73E";
+        DoctorCompletionIcon.Foreground = new SolidColorBrush(needsAttention
+            ? Color.FromArgb(255, 255, 193, 46)
+            : Color.FromArgb(255, 73, 205, 112));
+        DoctorCompletionCard.BorderBrush = new SolidColorBrush(needsAttention
+            ? Color.FromArgb(255, 177, 139, 32)
+            : Color.FromArgb(255, 62, 150, 91));
+        DoctorCompletionCard.Visibility = Visibility.Visible;
+        AutomationProperties.SetName(DoctorCompletionCard, DoctorCompletionTitle.Text + ". " + DoctorCompletionDescription.Text);
+        UpdateDashboardDoctorStatus(healthy, attention, information, completedAt);
+        DoctorSummaryStore.Save(new DoctorRunSummary(healthy, attention, information, completedAt));
+        LogActivity(
+            attention == 0 ? "Vault Doctor found no issues" : "Vault Doctor found items worth reviewing",
+            attention == 0
+                ? $"Completed locally with {healthy} healthy and {information} information result{(information == 1 ? string.Empty : "s")}."
+                : $"Completed locally with {attention} item{(attention == 1 ? string.Empty : "s")} worth reviewing, {healthy} healthy, and {information} information result{(information == 1 ? string.Empty : "s")}.",
+            "doctor");
         DoctorCheck? firstFinding = checks.FirstOrDefault(check => check.Kind == "attention");
         doctorAssistantCaseId = firstFinding?.AssistantCaseId;
         doctorAssistantEvidence = firstFinding?.Message ?? string.Empty;
@@ -4557,7 +4691,53 @@ public sealed partial class MainPage : Page
         AddDoctorCheckGroup(checks, "attention", "Needs attention", "!", expandWhenPopulated: true);
         AddDoctorCheckGroup(checks, "healthy", "Healthy", "✓");
         AddDoctorCheckGroup(checks, "information", "Information", "ⓘ");
+        DoctorProgressRing.IsActive = false;
+        DoctorProgressRing.Visibility = Visibility.Collapsed;
+        DoctorRunAgainButton.Content = "Run Doctor Again";
+        DoctorRunAgainButton.IsEnabled = true;
+        doctorRunInProgress = false;
         QueueTextScaleRefresh();
+    }
+
+    private static bool IsCriticalDoctorFinding(DoctorCheck check) =>
+        check.Kind == "attention"
+        && check.AssistantCaseId is "VK-1003" or "VK-3002";
+
+    private void UpdateDashboardDoctorStatus(int healthy, int attention, int information, DateTimeOffset completedAt)
+    {
+        bool needsAttention = attention > 0;
+        DoctorNavStatusBadge.Visibility = Visibility.Visible;
+        DoctorNavStatusBadge.Background = new SolidColorBrush(needsAttention
+            ? Color.FromArgb(255, 62, 55, 31)
+            : Color.FromArgb(255, 38, 63, 49));
+        DoctorNavStatusBadge.BorderBrush = new SolidColorBrush(needsAttention
+            ? Color.FromArgb(255, 177, 139, 32)
+            : Color.FromArgb(255, 63, 150, 91));
+        DoctorNavStatusIcon.Glyph = needsAttention ? "\uE7BA" : "\uE73E";
+        DoctorNavStatusIcon.Foreground = new SolidColorBrush(needsAttention
+            ? Color.FromArgb(255, 255, 193, 46)
+            : Color.FromArgb(255, 81, 212, 120));
+        string navigationStatus = needsAttention
+            ? $"Latest Vault Doctor check found {attention} item{(attention == 1 ? string.Empty : "s")} worth reviewing"
+            : "Latest Vault Doctor check found no issues";
+        AutomationProperties.SetName(DoctorNavStatusBadge, navigationStatus);
+        ToolTipService.SetToolTip(DoctorNavStatusBadge, navigationStatus);
+        DashboardDoctorTitle.Text = needsAttention
+            ? $"Vault Doctor found {attention} item{(attention == 1 ? string.Empty : "s")} worth reviewing"
+            : "Vault Doctor found no issues";
+        DashboardDoctorDescription.Text = $"{healthy} healthy  \u2022  {information} information  \u2022  Completed at {completedAt.LocalDateTime:h:mm tt}";
+        DashboardDoctorButton.Content = "Review Results";
+        AutomationProperties.SetName(DashboardDoctorButton, "Review the latest Vault Doctor results");
+        DashboardDoctorIcon.Glyph = needsAttention ? "\uE7BA" : "\uE73E";
+        DashboardDoctorIcon.Foreground = new SolidColorBrush(needsAttention
+            ? Color.FromArgb(255, 255, 193, 46)
+            : Color.FromArgb(255, 73, 205, 112));
+        DashboardDoctorCard.Background = new SolidColorBrush(needsAttention
+            ? Color.FromArgb(255, 62, 55, 31)
+            : Color.FromArgb(255, 41, 63, 52));
+        DashboardDoctorCard.BorderBrush = new SolidColorBrush(needsAttention
+            ? Color.FromArgb(255, 177, 139, 32)
+            : Color.FromArgb(255, 62, 150, 91));
     }
 
     private static DoctorCheck CheckVaultConfiguration(string vaultName, string configurationPath)
@@ -4585,6 +4765,40 @@ public sealed partial class MainPage : Page
         catch (IOException)
         {
             return new($"{vaultName}: vault.cryptomator is present but could not be read", "attention", "VK-1003");
+        }
+    }
+
+    private static DoctorCheck CheckEngineVaultState(string vaultName, string state) => state.ToLowerInvariant() switch
+    {
+        "locked" or "unlocked" => new($"{vaultName}: local engine reports {FriendlyVaultState(state).ToLowerInvariant()} and the vault configuration is available", "healthy"),
+        "processing" => new($"{vaultName}: local engine is currently working; run Vault Doctor again when it finishes", "information"),
+        "missing" or "all_missing" => new($"{vaultName}: local engine reports the storage location is unavailable", "attention", "VK-1002"),
+        "vault_config_missing" => new($"{vaultName}: local engine reports the vault configuration is missing", "attention", "VK-1003"),
+        "needs_migration" => new($"{vaultName}: local engine reports the vault configuration requires an update", "attention", "VK-1003"),
+        "error" => new($"{vaultName}: local engine could not load the vault configuration", "attention", "VK-1003"),
+        _ => new($"{vaultName}: local engine reported an unsupported vault state", "attention")
+    };
+
+    private static DoctorCheck CheckEncryptedDataDirectory(string vaultName, string encryptedDataPath)
+    {
+        if (!Directory.Exists(encryptedDataPath))
+        {
+            return new($"{vaultName}: encrypted data directory is missing", "attention", "VK-3002");
+        }
+
+        try
+        {
+            using IEnumerator<string> entries = Directory.EnumerateFileSystemEntries(encryptedDataPath).GetEnumerator();
+            _ = entries.MoveNext();
+            return new($"{vaultName}: encrypted data directory is present and readable", "healthy");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return new($"{vaultName}: encrypted data directory cannot be read by this Windows account", "attention", "VK-3002");
+        }
+        catch (IOException)
+        {
+            return new($"{vaultName}: encrypted data directory is present but could not be read", "attention", "VK-3002");
         }
     }
 

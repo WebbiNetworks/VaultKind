@@ -27,6 +27,16 @@ Popup dialogs are reserved for operating-system functions that cannot reasonably
 
 Application pages, vault management, settings, guidance, diagnostics, progress, results, and recoverable errors belong inside the main window. Before introducing a popup, the design must establish why an embedded workspace view cannot serve the user safely and clearly.
 
+### VaultKind UI Law #2: Useful depth, progressively disclosed
+
+VaultKind should provide useful, task-focused detail without becoming a manual that users must read from beginning to end. Pages lead with concise choices and plain-language summaries, then reveal deeper guidance only when the user asks for it.
+
+- Search includes detailed guidance, not only headings or landing-page summaries.
+- Contextual links open the exact relevant subsection, not merely the correct chapter.
+- Guidance pages present compact questions or tasks and expand one detailed answer at a time.
+- Safe actions, risks, and important “do not” guidance appear where they are relevant.
+- Deeper guidance remains inside the main workspace and preserves the user's context.
+
 ## Windows Focused
 
 - Windows is the only supported operating-system target.

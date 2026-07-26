@@ -95,7 +95,7 @@ class NativeUiProtocolTest {
 			return NativeVaultOperations.NativeCommandResult.success("renamed");
 		});
 
-		var request = new NativeUiProtocol.NativeUiRequest(1, "request-rename", "vault.rename", "vault-1", null, null, null, "Family files", null, false, false);
+		var request = new NativeUiProtocol.NativeUiRequest(1, "request-rename", "vault.rename", "vault-1", null, null, null, "Family files", null, false, false, null);
 		var response = exchange(request);
 
 		assertTrue(response.ok());
@@ -128,7 +128,7 @@ class NativeUiProtocolTest {
 			return NativeVaultOperations.NativeCommandResult.fileName(mapping);
 		});
 
-		var request = new NativeUiProtocol.NativeUiRequest(1, "request-filename", "vault.decrypt_filename", "vault-1", null, null, null, null, "F:\\Vaults\\Personal\\d\\ABCD.c9r", false, false);
+		var request = new NativeUiProtocol.NativeUiRequest(1, "request-filename", "vault.decrypt_filename", "vault-1", null, null, null, null, "F:\\Vaults\\Personal\\d\\ABCD.c9r", false, false, null);
 		var response = exchange(request);
 
 		assertTrue(response.ok());
@@ -146,7 +146,7 @@ class NativeUiProtocolTest {
 			return NativeVaultOperations.NativeCommandResult.fileName(mapping);
 		});
 
-		var request = new NativeUiProtocol.NativeUiRequest(1, "request-location", "vault.locate_encrypted", "vault-1", null, null, null, null, "H:\\Budget.xlsx", false, false);
+		var request = new NativeUiProtocol.NativeUiRequest(1, "request-location", "vault.locate_encrypted", "vault-1", null, null, null, null, "H:\\Budget.xlsx", false, false, null);
 		var response = exchange(request);
 
 		assertTrue(response.ok());
@@ -165,7 +165,7 @@ class NativeUiProtocolTest {
 			return NativeVaultOperations.NativeCommandResult.success("password_changed");
 		});
 
-		var request = new NativeUiProtocol.NativeUiRequest(1, "request-change", "vault.change_password", "vault-1", currentPassword, null, newPassword, null, null, false, false);
+		var request = new NativeUiProtocol.NativeUiRequest(1, "request-change", "vault.change_password", "vault-1", currentPassword, null, newPassword, null, null, false, false, null);
 		var response = exchange(request);
 
 		assertTrue(response.ok());

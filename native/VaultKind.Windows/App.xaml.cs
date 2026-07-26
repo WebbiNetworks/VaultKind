@@ -33,6 +33,9 @@ public partial class App : Application
     /// </summary>
     public App()
     {
+        RequestedTheme = string.Equals(AppPreferencesStore.Load().AppearanceMode, "light", StringComparison.OrdinalIgnoreCase)
+            ? ApplicationTheme.Light
+            : ApplicationTheme.Dark;
         InitializeComponent();
     }
 

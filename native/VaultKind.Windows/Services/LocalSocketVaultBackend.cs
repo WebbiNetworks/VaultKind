@@ -9,7 +9,7 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
     private const int ProtocolVersion = 1;
     private const int MaxMessageBytes = 64 * 1024;
     private static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(2);
-    private static readonly string[] RequiredCapabilities = ["vault.list", "vault.unlock", "vault.lock", "vault.reveal", "vault.remove", "vault.rename", "vault.stats", "vault.locate_encrypted", "vault.decrypt_filename", "vault.create", "vault.connect", "vault.reset_password", "vault.change_password", "vault.show_recovery_key", "backend.shutdown"];
+    private static readonly string[] RequiredCapabilities = ["vault.list", "vault.unlock", "vault.lock", "vault.reveal", "vault.remove", "vault.rename", "vault.stats", "vault.locate_encrypted", "vault.decrypt_filename", "vault.create", "vault.connect", "vault.reset_password", "vault.change_password", "vault.show_recovery_key", "settings.mount.list", "settings.mount.select", "backend.shutdown"];
 
     public async Task<VaultBackendSnapshot> GetSnapshotAsync(CancellationToken cancellationToken = default)
     {
@@ -192,13 +192,25 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
         }
     }
 
+    public async Task<MountSettingsResult> GetMountSettingsAsync(CancellationToken cancellationToken = default) =>
+        ToMountSettingsResult(await ExecuteRawCommandAsync("settings.mount.list", string.Empty, null, TimeSpan.FromSeconds(10), cancellationToken));
+
+    public async Task<MountSettingsResult> SetMountServiceAsync(string mountServiceId, CancellationToken cancellationToken = default) =>
+        ToMountSettingsResult(await ExecuteRawCommandAsync("settings.mount.select", string.Empty, null, TimeSpan.FromSeconds(10), cancellationToken, mountService: mountServiceId));
+
+    private static MountSettingsResult ToMountSettingsResult(ProtocolResponse response) => new(
+        response.Ok,
+        response.Error,
+        response.SelectedMountService,
+        response.MountServices?.Select(service => new MountServiceOption(service.Id, service.Name, service.MountPoint, service.DriveLetter, service.LoopbackPort, service.MountFlags, service.ReadOnly)).ToArray() ?? []);
+
     private static async Task<VaultCommandResult> ExecuteCommandAsync(string operation, string vaultId, string? password, TimeSpan commandTimeout, CancellationToken cancellationToken, string? recoveryKey = null, string? newPassword = null, string? displayName = null)
     {
         ProtocolResponse response = await ExecuteRawCommandAsync(operation, vaultId, password, commandTimeout, cancellationToken, recoveryKey, newPassword, displayName);
         return new VaultCommandResult(response.Ok, response.Error, response.State, response.RecoveryKey);
     }
 
-    private static async Task<ProtocolResponse> ExecuteRawCommandAsync(string operation, string vaultId, string? password, TimeSpan commandTimeout, CancellationToken cancellationToken, string? recoveryKey = null, string? newPassword = null, string? displayName = null, string? vaultPath = null)
+    private static async Task<ProtocolResponse> ExecuteRawCommandAsync(string operation, string vaultId, string? password, TimeSpan commandTimeout, CancellationToken cancellationToken, string? recoveryKey = null, string? newPassword = null, string? displayName = null, string? vaultPath = null, string? mountService = null)
     {
         try
         {
@@ -218,7 +230,7 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
             }
 
             var requestId = Guid.NewGuid().ToString("N");
-            await WriteFrameAsync(stream, new ProtocolRequest(ProtocolVersion, requestId, operation, vaultId, password, recoveryKey, newPassword, displayName, vaultPath), timeout.Token);
+            await WriteFrameAsync(stream, new ProtocolRequest(ProtocolVersion, requestId, operation, vaultId, password, recoveryKey, newPassword, displayName, vaultPath, MountService: mountService), timeout.Token);
             var response = await ReadFrameAsync<ProtocolResponse>(stream, timeout.Token);
             if (response.Protocol != ProtocolVersion || response.RequestId != requestId)
             {
@@ -279,12 +291,13 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    private sealed record ProtocolRequest(int Protocol, string RequestId, string Operation, string? VaultId = null, string? Password = null, string? RecoveryKey = null, string? NewPassword = null, string? DisplayName = null, string? VaultPath = null, bool CreateRecoveryKey = false, bool UseShortNames = false);
-    private sealed record ProtocolResponse(int Protocol, string RequestId, bool Ok, string? Backend, string? Error, IReadOnlyList<ProtocolVault>? Vaults, string? State, string? VaultId, string? RecoveryKey, ProtocolStatistics? Statistics, ProtocolFileNameMapping? FileNameMapping, IReadOnlyList<string>? Capabilities)
+    private sealed record ProtocolRequest(int Protocol, string RequestId, string Operation, string? VaultId = null, string? Password = null, string? RecoveryKey = null, string? NewPassword = null, string? DisplayName = null, string? VaultPath = null, bool CreateRecoveryKey = false, bool UseShortNames = false, string? MountService = null);
+    private sealed record ProtocolResponse(int Protocol, string RequestId, bool Ok, string? Backend, string? Error, IReadOnlyList<ProtocolVault>? Vaults, string? State, string? VaultId, string? RecoveryKey, ProtocolStatistics? Statistics, ProtocolFileNameMapping? FileNameMapping, IReadOnlyList<string>? Capabilities, string? SelectedMountService, IReadOnlyList<ProtocolMountService>? MountServices)
     {
-        internal static ProtocolResponse Failure(string error) => new(ProtocolVersion, string.Empty, false, null, error, null, null, null, null, null, null, null);
+        internal static ProtocolResponse Failure(string error) => new(ProtocolVersion, string.Empty, false, null, error, null, null, null, null, null, null, null, null, null);
     }
     private sealed record ProtocolVault(string Id, string Name, string State, string Path, string? MountPath);
     private sealed record ProtocolStatistics(long BytesPerSecondRead, long BytesPerSecondWritten, long BytesPerSecondDecrypted, long BytesPerSecondEncrypted, double CacheHitRate, long TotalBytesRead, long TotalBytesWritten, long TotalBytesDecrypted, long TotalBytesEncrypted, long TotalFilesAccessed);
     private sealed record ProtocolFileNameMapping(string EncryptedName, string CleartextName);
+    private sealed record ProtocolMountService(string Id, string Name, bool MountPoint, bool DriveLetter, bool LoopbackPort, bool MountFlags, bool ReadOnly);
 }

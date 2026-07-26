@@ -52,4 +52,10 @@ internal sealed class DisconnectedVaultBackend : IVaultBackend
 
     public Task<VaultCreateResult> ConnectAsync(string path, CancellationToken cancellationToken = default) =>
         Task.FromResult(new VaultCreateResult(false, "engine_unavailable", null, null, null));
+
+    public Task<MountSettingsResult> GetMountSettingsAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(new MountSettingsResult(false, "engine_unavailable", null, []));
+
+    public Task<MountSettingsResult> SetMountServiceAsync(string mountServiceId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(new MountSettingsResult(false, "engine_unavailable", null, []));
 }

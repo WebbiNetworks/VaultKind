@@ -9,6 +9,7 @@ using Windows.System;
 using Windows.UI;
 using System.Globalization;
 using System.IO;
+using Microsoft.Win32;
 using System.Text.Json;
 using VaultKind_Windows.Services;
 
@@ -24,6 +25,7 @@ namespace VaultKind_Windows;
 public sealed partial class MainPage : Page
 {
     private readonly IVaultBackend backend = new LocalSocketVaultBackend();
+    private readonly LocalizationService localization = new();
     private readonly List<Button> vaultButtons = [];
     private VaultSummary? activeVault;
     private VaultSummary? createdVault;
@@ -31,18 +33,98 @@ public sealed partial class MainPage : Page
     private string? selectedConnectVaultPath;
     private IReadOnlyList<VaultSummary> knownVaults = [];
     private readonly List<SessionActivity> activityHistory = [];
-    private string selectedActivityCategory = "all";
+    private readonly HashSet<string> expandedActivityCategories = [];
     private Microsoft.UI.Dispatching.DispatcherQueueTimer? navigationFocusTimer;
     private bool initializingPreferences = true;
+    private bool loadingMountServices;
+    private readonly Dictionary<DependencyObject, double> baselineFontSizes = [];
+    private bool useLargerText;
+    private bool textScaleRefreshQueued;
     private static readonly string ActivityHistoryPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultKind", "activity.json");
     private static readonly string LearningProgressPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultKind", "learning-progress.json");
     private readonly HashSet<string> viewedLearningTopics = [];
+    private readonly Dictionary<string, double> learningTopicScrollOffsets = [];
+    private readonly List<LearningSectionViewEntry> learningSectionViewEntries = [];
+    private readonly Dictionary<string, string?> selectedLearningSections = [];
+    private string? highlightedLearningAnswerTopic;
+    private string? highlightedLearningAnswerSection;
+    private TextBlock? learningSectionResultCount;
+    private TextBlock? learningSectionNoResults;
+    private Button? learningCopyGuidanceButton;
+    private Button? learningSaveGuidanceButton;
+    private TextBlock? learningCopyGuidanceStatus;
+    private string selectedFaqCategory = "all";
     private string selectedLearningTopic = "how";
     private string selectedAssistantCategory = "all";
-    private string doctorAssistantQuery = string.Empty;
+    private string? doctorAssistantCaseId;
+    private string doctorAssistantEvidence = string.Empty;
+    private IReadOnlyList<DoctorCheck> latestDoctorChecks = [];
+    private DateTime? latestDoctorRunAt;
     private string? recoveryTargetVaultId;
     private bool recoveryOpenedFromVaultManagement;
     private string? doctorFocusVaultId;
+    private readonly List<LocalizedVisual> localizedVisuals = [];
+    private readonly HashSet<DependencyObject> localizedVisualElements = [];
+
+    private enum LocalizedVisualProperty
+    {
+        Text,
+        Content,
+        Placeholder
+    }
+
+    private sealed record LocalizedVisual(DependencyObject Element, LocalizedVisualProperty Property, string Key, string Fallback);
+
+    private static readonly IReadOnlyDictionary<string, string> StaticLocalizationKeys =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["Back"] = "generic.button.back",
+            ["Next"] = "generic.button.next",
+            ["Done"] = "generic.button.done",
+            ["Cancel"] = "generic.button.cancel",
+            ["Add Vault"] = "addvaultwizard.title",
+            ["Create a new vault"] = "addvaultwizard.start.create.title",
+            ["Add an existing vault"] = "addvaultwizard.start.existing.title",
+            ["Connect an existing vault"] = "addvaultwizard.existing.title",
+            ["Create vault  →"] = "addvaultwizard.start.create.action",
+            ["Choose vault  →"] = "addvaultwizard.start.existing.action",
+            ["Having trouble with a vault?"] = "addvaultwizard.start.recovery.prompt",
+            ["Repair or Recover"] = "addvaultwizard.start.recovery.action",
+            ["Name your vault"] = "addvaultwizard.new.nameTitle",
+            ["Vault name"] = "addvaultwizard.new.reviewName",
+            ["For example: Personal files"] = "addvaultwizard.new.namePrompt",
+            ["Use letters, numbers, spaces, hyphens, or underscores."] = "addvaultwizard.new.validCharacters.simple",
+            ["Choose where to store it"] = "addvaultwizard.new.locationTitle",
+            ["Storage location"] = "addvaultwizard.new.locationLabel",
+            ["Custom location"] = "addvaultwizard.new.directoryPickerLabel",
+            ["Choose folder..."] = "addvaultwizard.new.directoryPickerButton",
+            ["Review your vault"] = "addvaultwizard.new.reviewTitle",
+            ["Change encrypted file-name length"] = "addvaultwizard.new.expertSettings.enableExpertSettingsCheckbox",
+            ["Create Vault"] = "addvaultwizard.new.createVaultBtn",
+            ["Create a recovery key (recommended)"] = "addvaultwizard.new.generateRecoveryKeyChoice.yes",
+            ["Continue without a recovery key"] = "addvaultwizard.new.generateRecoveryKeyChoice.no",
+            ["Connect Vault"] = "addvaultwizard.existing.connectBtn",
+            ["Choose Folder..."] = "addvaultwizard.existing.chooseBtn",
+            ["General"] = "preferences.general",
+            ["Appearance"] = "preferences.interface",
+            ["Virtual Drive"] = "preferences.volume",
+            ["About"] = "preferences.about",
+            ["Dark"] = "preferences.interface.theme.dark",
+            ["Light"] = "preferences.interface.theme.light",
+            ["Launch VaultKind when Windows starts"] = "preferences.general.autoStart",
+            ["Protect vaults when VaultKind closes"] = "preferences.general.autoCloseVaults",
+            ["Enable debug logging"] = "preferences.general.debugLogging",
+            ["Reveal log files"] = "preferences.general.debugDirectory",
+            ["Default Volume Type"] = "preferences.volume.type",
+            ["Automatic"] = "preferences.volume.type.automatic",
+            ["Third-party licenses"] = "preferences.about.thirdPartyLicenses",
+            ["Recent Activity"] = "main.home.dashboard.recentActivity",
+            ["No activity recorded yet"] = "main.home.dashboard.noActivity",
+            ["Important local actions will appear here."] = "main.home.dashboard.noActivityDescription",
+            ["View Activity"] = "main.home.dashboard.viewActivity",
+            ["Automatic, private health checks across VaultKind and your configured vaults."] = "main.vaultDoctor.subtitle",
+            ["Open Doctor"] = "main.vaultDoctor.dashboardAction"
+        };
 
     private static readonly IReadOnlyList<AssistantCase> AssistantCases =
     [
@@ -61,9 +143,90 @@ public sealed partial class MainPage : Page
         new("VK-3002", "recovery", "Vault integrity needs verification", "Interrupted synchronization, storage failure, or manual changes may have left inconsistent encrypted data.", "1. Stop synchronization changes.\n2. Preserve a backup of the encrypted vault.\n3. Run Vault Doctor and review each reported item.", "Follow only the repair action associated with a verified result. Preserve backups until the vault has been opened and checked successfully.", "health check vault doctor verify integrity damaged vault corrupted vault")
     ];
 
+    private static readonly IReadOnlyDictionary<string, LearningArticle> LearningArticles =
+        new Dictionary<string, LearningArticle>(StringComparer.Ordinal)
+        {
+            ["first"] = new(
+                "VaultKind creates an encrypted storage folder and a separate readable Windows drive. The four-step setup keeps those two locations clear from the beginning.",
+                [
+                    new("1. Name the vault", "Choose a short, recognizable name. This label appears only in VaultKind and can be changed later without renaming the encrypted storage folder."),
+                    new("2. Choose encrypted storage", "Select a local folder, external drive, or a folder synchronized by your cloud provider. VaultKind creates a new vault folder inside that location."),
+                    new("3. Review before creating", "Confirm the name and storage path. Advanced file-name compatibility should remain off unless a provider or file system specifically requires shorter encrypted names."),
+                    new("4. Protect and recover", "Use a unique, memorable password. Create the recommended recovery key, save it somewhere separate, and confirm that copy before finishing setup."),
+                    new("After setup", "Unlock the vault and use Open Drive. Add files to that readable drive—not directly to the encrypted storage folder.")
+                ],
+                "Choose storage that is backed up or synchronized, then keep the recovery key somewhere separate from both the vault and the computer."),
+            ["recovery"] = new(
+                "A recovery key is an emergency way to choose a new vault password. It does not reveal the old password, and VaultKind cannot recreate a lost key.",
+                [
+                    new("What the key protects", "The key belongs to one specific vault. Anyone who has it can restore access, so treat it with the same care as the vault password."),
+                    new("Where to keep it", "Store at least one copy away from the encrypted vault: a printed copy in a secure place, an offline password manager, or a protected removable drive."),
+                    new("How recovery works", "Open Manage Vault, choose Restore password access, enter every recovery-key word in order, and then choose a new password."),
+                    new("After recovery", "Confirm that the vault unlocks with the new password. Preserve existing backups until you have verified the files you need.")
+                ],
+                "Never store the only recovery-key copy inside the vault it protects. You would need to unlock the vault to reach it."),
+            ["cloud"] = new(
+                "VaultKind works with the synchronization software you already use. VaultKind encrypts locally; OneDrive, Dropbox, Google Drive, and similar providers synchronize the encrypted storage folder.",
+                [
+                    new("What reaches the provider", "The provider receives encrypted file contents and scrambled file names. Your readable virtual drive and vault password are not uploaded by VaultKind."),
+                    new("Let synchronization finish", "Lock the vault, then wait until the cloud application reports that synchronization is complete before shutting down or opening the vault on another device."),
+                    new("Avoid simultaneous changes", "Do not edit the same vault from two devices at once. Conflicting encrypted files can be difficult to identify and repair."),
+                    new("Offline files", "Configure the cloud client to keep the vault folder available on this device. Online-only placeholders may prevent VaultKind from reading required encrypted data."),
+                    new("Backups still matter", "Synchronization mirrors changes and deletions; it is not a complete backup. Keep versioned or offline backups of the encrypted storage folder."),
+                    new("Storage space and quota", "Keep free space available both on the Windows drive and with the cloud provider. A full local disk or exhausted cloud quota can interrupt writes and leave synchronization incomplete. Free space first, keep the vault locked, and let the provider finish before retrying.")
+                ],
+                "When a cloud client reports conflicts, keep the vault locked until synchronization is healthy and the conflict is understood."),
+            ["drive"] = new(
+                "Unlocking a vault opens a readable Windows drive. This is the normal workspace where familiar file and folder names appear.",
+                [
+                    new("The readable view", "Open, edit, organize, and save files in the virtual drive just as you would in another Windows drive. VaultKind encrypts those changes into the storage folder."),
+                    new("The encrypted view", "The storage folder contains vault configuration, scrambled names, and encrypted data. Do not organize or edit those internal files by hand."),
+                    new("Opening and closing", "Use Open Drive to reveal the readable view. Save your work and close programs using the drive before choosing Lock Vault."),
+                    new("If locking fails", "A document, File Explorer window, search indexer, or security tool may still be using the drive. Close it and retry rather than forcing removal."),
+                    new("Drive availability", "The readable drive exists only while the vault is unlocked. The encrypted storage remains safe and available for backup or synchronization while locked.")
+                ],
+                "If you see .c9r files and scrambled folders, you are looking at encrypted storage—not the readable virtual drive."),
+            ["security"] = new(
+                "VaultKind protects files through encryption, but the security of the Windows account, password, recovery key, and backups still matters.",
+                [
+                    new("Use a unique password", "Choose a password you do not use for Windows, email, or cloud accounts. Length and memorability are more useful than small predictable substitutions."),
+                    new("Protect the recovery key", "Keep it private, offline when practical, and separate from the vault. Do not send it with a shared encrypted vault."),
+                    new("Lock when finished", "Close documents and lock vaults that are no longer in use. VaultKind also attempts to lock open vaults during a normal application shutdown."),
+                    new("Maintain Windows", "Install trusted Windows security updates, use device encryption where appropriate, and protect the Windows account with a strong sign-in method."),
+                    new("Verify backups", "Back up the complete encrypted storage folder and periodically confirm that the backup can be read and contains vault.cryptomator plus the d folder. Keep an earlier known-good copy until a restored vault has opened successfully."),
+                    new("Folder permissions and write access", "VaultKind must be able to read and write the encrypted storage location. If a vault cannot be created or updated, check that the drive is connected, the media is not read-only, and the current Windows account can create a harmless test file beside the vault."),
+                    new("Blocked or missing app components", "If VaultKind cannot start or mount a drive, confirm the installation completed and review Windows Security or other trusted protection software for a quarantined VaultKind component. Restore files only when their package source is trusted; otherwise repair or reinstall VaultKind."),
+                    new("Vault integrity and safe verification", "If synchronization was interrupted, storage failed, or encrypted files were changed manually, stop further synchronization and preserve a copy of the complete encrypted vault first. Run Vault Doctor for read-only checks, review each finding, and use only the guided action associated with a verified result.")
+                ],
+                "Encryption cannot protect readable files while the vault is open to someone already controlling your Windows session."),
+            ["faq"] = new(
+                "Detailed answers to common VaultKind questions, including what happens behind the interface and what to check when a workflow does not behave as expected.",
+                [
+                    new("Where are my files actually stored?", "A vault has two views. The encrypted storage folder is the permanent location containing vault.cryptomator, a d folder, scrambled names, and encrypted contents. The readable Windows drive exists only while the vault is unlocked. Work in the readable drive; back up or synchronize the encrypted storage folder."),
+                    new("Does VaultKind upload files or require an account?", "No. VaultKind performs vault operations through its local engine and does not require an online account. If encrypted storage is inside OneDrive, Dropbox, Google Drive, or another synchronized folder, that provider's own Windows client uploads the already-encrypted data."),
+                    new("Why was the correct password rejected?", "First confirm the selected vault name and storage path, then check Caps Lock, Num Lock, and the active Windows keyboard layout. A password belongs to one vault. If it is genuinely forgotten, use that vault's saved recovery key rather than repeatedly guessing."),
+                    new("Can VaultKind reset or reveal a forgotten password?", "VaultKind cannot reveal the old password. A valid recovery key can authorize a new password without decrypting and re-encrypting every file. The key must belong to that specific vault and every word must remain in its original order."),
+                    new("What are vault.cryptomator and the d folder?", "They are internal parts of encrypted storage. vault.cryptomator describes how the vault is protected; the d folder contains encrypted directory and file entries. Do not rename, edit, reorganize, or replace either by hand. Preserve both when copying, synchronizing, or backing up a vault."),
+                    new("Can I rename a vault?", "Yes. Renaming changes the friendly label shown in VaultKind. It deliberately does not rename the encrypted storage folder, the readable drive, or internal encrypted files. This prevents a cosmetic change from becoming a risky storage operation."),
+                    new("How do I move a vault safely?", "Lock the vault and let all applications release its readable drive. Pause synchronization if applicable, copy or move the complete encrypted storage folder, verify the destination contains vault.cryptomator and the d folder, then reconnect the destination through Add Vault. Keep the old copy until the moved vault unlocks and its expected files are verified."),
+                    new("Can I use a vault on another Windows PC?", "Yes. Make the complete encrypted storage folder available on the second PC, wait for any cloud synchronization to finish, then choose Add Vault > Connect an existing vault. Avoid editing the same vault from two computers at once; finish work, lock, and synchronize before switching devices."),
+                    new("How should I share a vault?", "Share only the encrypted storage folder. The other person connects it as an existing vault. Send the password through a separate trusted channel, never in the same message or shared folder. Anyone who possesses both the encrypted vault and its password or recovery key can access its readable contents."),
+                    new("Why will a vault not lock?", "A program may still be using the readable drive. Save open documents, close File Explorer windows inside the vault, and stop applications that are previewing, indexing, scanning, or synchronizing readable files. Retry Lock Vault after those handles are released rather than forcing the drive closed during a write."),
+                    new("Why is the readable drive missing?", "The readable drive exists only while the vault is unlocked and successfully mounted. Confirm the vault reports Unlocked, then use Open Drive. If mounting fails, check that the configured Windows mounting service is available and that the requested drive location is not already occupied."),
+                    new("What does Vault Doctor change?", "Nothing. Vault Doctor is read-only: it reports locally observable health information such as engine availability, storage presence, configuration availability, free space, and vault state. A finding may direct you to reviewed guidance, but repairs remain a separate, deliberate action."),
+                    new("What are Locate Encrypted File and Decrypt File Name for?", "They are troubleshooting and backup tools. Locate Encrypted File starts with a familiar file in the open readable drive and identifies its scrambled .c9r storage entry. Decrypt File Name starts with a .c9r entry and identifies its readable name. Neither tool modifies the selected file."),
+                    new("What does Activity record?", "Activity is a private local history of VaultKind actions such as creating, connecting, unlocking, locking, recovery, password changes, and Doctor checks. It does not record passwords, recovery-key words, file contents, or readable file names, and it can be cleared from the Activity page."),
+                    new("What happens when VaultKind closes?", "During a normal shutdown, VaultKind asks its local engine to lock every open vault before exiting. If Windows still has a vault in use, closing may require you to release the open file or application first. The encrypted storage folders remain in place and are not deleted."),
+                    new("What if VaultKind settings cannot be loaded?", "Close any duplicate VaultKind process and restart once. If settings still cannot be read, preserve the existing settings file before changing anything, confirm the VaultKind settings folder is writable, and restore a known-good settings backup when available. Reset only damaged preferences; this does not require changing encrypted vault files."),
+                    new("What if a vault configuration is missing or invalid?", "Keep the vault locked and do not edit the d folder or encrypted .c9r entries. Confirm vault.cryptomator exists and look for trusted configuration backups from the same vault. Never substitute a configuration file from another vault. Preserve a complete copy before attempting guided recovery.")
+                ],
+                "When an answer depends on a specific error or vault state, use VaultKind Assistant for a reviewed diagnostic case or run the read-only Vault Doctor for local evidence."),
+        };
+
     public MainPage()
     {
         InitializeComponent();
+        CaptureLocalizedVisuals(this);
         foreach ((Button button, string _, string _, FontIcon _) in LearningTopicButtons())
         {
             button.KeyDown += LearningTopicKeyDown;
@@ -71,6 +234,17 @@ public sealed partial class MainPage : Page
         LoadActivityHistory();
         LoadLearningProgress();
         AppPreferences preferences = AppPreferencesStore.Load();
+        localization.SelectLanguage(preferences.LanguageCode);
+        LanguageSelector.ItemsSource = localization.GetLanguageOptions();
+        LanguageSelector.SelectedItem = ((IEnumerable<LanguageOption>)LanguageSelector.ItemsSource)
+            .FirstOrDefault(option => option.Code.Equals(preferences.LanguageCode, StringComparison.OrdinalIgnoreCase))
+            ?? ((IEnumerable<LanguageOption>)LanguageSelector.ItemsSource).First();
+        ApplyLocalizedShell();
+        DarkAppearanceToggle.IsOn = !string.Equals(preferences.AppearanceMode, "light", StringComparison.OrdinalIgnoreCase);
+        ApplyAppearanceMode(DarkAppearanceToggle.IsOn, persist: false);
+        LargerTextToggle.IsOn = preferences.UseLargerText;
+        ApplyLargerText(preferences.UseLargerText);
+        LaunchWithWindowsToggle.IsOn = WindowsStartupService.IsEnabled();
         RememberWindowPlacementToggle.IsOn = preferences.RememberWindowPlacement;
         RecordActivityHistoryToggle.IsOn = preferences.RecordActivityHistory;
         initializingPreferences = false;
@@ -160,8 +334,8 @@ public sealed partial class MainPage : Page
         VaultBackendSnapshot snapshot = await backend.GetSnapshotAsync();
         for (int attempt = 0; attempt < 12 && snapshot.ConnectionState != BackendConnectionState.Ready; attempt++)
         {
-            DashboardHealthDescription.Text = "Starting the VaultKind vault engine…";
-            EngineStatusFooter.Text = "Connecting securely to the local vault engine.";
+            DashboardHealthDescription.Text = localization.Get("main.home.dashboard.engineStarting", "Starting the VaultKind vault engine…");
+            EngineStatusFooter.Text = localization.Get("main.home.dashboard.engineConnecting", "Connecting securely to the local vault engine.");
             await Task.Delay(500);
             snapshot = await backend.GetSnapshotAsync();
         }
@@ -175,11 +349,78 @@ public sealed partial class MainPage : Page
         TotalVaultsCount.Text = snapshot.Vaults.Count.ToString();
         UnlockedVaultsCount.Text = snapshot.UnlockedCount.ToString();
         LockedVaultsCount.Text = snapshot.LockedCount.ToString();
-        DashboardHealthDescription.Text = snapshot.StatusMessage;
+        int attentionCount = snapshot.Vaults.Count(VaultNeedsAttention);
+        AttentionVaultsCount.Text = attentionCount.ToString();
+        TotalVaultsCard.IsEnabled = snapshot.Vaults.Count > 0;
+        UnlockedVaultsCard.IsEnabled = snapshot.UnlockedCount > 0;
+        LockedVaultsCard.IsEnabled = snapshot.LockedCount > 0;
+        AttentionVaultsCard.IsEnabled = attentionCount > 0;
+        UpdateDashboardHealth(snapshot, attentionCount);
         EngineStatusFooter.Text = snapshot.ConnectionState == BackendConnectionState.Ready
-            ? "Connected securely to the local VaultKind engine."
-            : "The local VaultKind engine is unavailable.";
+            ? localization.Get("main.home.dashboard.engineConnected", "Connected securely to the local VaultKind engine.")
+            : localization.Get("main.home.dashboard.engineUnavailable", "The local VaultKind engine is unavailable.");
         RenderVaultSidebar(snapshot.Vaults);
+    }
+
+    private void UpdateDashboardHealth(VaultBackendSnapshot snapshot, int attentionCount)
+    {
+        if (snapshot.ConnectionState != BackendConnectionState.Ready)
+        {
+            DashboardHealthTitle.Text = localization.Get("main.home.dashboard.engineAttention", "VaultKind needs your attention");
+            DashboardHealthDescription.Text = localization.Get("main.home.dashboard.engineAttentionDescription", "The local vault engine is unavailable. Vault states may be out of date.");
+            DashboardHealthIcon.Glyph = "\uE7BA";
+            DashboardHealthIcon.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 193, 46));
+            DashboardHealthCard.Background = new SolidColorBrush(Color.FromArgb(255, 62, 55, 31));
+            DashboardHealthCard.BorderBrush = new SolidColorBrush(Color.FromArgb(255, 177, 139, 32));
+            return;
+        }
+
+        if (attentionCount > 0)
+        {
+            DashboardHealthTitle.Text = attentionCount == 1
+                ? localization.Get("main.home.dashboard.reviewOne", "One vault is worth reviewing")
+                : string.Format(localization.Get("main.home.dashboard.reviewMany", "{0} vaults are worth reviewing"), attentionCount);
+            DashboardHealthDescription.Text = localization.Get("main.home.dashboard.reviewDescription", "Open the Attention card above to review the affected vault.");
+            DashboardHealthIcon.Glyph = "\uE7BA";
+            DashboardHealthIcon.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 193, 46));
+            DashboardHealthCard.Background = new SolidColorBrush(Color.FromArgb(255, 62, 55, 31));
+            DashboardHealthCard.BorderBrush = new SolidColorBrush(Color.FromArgb(255, 177, 139, 32));
+            return;
+        }
+
+        DashboardHealthTitle.Text = localization.Get("main.home.dashboard.healthy.title", "Everything looks good");
+        DashboardHealthDescription.Text = string.Format(
+            localization.Get("main.home.dashboard.readyStatus", "Connected securely to the local vault engine. {0} configured vault(s) reported."),
+            snapshot.Vaults.Count);
+        DashboardHealthIcon.Glyph = "\uE73E";
+        DashboardHealthIcon.Foreground = new SolidColorBrush(Color.FromArgb(255, 73, 205, 112));
+        DashboardHealthCard.Background = new SolidColorBrush(Color.FromArgb(255, 41, 63, 52));
+        DashboardHealthCard.BorderBrush = new SolidColorBrush(Color.FromArgb(255, 62, 150, 91));
+    }
+
+    private static bool VaultNeedsAttention(VaultSummary vault) =>
+        vault.State.Equals("missing", StringComparison.OrdinalIgnoreCase)
+        || vault.State.Equals("error", StringComparison.OrdinalIgnoreCase);
+
+    private void OpenDashboardMetric(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string category })
+        {
+            return;
+        }
+
+        VaultSummary? vault = category switch
+        {
+            "unlocked" => knownVaults.FirstOrDefault(candidate => candidate.State.Equals("unlocked", StringComparison.OrdinalIgnoreCase)),
+            "locked" => knownVaults.FirstOrDefault(candidate => candidate.State.Equals("locked", StringComparison.OrdinalIgnoreCase)),
+            "attention" => knownVaults.FirstOrDefault(VaultNeedsAttention),
+            _ => knownVaults.FirstOrDefault()
+        };
+
+        if (vault is not null && FindVaultButton(vault.Id) is Button vaultButton)
+        {
+            ShowVault(vault, vaultButton);
+        }
     }
 
     private void RenderVaultSidebar(IReadOnlyList<VaultSummary> vaults)
@@ -231,6 +472,8 @@ public sealed partial class MainPage : Page
             vaultButtons.Add(vaultButton);
             VaultListPanel.Children.Add(vaultButton);
         }
+
+        QueueTextScaleRefresh();
     }
 
     private MenuFlyout BuildVaultContextMenu(VaultSummary vault)
@@ -343,8 +586,8 @@ public sealed partial class MainPage : Page
         ActivityView.Visibility = Visibility.Collapsed;
         SettingsView.Visibility = Visibility.Collapsed;
         LearningView.Visibility = Visibility.Collapsed;
-        ContextTitle.Text = "Dashboard";
-        ContextSubtitle.Text = "Your secure workspace at a glance.";
+        ContextTitle.Text = localization.Get("main.content.dashboard.title", "Dashboard");
+        ContextSubtitle.Text = localization.Get("main.content.dashboard.subtitle", "Your secure workspace at a glance.");
         SetSelectedDestination(DashboardButton, DoctorButton, "Dashboard");
         SetDestinationUnselected(ActivityButton, "Activity");
         SetDestinationUnselected(SettingsButton, "Settings");
@@ -417,7 +660,7 @@ public sealed partial class MainPage : Page
         ActivityView.Visibility = Visibility.Collapsed;
         SettingsView.Visibility = Visibility.Collapsed;
         LearningView.Visibility = Visibility.Collapsed;
-        ContextTitle.Text = "Add Vault";
+        ContextTitle.Text = localization.Get("addvaultwizard.title", "Add Vault");
         ContextSubtitle.Text = "Create a new encrypted vault, connect an existing one, or recover access.";
         SetDestinationUnselected(DashboardButton, "Dashboard");
         SetDestinationUnselected(DoctorButton, "Vault Doctor");
@@ -451,7 +694,7 @@ public sealed partial class MainPage : Page
         ActivityView.Visibility = Visibility.Collapsed;
         SettingsView.Visibility = Visibility.Collapsed;
         LearningView.Visibility = Visibility.Collapsed;
-        ContextTitle.Text = "Connect a Vault";
+        ContextTitle.Text = localization.Get("addvaultwizard.existing.title", "Connect a Vault");
         ContextSubtitle.Text = "Add an existing encrypted vault without moving or changing its files.";
         selectedConnectVaultPath = null;
         ConnectVaultReviewCard.Visibility = Visibility.Collapsed;
@@ -482,7 +725,7 @@ public sealed partial class MainPage : Page
         UnlockView.Visibility = Visibility.Collapsed;
         RecoveryHubView.Visibility = Visibility.Collapsed;
         RecoveryResetView.Visibility = Visibility.Collapsed;
-        ContextTitle.Text = "Activity";
+        ContextTitle.Text = localization.Get("main.vaultlist.events", "Activity");
         ContextSubtitle.Text = "A private record of vault actions from this VaultKind session.";
         SetDestinationUnselected(DashboardButton, "Dashboard");
         SetDestinationUnselected(DoctorButton, "Vault Doctor");
@@ -491,26 +734,44 @@ public sealed partial class MainPage : Page
         SelectSidebarDestination(ActivityButton, "Activity");
         ClearVaultSelection();
         SetAddVaultUnselected();
+        ActivityClearConfirmation.Visibility = Visibility.Collapsed;
         RenderActivity();
+    }
+
+    private void ShowRecentActivity(object sender, RoutedEventArgs e)
+    {
+        SessionActivity? latest = activityHistory.LastOrDefault();
+        ShowActivity(sender, e);
+        ActivitySearchInput.Text = latest is null
+            ? string.Empty
+            : ActivityCategoryLabel(ActivitySectionFor(latest.Category));
+    }
+
+    private void ShowClearActivityConfirmation(object sender, RoutedEventArgs e)
+    {
+        if (activityHistory.Count == 0)
+        {
+            return;
+        }
+
+        ActivityClearConfirmation.Visibility = Visibility.Visible;
+        ActivityClearCancelButton.Focus(FocusState.Programmatic);
+    }
+
+    private void HideClearActivityConfirmation(object sender, RoutedEventArgs e)
+    {
+        ActivityClearConfirmation.Visibility = Visibility.Collapsed;
+        ClearActivityButton.Focus(FocusState.Programmatic);
     }
 
     private void ClearActivity(object sender, RoutedEventArgs e)
     {
         activityHistory.Clear();
         SaveActivityHistory();
+        ActivityClearConfirmation.Visibility = Visibility.Collapsed;
+        ActivitySearchInput.Text = string.Empty;
         RenderActivity();
-    }
-
-    private void SelectActivityCategory(object sender, RoutedEventArgs e)
-    {
-        if (sender is not Button { Tag: string category })
-        {
-            return;
-        }
-
-        selectedActivityCategory = category;
-        RenderActivity();
-        ActivityView.ChangeView(null, 0, null, true);
+        UpdateDashboardRecentActivity();
     }
 
     private void ShowSettings(object sender, RoutedEventArgs e)
@@ -532,7 +793,7 @@ public sealed partial class MainPage : Page
         UnlockView.Visibility = Visibility.Collapsed;
         RecoveryHubView.Visibility = Visibility.Collapsed;
         RecoveryResetView.Visibility = Visibility.Collapsed;
-        ContextTitle.Text = "Settings";
+        ContextTitle.Text = "Preferences";
         ContextSubtitle.Text = "Review VaultKind's appearance, Windows behavior, and privacy defaults.";
         SetDestinationUnselected(DashboardButton, "Dashboard");
         SetDestinationUnselected(DoctorButton, "Vault Doctor");
@@ -541,11 +802,303 @@ public sealed partial class MainPage : Page
         SelectSidebarDestination(SettingsButton, "Settings");
         ClearVaultSelection();
         SetAddVaultUnselected();
+        SelectSettingsSection("general");
+    }
+
+    private void SelectSettingsSection(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.Tag is string section)
+        {
+            SelectSettingsSection(section);
+        }
+    }
+
+    private void SettingsSectionKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        Button[] sections =
+        [
+            SettingsGeneralButton,
+            SettingsAppearanceButton,
+            SettingsVirtualDriveButton,
+            SettingsPrivacyButton,
+            SettingsAboutButton
+        ];
+
+        int currentIndex = sender is Button current ? Array.IndexOf(sections, current) : -1;
+        if (currentIndex < 0)
+        {
+            return;
+        }
+
+        int nextIndex = e.Key switch
+        {
+            VirtualKey.Left => (currentIndex + sections.Length - 1) % sections.Length,
+            VirtualKey.Right => (currentIndex + 1) % sections.Length,
+            VirtualKey.Home => 0,
+            VirtualKey.End => sections.Length - 1,
+            _ => -1
+        };
+
+        if (nextIndex < 0)
+        {
+            return;
+        }
+
+        Button next = sections[nextIndex];
+        if (next.Tag is string section)
+        {
+            SelectSettingsSection(section);
+            next.Focus(FocusState.Keyboard);
+            e.Handled = true;
+        }
+    }
+
+    private void SelectSettingsSection(string section)
+    {
+        SettingsGeneralPanel.Visibility = section == "general" ? Visibility.Visible : Visibility.Collapsed;
+        SettingsAppearancePanel.Visibility = section == "appearance" ? Visibility.Visible : Visibility.Collapsed;
+        SettingsVirtualDrivePanel.Visibility = section == "virtual-drive" ? Visibility.Visible : Visibility.Collapsed;
+        SettingsPrivacyPanel.Visibility = section == "privacy" ? Visibility.Visible : Visibility.Collapsed;
+        SettingsPrivacyPromisePanel.Visibility = section == "privacy" ? Visibility.Visible : Visibility.Collapsed;
+        SettingsAboutPanel.Visibility = section == "about" ? Visibility.Visible : Visibility.Collapsed;
+
+        ApplySettingsButtonPalette(section);
+
+        if (section == "virtual-drive")
+        {
+            _ = LoadMountSettingsAsync();
+        }
+
+        if (section == "privacy")
+        {
+            UpdatePrivacyHistorySummary();
+        }
+
+        if (section == "about")
+        {
+            _ = LoadAboutInformationAsync();
+        }
+    }
+
+    private void UpdatePrivacyHistorySummary()
+    {
+        PrivacyHistorySummary.Text = activityHistory.Count switch
+        {
+            0 => "No Activity entries are currently stored on this computer.",
+            1 => "1 private Activity entry is currently stored on this computer.",
+            _ => $"{activityHistory.Count} private Activity entries are currently stored on this computer."
+        };
+    }
+
+    private async Task LoadAboutInformationAsync()
+    {
+        Version? version = typeof(MainPage).Assembly.GetName().Version;
+        AboutVersionText.Text = version is null ? "Version unavailable" : $"{version.Major}.{version.Minor}.{version.Build}";
+        WindowsVersionInfo windows = ReadWindowsVersionInfo();
+        AboutWindowsEditionText.Text = windows.Edition;
+        AboutWindowsVersionText.Text = windows.Version;
+
+        VaultBackendSnapshot snapshot = await backend.GetSnapshotAsync();
+        bool connected = snapshot.ConnectionState == BackendConnectionState.Ready;
+        AboutEngineText.Text = connected ? "Connected locally" : "Currently unavailable";
+        AboutEngineText.Foreground = new SolidColorBrush(connected
+            ? Color.FromArgb(255, 73, 205, 112)
+            : Color.FromArgb(255, 255, 196, 0));
+        AboutVaultCountText.Text = snapshot.Vaults.Count == 1 ? "1 vault" : $"{snapshot.Vaults.Count} vaults";
+    }
+
+    private static WindowsVersionInfo ReadWindowsVersionInfo()
+    {
+        const string currentVersionKey = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion";
+
+        try
+        {
+            using RegistryKey? key = Registry.LocalMachine.OpenSubKey(currentVersionKey);
+            string edition = key?.GetValue("ProductName") as string ?? "Windows";
+            string version = key?.GetValue("DisplayVersion") as string
+                ?? key?.GetValue("ReleaseId") as string
+                ?? "Unavailable";
+            string? buildValue = key?.GetValue("CurrentBuildNumber") as string;
+
+            // Some Windows 11 installations retain "Windows 10" in ProductName for
+            // application compatibility. Builds 22000 and newer are Windows 11.
+            if (int.TryParse(buildValue, NumberStyles.None, CultureInfo.InvariantCulture, out int build)
+                && build >= 22000
+                && edition.StartsWith("Windows 10", StringComparison.OrdinalIgnoreCase))
+            {
+                edition = $"Windows 11{edition["Windows 10".Length..]}";
+            }
+
+            return new WindowsVersionInfo(edition, version);
+        }
+        catch (Exception)
+        {
+            return new WindowsVersionInfo("Windows", "Unavailable");
+        }
+    }
+
+    private sealed record WindowsVersionInfo(string Edition, string Version);
+
+    private async void OpenVaultKindWebsite(object sender, RoutedEventArgs e)
+    {
+        bool opened = await Launcher.LaunchUriAsync(new Uri("https://vaultkind.dev"));
+        AboutWebsiteStatus.Text = opened
+            ? "Opened vaultkind.dev in your default browser."
+            : "Windows could not open vaultkind.dev in the default browser.";
+        AboutWebsiteStatus.Foreground = new SolidColorBrush(opened
+            ? Color.FromArgb(255, 73, 205, 112)
+            : Color.FromArgb(255, 255, 92, 87));
+        AboutWebsiteStatus.Visibility = Visibility.Visible;
+    }
+
+    private async Task LoadMountSettingsAsync()
+    {
+        loadingMountServices = true;
+        MountServiceSelector.IsEnabled = false;
+        MountServiceStatus.Text = "Asking the local vault engine which Windows drive providers are installed...";
+        MountServiceStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 175, 185, 192));
+
+        MountSettingsResult result = await backend.GetMountSettingsAsync();
+        if (!result.Succeeded || result.MountServices.Count == 0)
+        {
+            MountServiceSelector.ItemsSource = null;
+            MountServiceCapabilities.Text = "Provider information is unavailable until the local VaultKind engine is connected.";
+            MountServiceStatus.Text = "VaultKind could not read the installed drive providers. No setting was changed.";
+            MountServiceStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 92, 87));
+            loadingMountServices = false;
+            return;
+        }
+
+        MountServiceSelector.ItemsSource = result.MountServices;
+        MountServiceSelector.SelectedItem = result.MountServices.FirstOrDefault(service => string.Equals(service.Id, result.SelectedMountService, StringComparison.Ordinal)) ?? result.MountServices[0];
+        MountServiceSelector.IsEnabled = true;
+        UpdateMountServiceCapabilities(MountServiceSelector.SelectedItem as MountServiceOption);
+        MountServiceStatus.Text = $"{result.MountServices.Count - 1} installed provider(s) reported by the local engine. Automatic is recommended.";
+        MountServiceStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 73, 205, 112));
+        loadingMountServices = false;
+    }
+
+    private void RefreshMountServices(object sender, RoutedEventArgs e)
+    {
+        _ = LoadMountSettingsAsync();
+    }
+
+    private async void MountServiceSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (loadingMountServices || MountServiceSelector.SelectedItem is not MountServiceOption selected)
+        {
+            return;
+        }
+
+        MountServiceSelector.IsEnabled = false;
+        MountServiceStatus.Text = "Saving the default drive provider locally...";
+        MountSettingsResult result = await backend.SetMountServiceAsync(selected.Id);
+        MountServiceSelector.IsEnabled = true;
+        if (!result.Succeeded)
+        {
+            MountServiceStatus.Text = "VaultKind could not save that provider. The previous setting remains in use.";
+            MountServiceStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 92, 87));
+            await LoadMountSettingsAsync();
+            return;
+        }
+
+        UpdateMountServiceCapabilities(selected);
+        MountServiceStatus.Text = $"{selected.Name} is now the default for future vault unlocks.";
+        MountServiceStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 73, 205, 112));
+    }
+
+    private void UpdateMountServiceCapabilities(MountServiceOption? service)
+    {
+        if (service is null)
+        {
+            MountServiceCapabilities.Text = "No provider selected.";
+            return;
+        }
+
+        if (service.Id == "automatic")
+        {
+            MountServiceCapabilities.Text = "VaultKind chooses the best available provider. Exact capabilities follow the provider selected at unlock time.";
+            return;
+        }
+
+        var capabilities = new List<string>();
+        if (service.DriveLetter) capabilities.Add("Windows drive letter");
+        if (service.MountPoint) capabilities.Add("Folder mount point");
+        if (service.ReadOnly) capabilities.Add("Read-only mode");
+        if (service.MountFlags) capabilities.Add("Custom mount flags");
+        if (service.LoopbackPort) capabilities.Add("Configurable loopback port");
+        MountServiceCapabilities.Text = capabilities.Count > 0 ? "✓ " + string.Join("   ✓ ", capabilities) : "This provider reports no optional mounting capabilities.";
     }
 
     private void RememberWindowPlacementChanged(object sender, RoutedEventArgs e)
     {
         SavePreferences();
+    }
+
+    private void LaunchWithWindowsChanged(object sender, RoutedEventArgs e)
+    {
+        if (initializingPreferences)
+        {
+            return;
+        }
+
+        bool requestedState = LaunchWithWindowsToggle.IsOn;
+        if (WindowsStartupService.TrySetEnabled(requestedState))
+        {
+            LaunchWithWindowsStatus.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        initializingPreferences = true;
+        LaunchWithWindowsToggle.IsOn = WindowsStartupService.IsEnabled();
+        initializingPreferences = false;
+        LaunchWithWindowsStatus.Text = "Windows could not update the startup registration. No other setting was changed.";
+        LaunchWithWindowsStatus.Visibility = Visibility.Visible;
+    }
+
+    private async void OpenDiagnosticsFolder(object sender, RoutedEventArgs e)
+    {
+        string? repositoryRoot = FindRepositoryRoot();
+        string logDirectory = repositoryRoot is null
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultKind", "logs")
+            : Path.Combine(repositoryRoot, "target", "ui-dev-profile", "logs");
+
+        try
+        {
+            Directory.CreateDirectory(logDirectory);
+            Windows.Storage.StorageFolder folder = await Windows.Storage.StorageFolder.GetFolderFromPathAsync(logDirectory);
+            bool opened = await Launcher.LaunchFolderAsync(folder);
+            DiagnosticsFolderStatus.Text = opened
+                ? "Opened the local diagnostics folder."
+                : $"Windows could not open the folder. Its location is {logDirectory}";
+            DiagnosticsFolderStatus.Foreground = new SolidColorBrush(opened
+                ? Color.FromArgb(255, 73, 205, 112)
+                : Color.FromArgb(255, 255, 92, 87));
+            DiagnosticsFolderStatus.Visibility = Visibility.Visible;
+        }
+        catch (Exception)
+        {
+            DiagnosticsFolderStatus.Text = $"Windows could not open the folder. Its location is {logDirectory}";
+            DiagnosticsFolderStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 92, 87));
+            DiagnosticsFolderStatus.Visibility = Visibility.Visible;
+        }
+    }
+
+    private static string? FindRepositoryRoot()
+    {
+        DirectoryInfo? current = new(AppContext.BaseDirectory);
+        while (current is not null)
+        {
+            if (File.Exists(Path.Combine(current.FullName, "pom.xml")) &&
+                Directory.Exists(Path.Combine(current.FullName, "native", "VaultKind.Windows")))
+            {
+                return current.FullName;
+            }
+
+            current = current.Parent;
+        }
+
+        return null;
     }
 
     private void RecordActivityHistoryChanged(object sender, RoutedEventArgs e)
@@ -562,7 +1115,304 @@ public sealed partial class MainPage : Page
 
         AppPreferencesStore.Save(new AppPreferences(
             RememberWindowPlacementToggle.IsOn,
-            RecordActivityHistoryToggle.IsOn));
+            RecordActivityHistoryToggle.IsOn,
+            DarkAppearanceToggle.IsOn ? "dark" : "light",
+            LargerTextToggle.IsOn,
+            LanguageSelector.SelectedItem is LanguageOption language ? language.Code : "system"));
+    }
+
+    private void LanguageSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (initializingPreferences || LanguageSelector.SelectedItem is not LanguageOption language)
+        {
+            return;
+        }
+
+        localization.SelectLanguage(language.Code);
+        ApplyLocalizedShell();
+        SavePreferences();
+    }
+
+    private void ApplyLocalizedShell()
+    {
+        DashboardNavText.Text = localization.Get("main.home", "Dashboard");
+        DoctorNavText.Text = localization.Get("main.vaultDoctor", "Vault Doctor");
+        VaultsNavText.Text = localization.Get("main.vaultlist", "Vaults");
+        AddVaultButton.Content = $"+ {localization.Get("main.vaultlist.addVaultButton.tooltip", "Add Vault")}";
+        ActivityNavText.Text = localization.Get("main.vaultlist.events", "Activity");
+        SettingsNavText.Text = localization.Get("preferences.title", "Settings");
+        LearningNavText.Text = localization.Get("main.vaultlist.help", "Learning Center");
+
+        SettingsGeneralText.Text = localization.Get("preferences.general", "General");
+        SettingsAppearanceText.Text = localization.Get("preferences.interface.theme", "Appearance");
+        SettingsVirtualDriveText.Text = localization.Get("preferences.volume", "Virtual Drive");
+        SettingsPrivacyText.Text = localization.Get("preferences.privacy", "Privacy");
+        SettingsAboutText.Text = localization.Get("preferences.about", "About");
+        var languageLabel = localization.Get("preferences.interface.language", "Language");
+        var qualifierIndex = languageLabel.IndexOfAny(['(', '（']);
+        if (qualifierIndex > 0)
+        {
+            languageLabel = languageLabel[..qualifierIndex].TrimEnd();
+        }
+
+        LanguageHeadingText.Text = languageLabel;
+        LanguageChoiceText.Text = languageLabel;
+        ApplyLocalizedPageContent();
+    }
+
+    private void CaptureLocalizedVisuals(DependencyObject parent)
+    {
+        int childCount = VisualTreeHelper.GetChildrenCount(parent);
+        for (int index = 0; index < childCount; index++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(parent, index);
+            switch (child)
+            {
+                case TextBlock textBlock when TryResolveLocalizationKey(textBlock, textBlock.Text, out string textKey) && localizedVisualElements.Add(textBlock):
+                    localizedVisuals.Add(new(textBlock, LocalizedVisualProperty.Text, textKey, textBlock.Text));
+                    break;
+                case ContentControl contentControl when contentControl.Content is string content && TryResolveLocalizationKey(contentControl, content, out string contentKey) && localizedVisualElements.Add(contentControl):
+                    localizedVisuals.Add(new(contentControl, LocalizedVisualProperty.Content, contentKey, content));
+                    break;
+                case TextBox textBox when !string.IsNullOrWhiteSpace(textBox.PlaceholderText) && TryResolveLocalizationKey(textBox, textBox.PlaceholderText, out string textBoxKey) && localizedVisualElements.Add(textBox):
+                    localizedVisuals.Add(new(textBox, LocalizedVisualProperty.Placeholder, textBoxKey, textBox.PlaceholderText));
+                    break;
+                case PasswordBox passwordBox when !string.IsNullOrWhiteSpace(passwordBox.PlaceholderText) && TryResolveLocalizationKey(passwordBox, passwordBox.PlaceholderText, out string passwordKey) && localizedVisualElements.Add(passwordBox):
+                    localizedVisuals.Add(new(passwordBox, LocalizedVisualProperty.Placeholder, passwordKey, passwordBox.PlaceholderText));
+                    break;
+            }
+
+            CaptureLocalizedVisuals(child);
+        }
+    }
+
+    private bool TryResolveLocalizationKey(FrameworkElement element, string text, out string key)
+    {
+        if (element.Tag is string tag && tag.StartsWith("i18n:", StringComparison.Ordinal))
+        {
+            key = tag["i18n:".Length..];
+            return key.Length > 0;
+        }
+
+        return StaticLocalizationKeys.TryGetValue(text, out key!) ||
+               localization.TryFindKeyByEnglishText(text, out key!);
+    }
+
+    private void ApplyLocalizedPageContent()
+    {
+        // Views are materialized as the user visits them, so include any newly
+        // available controls before applying the selected language.
+        CaptureLocalizedVisuals(this);
+        foreach (LocalizedVisual visual in localizedVisuals)
+        {
+            // The shared hero describes the active workspace, not a static page.
+            // Its text is owned by navigation handlers and must never be reset to
+            // the Dashboard values captured when the application first loaded.
+            if (ReferenceEquals(visual.Element, ContextTitle) || ReferenceEquals(visual.Element, ContextSubtitle))
+            {
+                continue;
+            }
+
+            string value = localization.Get(visual.Key, visual.Fallback);
+            switch (visual.Element, visual.Property)
+            {
+                case (TextBlock textBlock, LocalizedVisualProperty.Text):
+                    textBlock.Text = value;
+                    break;
+                case (ContentControl contentControl, LocalizedVisualProperty.Content):
+                    contentControl.Content = value;
+                    break;
+                case (TextBox textBox, LocalizedVisualProperty.Placeholder):
+                    textBox.PlaceholderText = value;
+                    break;
+                case (PasswordBox passwordBox, LocalizedVisualProperty.Placeholder):
+                    passwordBox.PlaceholderText = value;
+                    break;
+            }
+        }
+    }
+
+    private void LargerTextChanged(object sender, RoutedEventArgs e)
+    {
+        if (initializingPreferences)
+        {
+            return;
+        }
+
+        ApplyLargerText(LargerTextToggle.IsOn);
+        SavePreferences();
+    }
+
+    private void ApplyLargerText(bool enabled)
+    {
+        useLargerText = enabled;
+        ApplyTextScale(this);
+    }
+
+    private void QueueTextScaleRefresh()
+    {
+        if (!useLargerText || textScaleRefreshQueued)
+        {
+            return;
+        }
+
+        textScaleRefreshQueued = true;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            textScaleRefreshQueued = false;
+            ApplyTextScale(this);
+        });
+    }
+
+    private void ApplyTextScale(DependencyObject element)
+    {
+        const double scale = 1.16;
+
+        if (element is TextBlock textBlock)
+        {
+            if (!baselineFontSizes.TryGetValue(textBlock, out double baseline))
+            {
+                baseline = textBlock.FontSize;
+                baselineFontSizes[textBlock] = baseline;
+            }
+
+            textBlock.FontSize = useLargerText ? baseline * scale : baseline;
+        }
+        else if (element is Control control && element is not FontIcon)
+        {
+            if (!baselineFontSizes.TryGetValue(control, out double baseline))
+            {
+                baseline = control.FontSize;
+                baselineFontSizes[control] = baseline;
+            }
+
+            control.FontSize = useLargerText ? baseline * scale : baseline;
+        }
+
+        int childCount = VisualTreeHelper.GetChildrenCount(element);
+        for (int index = 0; index < childCount; index++)
+        {
+            ApplyTextScale(VisualTreeHelper.GetChild(element, index));
+        }
+    }
+
+    private void AppearanceModeChanged(object sender, RoutedEventArgs e)
+    {
+        if (initializingPreferences)
+        {
+            return;
+        }
+
+        ApplyAppearanceMode(DarkAppearanceToggle.IsOn, persist: true);
+    }
+
+    private void ApplyAppearanceMode(bool useDarkMode, bool persist)
+    {
+        bool useLightMode = !useDarkMode;
+        RequestedTheme = useLightMode ? ElementTheme.Light : ElementTheme.Dark;
+
+        SetPaletteColor("AppCanvasBrush", useLightMode ? "#E3E8EC" : "#292D30");
+        SetPaletteColor("SidebarBrush", useLightMode ? "#D4DCE2" : "#1D2022");
+        SetPaletteColor("CardBrush", useLightMode ? "#F8FAFB" : "#3B4145");
+        SetPaletteColor("CardBorderBrush", useLightMode ? "#8998A3" : "#535B60");
+        SetPaletteColor("BrandBlueBrush", useLightMode ? "#006FC9" : "#4EA1FF");
+        SetPaletteColor("PrimaryTextBrush", useLightMode ? "#18232B" : "#F4F6F8");
+        SetPaletteColor("SelectedSurfaceBrush", useLightMode ? "#C3D1DB" : "#3A4248");
+        SetPaletteColor("MutedTextBrush", useLightMode ? "#455662" : "#AEB7BE");
+        SetPaletteColor("DividerBrush", useLightMode ? "#9AA8B2" : "#485056");
+        SetPaletteColor("InfoSurfaceBrush", useLightMode ? "#D5E6F2" : "#293A4A");
+        SetPaletteColor("InfoTextBrush", useLightMode ? "#234A68" : "#AFC8E2");
+        SetPaletteColor("IconSurfaceBrush", useLightMode ? "#C7DCEB" : "#35444D");
+        SetPaletteColor("DeepSurfaceBrush", useLightMode ? "#EDF1F4" : "#202426");
+        SetPaletteColor("ListSurfaceBrush", useLightMode ? "#F4F7F9" : "#2D3438");
+        SetPaletteColor("ListSurfaceStrongBrush", useLightMode ? "#E8EEF2" : "#252A2D");
+        SetPaletteColor("SubtleBadgeBrush", useLightMode ? "#E1E8ED" : "#2D3438");
+        SetPaletteColor("TrackBrush", useLightMode ? "#8F9DA7" : "#586168");
+        SetPaletteColor("StrongDividerBrush", useLightMode ? "#7E8E99" : "#4E575D");
+        SetPaletteColor("InfoBorderBrush", useLightMode ? "#347FB8" : "#367DC2");
+        SetPaletteColor("ButtonBackgroundPointerOver", useLightMode ? "#B7CAD8" : "#40596C");
+        SetPaletteColor("ButtonBorderBrushPointerOver", useLightMode ? "#2379B9" : "#69B1FF");
+        SetPaletteColor("ButtonForegroundPointerOver", useLightMode ? "#10202B" : "#FFFFFF");
+        SetPaletteColor("ButtonBackgroundPressed", useLightMode ? "#A8BFCE" : "#29435B");
+        SetPaletteColor("ButtonForegroundPressed", useLightMode ? "#10202B" : "#FFFFFF");
+
+        // Page-scoped resources do not exist until the XAML root has finished
+        // loading, so assign the canvas brush only after construction.
+        if (Resources["AppCanvasBrush"] is SolidColorBrush canvasBrush)
+        {
+            Background = canvasBrush;
+        }
+
+        RefreshThemeDependentNavigation();
+
+        AppearanceModeName.Text = useLightMode ? "Light — Clear" : "Dark — Low Glare";
+        AppearanceModeDescription.Text = useLightMode
+            ? "Bright surfaces, clear dark text, and VaultKind blue accents."
+            : "Charcoal surfaces, restrained contrast, and VaultKind blue accents.";
+
+        if (Application.Current is App app && app.MainWindow is MainWindow window)
+        {
+            window.ApplyAppearance(useLightMode);
+        }
+
+        if (persist)
+        {
+            SavePreferences();
+        }
+    }
+
+    private void SetPaletteColor(string resourceKey, string color)
+    {
+        if (Resources[resourceKey] is SolidColorBrush brush)
+        {
+            brush.Color = Color.FromArgb(
+                255,
+                Convert.ToByte(color.Substring(1, 2), 16),
+                Convert.ToByte(color.Substring(3, 2), 16),
+                Convert.ToByte(color.Substring(5, 2), 16));
+        }
+    }
+
+    private SolidColorBrush PaletteBrush(string resourceKey)
+    {
+        return Resources[resourceKey] as SolidColorBrush ?? new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+    }
+
+    private void ApplySettingsButtonPalette(string section)
+    {
+        foreach (Button button in new[] { SettingsGeneralButton, SettingsAppearanceButton, SettingsVirtualDriveButton, SettingsPrivacyButton, SettingsAboutButton })
+        {
+            bool selected = string.Equals(button.Tag as string, section, StringComparison.Ordinal);
+            button.Background = selected ? PaletteBrush("SelectedSurfaceBrush") : new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+            button.BorderBrush = selected ? PaletteBrush("BrandBlueBrush") : PaletteBrush("CardBorderBrush");
+            button.BorderThickness = selected ? new Thickness(2) : new Thickness(1);
+            button.Foreground = selected ? PaletteBrush("BrandBlueBrush") : PaletteBrush("PrimaryTextBrush");
+        }
+    }
+
+    private void RefreshThemeDependentNavigation()
+    {
+        foreach (Button button in new[] { DashboardButton, DoctorButton, ActivityButton, SettingsButton, LearningButton })
+        {
+            bool selected = AutomationProperties.GetName(button).EndsWith(", selected", StringComparison.Ordinal);
+            if (selected)
+            {
+                button.Background = PaletteBrush("SelectedSurfaceBrush");
+                button.BorderBrush = PaletteBrush("BrandBlueBrush");
+                SetContentForeground(button, PaletteBrush("BrandBlueBrush"));
+            }
+            else
+            {
+                SetContentForeground(button, PaletteBrush("PrimaryTextBrush"));
+            }
+        }
+
+        string section = SettingsAppearancePanel.Visibility == Visibility.Visible ? "appearance"
+            : SettingsVirtualDrivePanel.Visibility == Visibility.Visible ? "virtual-drive"
+            : SettingsPrivacyPanel.Visibility == Visibility.Visible ? "privacy"
+            : SettingsAboutPanel.Visibility == Visibility.Visible ? "about"
+            : "general";
+        ApplySettingsButtonPalette(section);
     }
 
     private void ShowLearningCenter(object sender, RoutedEventArgs e)
@@ -687,9 +1537,28 @@ public sealed partial class MainPage : Page
         visibleTopics[targetIndex].Focus(FocusState.Keyboard);
     }
 
-    private void ShowLearningTopic(string topic)
+    private void ShowLearningTopic(string topic, string? sectionTitle = null, bool highlightAnswer = false)
     {
+        if (!string.IsNullOrWhiteSpace(selectedLearningTopic))
+        {
+            learningTopicScrollOffsets[selectedLearningTopic] = LearningContentScroll.VerticalOffset;
+        }
+
         selectedLearningTopic = topic;
+        if (highlightAnswer && !string.IsNullOrWhiteSpace(sectionTitle))
+        {
+            highlightedLearningAnswerTopic = topic;
+            highlightedLearningAnswerSection = sectionTitle;
+        }
+        else if (!highlightAnswer)
+        {
+            highlightedLearningAnswerTopic = null;
+            highlightedLearningAnswerSection = null;
+        }
+        if (!string.IsNullOrWhiteSpace(sectionTitle))
+        {
+            selectedLearningSections[topic] = sectionTitle;
+        }
         if (viewedLearningTopics.Add(topic))
         {
             SaveLearningProgress();
@@ -711,33 +1580,483 @@ public sealed partial class MainPage : Page
         LearningTopicIcon.Glyph = glyph;
         LearningHowContent.Visibility = topic == "how" ? Visibility.Visible : Visibility.Collapsed;
         LearningSimpleContent.Visibility = topic == "how" ? Visibility.Collapsed : Visibility.Visible;
-        LearningBodyText.Text = body;
-        LearningTipText.Text = tip;
+        if (LearningArticles.TryGetValue(topic, out LearningArticle? article))
+        {
+            LearningBodyText.Text = article.Introduction;
+            LearningTipText.Text = article.Tip;
+            RenderLearningArticle(article);
+        }
+        else
+        {
+            LearningBodyText.Text = body;
+            LearningTipText.Text = tip;
+            LearningArticleSectionsPanel.Children.Clear();
+        }
 
         foreach ((Button button, string id, string _, FontIcon check) in LearningTopicButtons())
         {
             bool selected = id == topic;
-            button.Background = new SolidColorBrush(selected ? Color.FromArgb(255, 58, 66, 72) : Color.FromArgb(0, 0, 0, 0));
-            button.BorderBrush = new SolidColorBrush(selected ? Color.FromArgb(255, 78, 161, 255) : Color.FromArgb(255, 82, 93, 101));
+            button.Background = selected ? PaletteBrush("SelectedSurfaceBrush") : new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
+            button.BorderBrush = selected ? PaletteBrush("BrandBlueBrush") : PaletteBrush("CardBorderBrush");
             button.BorderThickness = selected ? new Thickness(3, 0, 0, 0) : new Thickness(1);
             check.Visibility = viewedLearningTopics.Contains(id) ? Visibility.Visible : Visibility.Collapsed;
         }
 
         LearningProgressText.Text = $"{viewedLearningTopics.Count} of 7 topics viewed";
-        DispatcherQueue.TryEnqueue(() => LearningContentScroll.ChangeView(null, 0, null, true));
+        if (string.IsNullOrWhiteSpace(sectionTitle))
+        {
+            double targetOffset = learningTopicScrollOffsets.GetValueOrDefault(topic, 0);
+            DispatcherQueue.TryEnqueue(() => LearningContentScroll.ChangeView(null, targetOffset, null, true));
+        }
     }
+
+    private void RenderLearningArticle(LearningArticle article)
+    {
+        LearningArticleSectionsPanel.Children.Clear();
+        RenderSmartLearningArticle(article);
+    }
+
+    private void RenderSmartLearningArticle(LearningArticle article)
+    {
+        learningSectionViewEntries.Clear();
+        bool isFaq = selectedLearningTopic == "faq";
+
+        var search = new TextBox
+        {
+            PlaceholderText = isFaq ? "Ask a question or search the FAQ" : $"Search {LearningTopicName(selectedLearningTopic)}",
+            FontSize = 16,
+            Padding = new Thickness(13, 10, 13, 10)
+        };
+        search.TextChanged += FilterLearningSections;
+        AutomationProperties.SetName(search, isFaq ? "Search frequently asked questions" : $"Search {LearningTopicName(selectedLearningTopic)} guidance");
+        LearningArticleSectionsPanel.Children.Add(search);
+
+        if (isFaq)
+        {
+            var categories = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 8
+            };
+            foreach ((string id, string label) in new[]
+            {
+                ("all", "All"),
+                ("access", "Access"),
+                ("storage", "Storage"),
+                ("privacy", "Privacy"),
+                ("troubleshooting", "Troubleshooting")
+            })
+            {
+                var button = new Button
+                {
+                    Tag = id,
+                    Content = label,
+                    Padding = new Thickness(15, 8, 15, 8),
+                    BorderBrush = new SolidColorBrush(id == selectedFaqCategory
+                        ? Color.FromArgb(255, 78, 161, 255)
+                        : Color.FromArgb(255, 82, 93, 101)),
+                    BorderThickness = new Thickness(id == selectedFaqCategory ? 2 : 1)
+                };
+                button.Click += SelectFaqCategory;
+                categories.Children.Add(button);
+            }
+            LearningArticleSectionsPanel.Children.Add(categories);
+        }
+
+        string? selectedSection = selectedLearningSections.GetValueOrDefault(selectedLearningTopic);
+        learningSectionResultCount = new TextBlock
+        {
+            Foreground = PaletteBrush("MutedTextBrush"),
+            FontSize = 13,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        learningCopyGuidanceStatus = new TextBlock
+        {
+            FontSize = 13,
+            VerticalAlignment = VerticalAlignment.Center,
+            Visibility = Visibility.Collapsed
+        };
+        learningCopyGuidanceButton = new Button
+        {
+            Content = "Copy Guidance",
+            Padding = new Thickness(14, 7, 14, 7),
+            Visibility = string.IsNullOrWhiteSpace(selectedSection) ? Visibility.Collapsed : Visibility.Visible
+        };
+        learningCopyGuidanceButton.Click += CopySelectedLearningGuidance;
+        learningSaveGuidanceButton = new Button
+        {
+            Content = "Save Guidance\u2026",
+            Padding = new Thickness(14, 7, 14, 7),
+            Visibility = string.IsNullOrWhiteSpace(selectedSection) ? Visibility.Collapsed : Visibility.Visible
+        };
+        learningSaveGuidanceButton.Click += SaveSelectedLearningGuidance;
+
+        var learningResultRow = new Grid { ColumnSpacing = 12 };
+        learningResultRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        learningResultRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        learningResultRow.Children.Add(learningSectionResultCount);
+        var learningCopyActions = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 10,
+            Children =
+            {
+                learningCopyGuidanceStatus,
+                learningCopyGuidanceButton,
+                learningSaveGuidanceButton
+            }
+        };
+        Grid.SetColumn(learningCopyActions, 1);
+        learningResultRow.Children.Add(learningCopyActions);
+        LearningArticleSectionsPanel.Children.Add(learningResultRow);
+
+        foreach (LearningSection section in article.Sections)
+        {
+            string category = isFaq ? FaqCategory(section.Title) : "guide";
+            bool isExpanded = section.Title == selectedSection;
+            bool isHighlightedAnswer = selectedLearningTopic == highlightedLearningAnswerTopic
+                && section.Title == highlightedLearningAnswerSection;
+            var answer = new TextBlock
+            {
+                Text = section.Body,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 14,
+                LineHeight = 22,
+                Foreground = PaletteBrush("MutedTextBrush"),
+                Visibility = isExpanded ? Visibility.Visible : Visibility.Collapsed,
+                Margin = new Thickness(0, 8, 26, 2)
+            };
+            var chevron = new FontIcon
+            {
+                Glyph = isExpanded ? "\uE70E" : "\uE70D",
+                FontSize = 13,
+                Foreground = PaletteBrush("BrandBlueBrush"),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            var header = new Grid { ColumnSpacing = 12 };
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            header.Children.Add(new StackPanel
+            {
+                Spacing = 3,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = isHighlightedAnswer
+                            ? "✓  ANSWER FOR THIS ISSUE"
+                            : (isFaq ? FaqCategoryLabel(category) : "GUIDE").ToUpperInvariant(),
+                        Foreground = isHighlightedAnswer ? PaletteBrush("PrimaryTextBrush") : PaletteBrush("BrandBlueBrush"),
+                        FontSize = isHighlightedAnswer ? 12 : 10,
+                        FontWeight = Microsoft.UI.Text.FontWeights.Bold
+                    },
+                    new TextBlock
+                    {
+                        Text = section.Title,
+                        TextWrapping = TextWrapping.Wrap,
+                        FontSize = 16,
+                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+                    }
+                }
+            });
+            Grid.SetColumn(chevron, 1);
+            header.Children.Add(chevron);
+
+            var content = new StackPanel { Spacing = 3 };
+            content.Children.Add(header);
+            content.Children.Add(answer);
+            var question = new Button
+            {
+                Tag = section.Title,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                Padding = new Thickness(16, 13, 16, 13),
+                Background = isExpanded ? PaletteBrush("InfoSurfaceBrush") : PaletteBrush("ListSurfaceBrush"),
+                BorderBrush = isHighlightedAnswer || isExpanded ? PaletteBrush("BrandBlueBrush") : PaletteBrush("CardBorderBrush"),
+                BorderThickness = new Thickness(isHighlightedAnswer ? 3 : 1),
+                CornerRadius = new CornerRadius(9),
+                Content = content
+            };
+            question.Click += ToggleLearningSection;
+            learningSectionViewEntries.Add(new LearningSectionViewEntry(section, category, question, answer, chevron, isHighlightedAnswer));
+            LearningArticleSectionsPanel.Children.Add(question);
+        }
+
+        learningSectionNoResults = new TextBlock
+        {
+            Text = isFaq
+                ? "No FAQ answer matches that search. Try fewer words, or open VaultKind Assistant for diagnostic guidance."
+                : "No guidance in this chapter matches that search. Try fewer words or search another Learning Center chapter.",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = PaletteBrush("MutedTextBrush"),
+            FontSize = 14,
+            Visibility = Visibility.Collapsed
+        };
+        LearningArticleSectionsPanel.Children.Add(learningSectionNoResults);
+        ApplyLearningSectionFilter(search.Text);
+        QueueTextScaleRefresh();
+
+        if (!string.IsNullOrWhiteSpace(selectedSection))
+        {
+            LearningSectionViewEntry? selectedEntry = learningSectionViewEntries.FirstOrDefault(entry => entry.Section.Title == selectedSection);
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (selectedEntry is null)
+                {
+                    return;
+                }
+
+                selectedEntry.Button.Focus(FocusState.Programmatic);
+                selectedEntry.Button.StartBringIntoView(new BringIntoViewOptions
+                {
+                    AnimationDesired = true,
+                    // Deep-linked answers can be taller than the viewport's remaining
+                    // space. Anchor them near the top so the complete guidance receives
+                    // the largest possible reading area without an extra manual scroll.
+                    VerticalAlignmentRatio = 0.03
+                });
+            });
+        }
+        else
+        {
+            DispatcherQueue.TryEnqueue(() => search.Focus(FocusState.Programmatic));
+        }
+    }
+
+    private void SelectFaqCategory(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string category })
+        {
+            return;
+        }
+
+        selectedFaqCategory = category;
+        if (LearningArticles.TryGetValue("faq", out LearningArticle? article))
+        {
+            RenderLearningArticle(article);
+        }
+    }
+
+    private void FilterLearningSections(object sender, TextChangedEventArgs e)
+    {
+        if (sender is TextBox search)
+        {
+            ApplyLearningSectionFilter(search.Text);
+        }
+    }
+
+    private void ApplyLearningSectionFilter(string query)
+    {
+        string[] terms = query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        int visible = 0;
+        foreach (LearningSectionViewEntry entry in learningSectionViewEntries)
+        {
+            bool categoryMatches = selectedLearningTopic != "faq" || selectedFaqCategory == "all" || entry.Category == selectedFaqCategory;
+            string searchable = $"{entry.Section.Title} {entry.Section.Body}";
+            bool textMatches = terms.All(term => searchable.Contains(term, StringComparison.OrdinalIgnoreCase));
+            bool matches = categoryMatches && textMatches;
+            entry.Button.Visibility = matches ? Visibility.Visible : Visibility.Collapsed;
+            visible += matches ? 1 : 0;
+        }
+
+        if (learningSectionResultCount is not null)
+        {
+            string noun = selectedLearningTopic == "faq" ? "answer" : "section";
+            learningSectionResultCount.Text = $"{visible} {noun}{(visible == 1 ? string.Empty : "s")}";
+        }
+        if (learningSectionNoResults is not null)
+        {
+            learningSectionNoResults.Visibility = visible == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    private void ToggleLearningSection(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string question })
+        {
+            return;
+        }
+
+        string? selected = selectedLearningSections.GetValueOrDefault(selectedLearningTopic);
+        selectedLearningSections[selectedLearningTopic] = selected == question ? null : question;
+        foreach (LearningSectionViewEntry entry in learningSectionViewEntries)
+        {
+            bool expanded = entry.Section.Title == selectedLearningSections[selectedLearningTopic];
+            entry.Answer.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
+            entry.Chevron.Glyph = expanded ? "\uE70E" : "\uE70D";
+            entry.Button.Background = expanded ? PaletteBrush("InfoSurfaceBrush") : PaletteBrush("ListSurfaceBrush");
+            entry.Button.BorderBrush = entry.IsHighlightedAnswer || expanded ? PaletteBrush("BrandBlueBrush") : PaletteBrush("CardBorderBrush");
+            entry.Button.BorderThickness = new Thickness(entry.IsHighlightedAnswer ? 3 : 1);
+        }
+
+        bool hasSelectedGuidance = !string.IsNullOrWhiteSpace(selectedLearningSections[selectedLearningTopic]);
+        if (learningCopyGuidanceButton is not null)
+        {
+            learningCopyGuidanceButton.Visibility = hasSelectedGuidance ? Visibility.Visible : Visibility.Collapsed;
+        }
+        if (learningSaveGuidanceButton is not null)
+        {
+            learningSaveGuidanceButton.Visibility = hasSelectedGuidance ? Visibility.Visible : Visibility.Collapsed;
+        }
+        if (learningCopyGuidanceStatus is not null)
+        {
+            learningCopyGuidanceStatus.Text = string.Empty;
+            learningCopyGuidanceStatus.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void CopySelectedLearningGuidance(object sender, RoutedEventArgs e)
+    {
+        if (!TryGetSelectedLearningGuidance(out string guidance, out _))
+        {
+            return;
+        }
+
+        try
+        {
+            DataPackage package = new();
+            package.SetText(guidance);
+            Clipboard.SetContent(package);
+            ShowLearningCopyStatus("Guidance copied.", true);
+        }
+        catch (Exception)
+        {
+            ShowLearningCopyStatus("Clipboard unavailable.", false);
+        }
+    }
+
+    private async void SaveSelectedLearningGuidance(object sender, RoutedEventArgs e)
+    {
+        if (!TryGetSelectedLearningGuidance(out string guidance, out string suggestedFileName)
+            || ((App)Application.Current).MainWindow is not Window window)
+        {
+            return;
+        }
+
+        try
+        {
+            FileSavePicker picker = new()
+            {
+                SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+                SuggestedFileName = suggestedFileName
+            };
+            picker.FileTypeChoices.Add("Text document", new List<string> { ".txt" });
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(window));
+            Windows.Storage.StorageFile? file = await picker.PickSaveFileAsync();
+            if (file is null)
+            {
+                return;
+            }
+
+            await Windows.Storage.FileIO.WriteTextAsync(file, guidance);
+            ShowLearningCopyStatus("Guidance saved.", true);
+        }
+        catch (Exception)
+        {
+            ShowLearningCopyStatus("Could not save guidance.", false);
+        }
+    }
+
+    private bool TryGetSelectedLearningGuidance(out string guidance, out string suggestedFileName)
+    {
+        guidance = string.Empty;
+        suggestedFileName = "VaultKind Guidance";
+        string? selectedSection = selectedLearningSections.GetValueOrDefault(selectedLearningTopic);
+        if (string.IsNullOrWhiteSpace(selectedSection)
+            || !LearningArticles.TryGetValue(selectedLearningTopic, out LearningArticle? article))
+        {
+            return false;
+        }
+
+        LearningSection? section = article.Sections.FirstOrDefault(candidate => candidate.Title == selectedSection);
+        if (section is null)
+        {
+            return false;
+        }
+
+        string topicName = LearningTopicName(selectedLearningTopic);
+        guidance = $"VaultKind Learning Center\r\n{topicName}\r\n\r\n{section.Title}\r\n\r\n{section.Body}";
+        string rawFileName = $"VaultKind - {topicName} - {section.Title}";
+        suggestedFileName = string.Concat(rawFileName.Select(character => Path.GetInvalidFileNameChars().Contains(character) ? '_' : character));
+        return true;
+    }
+
+    private void ShowLearningCopyStatus(string message, bool success)
+    {
+        if (learningCopyGuidanceStatus is null)
+        {
+            return;
+        }
+
+        learningCopyGuidanceStatus.Text = message;
+        learningCopyGuidanceStatus.Foreground = new SolidColorBrush(success
+            ? Color.FromArgb(255, 58, 211, 111)
+            : Color.FromArgb(255, 255, 96, 86));
+        learningCopyGuidanceStatus.Visibility = Visibility.Visible;
+    }
+
+    private static string FaqCategory(string title)
+    {
+        if (title.Contains("password", StringComparison.OrdinalIgnoreCase)
+            || title.Contains("recovery", StringComparison.OrdinalIgnoreCase)
+            || title.Contains("another Windows", StringComparison.OrdinalIgnoreCase))
+        {
+            return "access";
+        }
+        if (title.Contains("stored", StringComparison.OrdinalIgnoreCase)
+            || title.Contains("vault.cryptomator", StringComparison.OrdinalIgnoreCase)
+            || title.Contains("rename", StringComparison.OrdinalIgnoreCase)
+            || title.Contains("move", StringComparison.OrdinalIgnoreCase)
+            || title.Contains("share", StringComparison.OrdinalIgnoreCase))
+        {
+            return "storage";
+        }
+        if (title.Contains("upload", StringComparison.OrdinalIgnoreCase)
+            || title.Contains("Activity", StringComparison.OrdinalIgnoreCase)
+            || title.Contains("closes", StringComparison.OrdinalIgnoreCase))
+        {
+            return "privacy";
+        }
+        return "troubleshooting";
+    }
+
+    private static string FaqCategoryLabel(string category) => category switch
+    {
+        "access" => "Access",
+        "storage" => "Storage",
+        "privacy" => "Privacy",
+        _ => "Troubleshooting"
+    };
 
     private void FilterLearningTopics(object sender, TextChangedEventArgs e)
     {
         string query = LearningSearch.Text.Trim();
         int visible = 0;
-        foreach ((Button button, string _, string title, FontIcon _) in LearningTopicButtons())
+        foreach ((Button button, string id, string title, FontIcon _) in LearningTopicButtons())
         {
-            bool matches = query.Length == 0 || title.Contains(query, StringComparison.OrdinalIgnoreCase);
+            bool matches = query.Length == 0 || LearningTopicMatches(id, title, query);
             button.Visibility = matches ? Visibility.Visible : Visibility.Collapsed;
             visible += matches ? 1 : 0;
         }
         LearningNoResults.Visibility = visible == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private static bool LearningTopicMatches(string id, string title, string query)
+    {
+        string searchableText;
+        if (LearningArticles.TryGetValue(id, out LearningArticle? article))
+        {
+            searchableText = string.Join(' ',
+                new[] { title, article.Introduction, article.Tip }
+                    .Concat(article.Sections.SelectMany(section => new[] { section.Title, section.Body })));
+        }
+        else
+        {
+            searchableText = $"{title} encryption encrypted files cloud storage password unlock virtual drive readable view encrypted storage folder scrambled file names lock vault";
+        }
+
+        string[] terms = query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return terms.All(term => searchableText.Contains(term, StringComparison.OrdinalIgnoreCase));
     }
 
     private void ResetLearningProgress(object sender, RoutedEventArgs e)
@@ -852,11 +2171,17 @@ public sealed partial class MainPage : Page
     {
         AssistantBackToCasesButton.Visibility = Visibility.Collapsed;
         AssistantResultsPanel.Children.Clear();
-        IEnumerable<AssistantCase> cases = category == "all" ? AssistantCases : AssistantCases.Where(item => item.Category == category);
+        string query = AssistantSearch.Text.Trim();
+        IEnumerable<AssistantCase> cases = query.Length > 0
+            ? AssistantCases.Where(item => AssistantCaseMatches(item, query))
+            : category == "all" ? AssistantCases : AssistantCases.Where(item => item.Category == category);
+        List<AssistantCase> visibleCases = cases.ToList();
         string categoryName = category switch { "startup" => "Startup", "vault" => "Vault", "filesystem" => "Filesystem", "recovery" => "Recovery", _ => "All" };
-        AssistantResultsTitle.Text = $"{categoryName} diagnostic cases";
+        AssistantResultsTitle.Text = query.Length > 0
+            ? $"Search results ({visibleCases.Count})"
+            : $"{categoryName} diagnostic cases";
 
-        foreach (AssistantCase item in cases)
+        foreach (AssistantCase item in visibleCases)
         {
             var button = new Button
             {
@@ -878,7 +2203,31 @@ public sealed partial class MainPage : Page
             button.Click += OpenAssistantCaseFromButton;
             AssistantResultsPanel.Children.Add(button);
         }
+
+        if (visibleCases.Count == 0)
+        {
+            AssistantResultsPanel.Children.Add(new TextBlock
+            {
+                Text = "No matching diagnostic cases. Try fewer words or a broader description.",
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = new SolidColorBrush(Color.FromArgb(255, 185, 193, 199)),
+                FontSize = 15
+            });
+        }
         DispatcherQueue.TryEnqueue(() => AssistantContentScroll.ChangeView(null, 0, null, true));
+        QueueTextScaleRefresh();
+    }
+
+    private void FilterAssistantCases(object sender, TextChangedEventArgs e)
+    {
+        ShowAssistantCaseList(selectedAssistantCategory);
+    }
+
+    private static bool AssistantCaseMatches(AssistantCase item, string query)
+    {
+        string searchableText = string.Join(' ', item.Id, item.Title, item.Cause, item.Checks, item.Fix, item.Keywords);
+        string[] terms = query.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return terms.All(term => searchableText.Contains(term, StringComparison.OrdinalIgnoreCase));
     }
 
     private void OpenAssistantQuickCase(object sender, RoutedEventArgs e)
@@ -941,6 +2290,7 @@ public sealed partial class MainPage : Page
         AssistantBackToCasesButton.Visibility = Visibility.Visible;
         AssistantResultsPanel.Children.Clear();
         AssistantResultsPanel.Children.Add(new TextBlock { Text = body, TextWrapping = TextWrapping.Wrap, Foreground = new SolidColorBrush(Color.FromArgb(255, 185, 193, 199)), FontSize = 15 });
+        QueueTextScaleRefresh();
     }
 
     private void ShowAssistantCase(string id, int score, string evidence)
@@ -956,8 +2306,107 @@ public sealed partial class MainPage : Page
         AssistantResultsPanel.Children.Add(AssistantSection("LOCAL CHECKS", item.Checks));
         AssistantResultsPanel.Children.Add(AssistantSection("WHY THIS MATCHED", evidence));
         AssistantResultsPanel.Children.Add(AssistantSection("SUGGESTED FIX", item.Fix));
+        LearningDestination learningDestination = RelatedLearningDestination(item);
+        AssistantResultsPanel.Children.Add(new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(255, 37, 57, 74)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(255, 54, 130, 198)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(14),
+            Child = new Grid
+            {
+                ColumnSpacing = 14,
+                ColumnDefinitions =
+                {
+                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
+                    new ColumnDefinition { Width = GridLength.Auto }
+                },
+                Children =
+                {
+                    AssistantLearningText(learningDestination),
+                    AssistantLearningButton(learningDestination)
+                }
+            }
+        });
         DispatcherQueue.TryEnqueue(() => AssistantContentScroll.ChangeView(null, 0, null, true));
+        QueueTextScaleRefresh();
     }
+
+    private static StackPanel AssistantLearningText(LearningDestination destination) => new()
+    {
+        Spacing = 3,
+        Children =
+        {
+            new TextBlock
+            {
+                Text = "Learn more",
+                FontSize = 16,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+            },
+            new TextBlock
+            {
+                Text = $"Open {LearningTopicName(destination.Topic)} directly at “{destination.Section}” without leaving VaultKind.",
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = new SolidColorBrush(Color.FromArgb(255, 190, 211, 230)),
+                FontSize = 14
+            }
+        }
+    };
+
+    private Button AssistantLearningButton(LearningDestination destination)
+    {
+        var button = new Button
+        {
+            Tag = destination,
+            Content = $"Open {LearningTopicName(destination.Topic)}",
+            Padding = new Thickness(16, 9, 16, 9),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(button, 1);
+        button.Click += OpenRelatedLearningTopic;
+        AutomationProperties.SetName(button, $"Open {LearningTopicName(destination.Topic)} at {destination.Section}");
+        return button;
+    }
+
+    private void OpenRelatedLearningTopic(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: LearningDestination destination })
+        {
+            return;
+        }
+
+        ShowLearningCenter(sender, e);
+        ShowLearningTopic(destination.Topic, destination.Section, highlightAnswer: true);
+    }
+
+    private static LearningDestination RelatedLearningDestination(AssistantCase item) => item.Id switch
+    {
+        "VK-0001" => new("faq", "What if VaultKind settings cannot be loaded?"),
+        "VK-0002" => new("security", "Blocked or missing app components"),
+        "VK-1001" => new("faq", "Why was the correct password rejected?"),
+        "VK-1002" => new("cloud", "Offline files"),
+        "VK-1003" => new("faq", "What if a vault configuration is missing or invalid?"),
+        "VK-1004" => new("first", "After setup"),
+        "VK-2001" => new("security", "Folder permissions and write access"),
+        "VK-2002" => new("cloud", "Storage space and quota"),
+        "VK-2003" => new("drive", "If locking fails"),
+        "VK-2004" => new("cloud", "Let synchronization finish"),
+        "VK-2005" => new("drive", "Drive availability"),
+        "VK-3001" => new("recovery", "How recovery works"),
+        "VK-3002" => new("security", "Vault integrity and safe verification"),
+        _ => new("faq", "Where are my files actually stored?")
+    };
+
+    private static string LearningTopicName(string topic) => topic switch
+    {
+        "first" => "Your First Vault",
+        "recovery" => "Recovery Keys",
+        "cloud" => "Cloud Storage",
+        "drive" => "Virtual Drives",
+        "security" => "Security Tips",
+        _ => "FAQ"
+    };
 
     private static StackPanel AssistantSection(string label, string body) => new()
     {
@@ -1274,7 +2723,7 @@ public sealed partial class MainPage : Page
         VaultView.Visibility = Visibility.Collapsed;
         VaultManagementView.Visibility = Visibility.Collapsed;
         UnlockView.Visibility = Visibility.Collapsed;
-        ContextTitle.Text = "Create a Vault";
+        ContextTitle.Text = localization.Get("addvaultwizard.new.title", "Create a Vault");
         ContextSubtitle.Text = "Set up a new encrypted space in four clear steps.";
         CreateVaultNameInput.Text = string.Empty;
         CreateVaultNameStatus.Visibility = Visibility.Collapsed;
@@ -1321,7 +2770,7 @@ public sealed partial class MainPage : Page
         CreateVaultReviewView.Visibility = Visibility.Collapsed;
         CreateVaultProtectionView.Visibility = Visibility.Collapsed;
         CreateVaultSuccessView.Visibility = Visibility.Collapsed;
-        ContextTitle.Text = "Create a Vault";
+        ContextTitle.Text = localization.Get("addvaultwizard.new.title", "Create a Vault");
         ContextSubtitle.Text = "Set up a new encrypted space in four clear steps.";
         RefreshCreateVaultStorageLocation();
     }
@@ -2922,6 +4371,8 @@ public sealed partial class MainPage : Page
     {
         DoctorSummary.Text = "Vault Doctor is running local, read-only checks...";
         DoctorChecksPanel.Children.Clear();
+        DoctorSaveReportButton.IsEnabled = false;
+        DoctorSaveReportStatus.Visibility = Visibility.Collapsed;
 
         VaultBackendSnapshot snapshot = await backend.GetSnapshotAsync();
         if (snapshot.ConnectionState == BackendConnectionState.Ready)
@@ -2929,13 +4380,13 @@ public sealed partial class MainPage : Page
             ApplySnapshot(snapshot);
         }
 
-        var checks = new List<(string Message, string Kind)>();
+        var checks = new List<DoctorCheck>();
         checks.Add(snapshot.ConnectionState == BackendConnectionState.Ready
-            ? ("The local VaultKind engine is responding", "healthy")
-            : ("The local VaultKind engine is not available", "attention"));
+            ? new("The local VaultKind engine is responding", "healthy")
+            : new("The local VaultKind engine is not available", "attention", "VK-0002"));
         checks.Add(OperatingSystem.IsWindows()
-            ? ("Windows desktop compatibility is available", "healthy")
-            : ("VaultKind is not running on its supported Windows desktop platform", "attention"));
+            ? new("Windows desktop compatibility is available", "healthy")
+            : new("VaultKind is not running on its supported Windows desktop platform", "attention", "VK-0002"));
 
         IReadOnlyList<VaultSummary> targets = snapshot.Vaults;
         if (!string.IsNullOrWhiteSpace(doctorFocusVaultId))
@@ -2953,24 +4404,24 @@ public sealed partial class MainPage : Page
 
         if (targets.Count == 0)
         {
-            checks.Add((doctorFocusVaultId is null ? "No vaults are currently configured" : "The selected vault is no longer connected", "information"));
+            checks.Add(new(doctorFocusVaultId is null ? "No vaults are currently configured" : "The selected vault is no longer connected", "information"));
         }
 
         foreach (VaultSummary vault in targets)
         {
             bool pathExists = Directory.Exists(vault.Path);
             checks.Add(pathExists
-                ? ($"{vault.Name}: encrypted storage location is present", "healthy")
-                : ($"{vault.Name}: encrypted storage location could not be found", "attention"));
+                ? new($"{vault.Name}: encrypted storage location is present", "healthy")
+                : new($"{vault.Name}: encrypted storage location could not be found", "attention", "VK-1002"));
 
             bool stateNeedsAttention = vault.State.Equals("missing", StringComparison.OrdinalIgnoreCase)
                 || vault.State.Equals("error", StringComparison.OrdinalIgnoreCase)
                 || vault.State.Contains("missing", StringComparison.OrdinalIgnoreCase);
             checks.Add(stateNeedsAttention
-                ? ($"{vault.Name}: the local engine reports {FriendlyVaultState(vault.State).ToLowerInvariant()}", "attention")
-                : ($"{vault.Name}: vault configuration is available to the local engine", "healthy"));
+                ? new($"{vault.Name}: the local engine reports {FriendlyVaultState(vault.State).ToLowerInvariant()}", "attention", "VK-1003")
+                : new($"{vault.Name}: vault configuration is available to the local engine", "healthy"));
 
-            checks.Add(($"{vault.Name}: currently {FriendlyVaultState(vault.State).ToLowerInvariant()}", "information"));
+            checks.Add(new($"{vault.Name}: currently {FriendlyVaultState(vault.State).ToLowerInvariant()}", "information"));
 
             if (pathExists)
             {
@@ -2983,21 +4434,25 @@ public sealed partial class MainPage : Page
                         if (drive.IsReady)
                         {
                             double freeGigabytes = drive.AvailableFreeSpace / 1024d / 1024d / 1024d;
-                            checks.Add(($"{vault.Name}: {freeGigabytes:N1} GB available on {root}", "information"));
+                            checks.Add(freeGigabytes < 1d
+                                ? new($"{vault.Name}: only {freeGigabytes:N1} GB is available on {root}", "attention", "VK-2002")
+                                : new($"{vault.Name}: {freeGigabytes:N1} GB available on {root}", "information"));
                         }
                     }
                 }
                 catch (IOException)
                 {
-                    checks.Add(($"{vault.Name}: Windows could not read storage capacity", "information"));
+                    checks.Add(new($"{vault.Name}: Windows could not read storage capacity", "information"));
                 }
                 catch (UnauthorizedAccessException)
                 {
-                    checks.Add(($"{vault.Name}: storage capacity is not available to this account", "information"));
+                    checks.Add(new($"{vault.Name}: storage capacity is not available to this account", "information"));
                 }
             }
         }
 
+        latestDoctorChecks = checks.ToList();
+        latestDoctorRunAt = DateTime.Now;
         int healthy = checks.Count(check => check.Kind == "healthy");
         int attention = checks.Count(check => check.Kind == "attention");
         int information = checks.Count(check => check.Kind == "information");
@@ -3007,55 +4462,260 @@ public sealed partial class MainPage : Page
         DoctorSummary.Text = attention == 0
             ? $"Vault Doctor didn't find any issues in the checks it completed at {DateTime.Now:h:mm tt}."
             : $"Vault Doctor found {attention} item{(attention == 1 ? string.Empty : "s")} worth reviewing.";
-        doctorAssistantQuery = checks.FirstOrDefault(check => check.Kind == "attention").Message ?? string.Empty;
+        DoctorCheck? firstFinding = checks.FirstOrDefault(check => check.Kind == "attention");
+        doctorAssistantCaseId = firstFinding?.AssistantCaseId;
+        doctorAssistantEvidence = firstFinding?.Message ?? string.Empty;
         DoctorAssistantButton.Content = attention == 0 ? "Open Assistant" : "Review Finding in Assistant";
+        DoctorSaveReportButton.IsEnabled = true;
 
-        foreach ((string message, string kind) in checks)
+        AddDoctorCheckGroup(checks, "attention", "Needs attention", "!", expandWhenPopulated: true);
+        AddDoctorCheckGroup(checks, "healthy", "Healthy", "✓");
+        AddDoctorCheckGroup(checks, "information", "Information", "ⓘ");
+        QueueTextScaleRefresh();
+    }
+
+    private async void SaveDoctorReport(object sender, RoutedEventArgs e)
+    {
+        if (latestDoctorRunAt is null
+            || latestDoctorChecks.Count == 0
+            || ((App)Application.Current).MainWindow is not Window window)
         {
-            DoctorChecksPanel.Children.Add(CreateDoctorCheckRow(message, kind));
+            return;
         }
+
+        try
+        {
+            FileSavePicker picker = new()
+            {
+                SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+                SuggestedFileName = $"VaultKind-Doctor-Report-{latestDoctorRunAt.Value:yyyyMMdd-HHmm}"
+            };
+            picker.FileTypeChoices.Add("Text document", new List<string> { ".txt" });
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, WinRT.Interop.WindowNative.GetWindowHandle(window));
+            Windows.Storage.StorageFile? file = await picker.PickSaveFileAsync();
+            if (file is null)
+            {
+                return;
+            }
+
+            await Windows.Storage.FileIO.WriteTextAsync(file, BuildDoctorReport());
+            DoctorSaveReportStatus.Text = "Report saved.";
+            DoctorSaveReportStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 81, 212, 120));
+            DoctorSaveReportStatus.Visibility = Visibility.Visible;
+            LogActivity("Doctor report saved", "A local Vault Doctor report was saved without private vault data.", "doctor");
+        }
+        catch (Exception)
+        {
+            DoctorSaveReportStatus.Text = "Could not save report.";
+            DoctorSaveReportStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 102, 93));
+            DoctorSaveReportStatus.Visibility = Visibility.Visible;
+        }
+    }
+
+    private string BuildDoctorReport()
+    {
+        int healthy = latestDoctorChecks.Count(check => check.Kind == "healthy");
+        int attention = latestDoctorChecks.Count(check => check.Kind == "attention");
+        int information = latestDoctorChecks.Count(check => check.Kind == "information");
+        var report = new System.Text.StringBuilder();
+        report.AppendLine("VAULTKIND VAULT DOCTOR REPORT");
+        report.AppendLine("=============================");
+        report.AppendLine($"Completed locally: {latestDoctorRunAt:yyyy-MM-dd h:mm tt}");
+        report.AppendLine($"Scope: {DoctorScope.Text}");
+        report.AppendLine($"Summary: {healthy} healthy, {attention} needs attention, {information} information");
+        report.AppendLine();
+
+        foreach ((string kind, string heading) in new[]
+        {
+            ("attention", "NEEDS ATTENTION"),
+            ("healthy", "HEALTHY"),
+            ("information", "INFORMATION")
+        })
+        {
+            List<DoctorCheck> group = latestDoctorChecks.Where(check => check.Kind == kind).ToList();
+            if (group.Count == 0)
+            {
+                continue;
+            }
+
+            report.AppendLine(heading);
+            foreach (DoctorCheck check in group)
+            {
+                report.AppendLine($"- {check.Message}");
+            }
+            report.AppendLine();
+        }
+
+        report.AppendLine("PRIVACY");
+        report.AppendLine("This report was generated on this computer. It does not contain passwords, recovery keys, file contents, or readable file names.");
+        return report.ToString();
     }
 
     private void OpenDoctorAssistant(object sender, RoutedEventArgs e)
     {
         ShowLearningCenter(sender, e);
         ShowAssistant(sender, e);
-        if (!string.IsNullOrWhiteSpace(doctorAssistantQuery))
+        if (!string.IsNullOrWhiteSpace(doctorAssistantCaseId))
         {
-            AssistantSearch.Text = doctorAssistantQuery;
-            FindAssistantFix(sender, e);
+            AssistantSearch.Text = string.Empty;
+            ShowAssistantCase(doctorAssistantCaseId, 100, $"Vault Doctor observed locally: {doctorAssistantEvidence}");
         }
     }
 
-    private static Border CreateDoctorCheckRow(string message, string kind)
+    private void AddDoctorCheckGroup(
+        IReadOnlyList<DoctorCheck> checks,
+        string kind,
+        string title,
+        string symbol,
+        bool expandWhenPopulated = false)
     {
-        Color foreground = kind switch
+        List<DoctorCheck> matchingChecks = checks.Where(check => check.Kind == kind).ToList();
+        if (matchingChecks.Count == 0)
+        {
+            return;
+        }
+
+        Color accent = kind switch
+        {
+            "healthy" => Color.FromArgb(255, 81, 212, 120),
+            "attention" => Color.FromArgb(255, 255, 193, 7),
+            _ => Color.FromArgb(255, 78, 161, 255)
+        };
+        Color surface = kind switch
+        {
+            "healthy" => Color.FromArgb(255, 31, 58, 43),
+            "attention" => Color.FromArgb(255, 62, 53, 25),
+            _ => Color.FromArgb(255, 41, 58, 74)
+        };
+
+        var details = new StackPanel { Spacing = 8, Margin = new Thickness(0, 4, 0, 4) };
+        foreach (DoctorCheck check in matchingChecks)
+        {
+            details.Children.Add(CreateDoctorCheckRow(check));
+        }
+
+        var header = new Grid { ColumnSpacing = 12 };
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        header.Children.Add(new TextBlock
+        {
+            Text = symbol,
+            Foreground = new SolidColorBrush(accent),
+            FontSize = 19,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        var titleText = new TextBlock
+        {
+            Text = title,
+            FontSize = 17,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(titleText, 1);
+        header.Children.Add(titleText);
+        var count = new Border
+        {
+            Background = new SolidColorBrush(Color.FromArgb(80, accent.R, accent.G, accent.B)),
+            BorderBrush = new SolidColorBrush(accent),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(9, 3, 9, 3),
+            Child = new TextBlock
+            {
+                Text = matchingChecks.Count.ToString(CultureInfo.InvariantCulture),
+                Foreground = new SolidColorBrush(accent),
+                FontSize = 12,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+            }
+        };
+        Grid.SetColumn(count, 2);
+        header.Children.Add(count);
+
+        var expander = new Expander
+        {
+            Header = header,
+            Content = details,
+            IsExpanded = expandWhenPopulated,
+            Background = new SolidColorBrush(surface),
+            BorderBrush = new SolidColorBrush(accent),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(9),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Padding = new Thickness(8, 2, 8, 8)
+        };
+        AutomationProperties.SetName(expander, $"{title}, {matchingChecks.Count} check{(matchingChecks.Count == 1 ? string.Empty : "s")}");
+        DoctorChecksPanel.Children.Add(expander);
+    }
+
+    private Border CreateDoctorCheckRow(DoctorCheck check)
+    {
+        string kind = check.Kind;
+        string message = check.Message;
+        Color foreground = check.Kind switch
         {
             "healthy" => Color.FromArgb(255, 81, 212, 120),
             "attention" => Color.FromArgb(255, 255, 193, 7),
             _ => Color.FromArgb(255, 175, 200, 226)
         };
         string symbol = kind switch { "healthy" => "✓", "attention" => "!", _ => "ⓘ" };
+        var content = new Grid { ColumnSpacing = 14 };
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        content.Children.Add(new TextBlock
+        {
+            Text = $"{symbol}  {message}",
+            Foreground = new SolidColorBrush(foreground),
+            TextWrapping = TextWrapping.Wrap,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        if (kind == "attention" && !string.IsNullOrWhiteSpace(check.AssistantCaseId))
+        {
+            var reviewButton = new Button
+            {
+                Tag = new DoctorAssistantHandoff(check.AssistantCaseId, check.Message, DoctorScope.Text),
+                Content = "Review in Assistant",
+                Padding = new Thickness(13, 7, 13, 7),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            reviewButton.Click += OpenDoctorFindingAssistant;
+            AutomationProperties.SetName(reviewButton, $"Review {check.Message} in VaultKind Assistant");
+            Grid.SetColumn(reviewButton, 1);
+            content.Children.Add(reviewButton);
+        }
+
         return new Border
         {
-            Background = new SolidColorBrush(kind == "information" ? Color.FromArgb(255, 41, 58, 74) : Color.FromArgb(255, 41, 46, 49)),
-            BorderBrush = new SolidColorBrush(kind == "information" ? Color.FromArgb(255, 54, 125, 194) : Color.FromArgb(0, 0, 0, 0)),
-            BorderThickness = kind == "information" ? new Thickness(1) : new Thickness(0),
+            Background = new SolidColorBrush(Color.FromArgb(150, 31, 35, 37)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0)),
+            BorderThickness = new Thickness(0),
             CornerRadius = new CornerRadius(7),
             Padding = new Thickness(14, 11, 14, 11),
-            Child = new TextBlock
-            {
-                Text = $"{symbol}  {message}",
-                Foreground = new SolidColorBrush(foreground),
-                TextWrapping = TextWrapping.Wrap
-            }
+            Child = content
         };
+    }
+
+    private void OpenDoctorFindingAssistant(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: DoctorAssistantHandoff handoff })
+        {
+            return;
+        }
+
+        doctorAssistantCaseId = handoff.CaseId;
+        doctorAssistantEvidence = handoff.Evidence;
+        ShowLearningCenter(sender, e);
+        ShowAssistant(sender, e);
+        AssistantSearch.Text = string.Empty;
+        string evidence = $"Vault Doctor observed this during a local, read-only check:\n{handoff.Evidence}\nReport scope: {handoff.Scope}";
+        ShowAssistantCase(handoff.CaseId, 100, evidence);
     }
 
     private void SelectSidebarDestination(Button selected, string selectedName)
     {
-        var blue = new SolidColorBrush(Color.FromArgb(255, 78, 161, 255));
-        selected.Background = new SolidColorBrush(Color.FromArgb(255, 58, 66, 72));
+        SolidColorBrush blue = PaletteBrush("BrandBlueBrush");
+        selected.Background = PaletteBrush("SelectedSurfaceBrush");
         selected.BorderBrush = blue;
         selected.BorderThickness = new Thickness(3, 0, 0, 0);
         SetContentForeground(selected, blue);
@@ -3075,6 +4735,7 @@ public sealed partial class MainPage : Page
             activityHistory.RemoveRange(0, activityHistory.Count - 500);
         }
         SaveActivityHistory();
+        UpdateDashboardRecentActivity();
         if (ActivityView.Visibility == Visibility.Visible)
         {
             RenderActivity();
@@ -3084,123 +4745,273 @@ public sealed partial class MainPage : Page
     private void RenderActivity()
     {
         ActivityEventsPanel.Children.Clear();
-        List<SessionActivity> visibleActivity = activityHistory
-            .Where(activity => selectedActivityCategory == "all" || ActivitySectionFor(activity.Category) == selectedActivityCategory)
+        ClearActivityButton.IsEnabled = activityHistory.Count > 0;
+        string query = ActivitySearchInput.Text.Trim();
+        List<SessionActivity> matchingActivity = activityHistory
+            .Where(activity => ActivityMatchesSearch(activity, query))
+            .ToList();
+        bool searching = query.Length > 0;
+
+        ActivityFilterSummary.Text = searching
+            ? $"{matchingActivity.Count} of {activityHistory.Count} matching"
+            : $"{activityHistory.Count} event{(activityHistory.Count == 1 ? string.Empty : "s")} recorded";
+        ActivityEmptyState.Visibility = matchingActivity.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        ActivityEventsPanel.Visibility = matchingActivity.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
+        ActivityEmptyTitle.Text = activityHistory.Count == 0 ? "No activity yet" : "No matching activity";
+        ActivityEmptyDescription.Text = activityHistory.Count == 0
+            ? "Important vault, recovery, password, and Doctor actions will appear here."
+            : "Try a vault name, action, or a word from the activity description.";
+
+        AddActivityCategoryGroup("vaults", "Vaults", "\uE8B7", Color.FromArgb(255, 78, 161, 255), matchingActivity, !searching, searching);
+        AddActivityCategoryGroup("recovery", "Recovery", "\uE8D7", Color.FromArgb(255, 73, 205, 112), matchingActivity, !searching, searching);
+        AddActivityCategoryGroup("passwords", "Passwords", "\uE72E", Color.FromArgb(255, 224, 171, 52), matchingActivity, !searching, searching);
+        AddActivityCategoryGroup("doctor", "Doctor", "\uE95E", Color.FromArgb(255, 78, 161, 255), matchingActivity, !searching, searching);
+        QueueTextScaleRefresh();
+    }
+
+    private void UpdateDashboardRecentActivity()
+    {
+        if (DashboardRecentActivityTitle is null)
+        {
+            return;
+        }
+
+        SessionActivity? latest = activityHistory.LastOrDefault();
+        if (latest is null)
+        {
+            DashboardRecentActivityIcon.Glyph = "\uE7ED";
+            DashboardRecentActivityTitle.Text = RecordActivityHistoryToggle?.IsOn == false
+                ? "Activity history is paused"
+                : "No activity recorded yet";
+            DashboardRecentActivityDescription.Text = RecordActivityHistoryToggle?.IsOn == false
+                ? "Turn local Activity history on in Settings to record future VaultKind actions."
+                : "Important vault, recovery, password, and Doctor actions will appear here.";
+            DashboardRecentActivityTime.Text = string.Empty;
+            DashboardRecentActivityButton.IsEnabled = false;
+            DashboardRecentActivityButton.Tag = null;
+            return;
+        }
+
+        string section = ActivitySectionFor(latest.Category);
+        DashboardRecentActivityIcon.Glyph = section switch
+        {
+            "recovery" => "\uE8D7",
+            "passwords" => "\uE72E",
+            "doctor" => "\uE95E",
+            _ => "\uE8B7"
+        };
+        DashboardRecentActivityTitle.Text = latest.Title;
+        DashboardRecentActivityDescription.Text = latest.Detail;
+        DashboardRecentActivityTime.Text = latest.Timestamp.Date == DateTime.Today
+            ? latest.Timestamp.ToString("h:mm tt")
+            : latest.Timestamp.ToString("MMM d, h:mm tt");
+        DashboardRecentActivityButton.IsEnabled = true;
+        DashboardRecentActivityButton.Tag = section;
+        AutomationProperties.SetName(DashboardRecentActivityButton, $"View {ActivityCategoryLabel(section)} activity. Latest: {latest.Title}");
+    }
+
+    private void SearchActivityHistory(object sender, TextChangedEventArgs e) => RenderActivity();
+
+    private static bool ActivityMatchesSearch(SessionActivity activity, string query)
+    {
+        if (query.Length == 0)
+        {
+            return true;
+        }
+
+        return activity.Title.Contains(query, StringComparison.OrdinalIgnoreCase)
+            || activity.Detail.Contains(query, StringComparison.OrdinalIgnoreCase)
+            || ActivityCategoryLabel(ActivitySectionFor(activity.Category)).Contains(query, StringComparison.OrdinalIgnoreCase)
+            || activity.Timestamp.ToString("dddd, MMMM d, yyyy h:mm tt").Contains(query, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void AddActivityCategoryGroup(string category, string title, string glyph, Color accent, IEnumerable<SessionActivity> source, bool includeEmpty, bool expandMatches)
+    {
+        List<SessionActivity> events = source
+            .Where(activity => ActivitySectionFor(activity.Category) == category)
             .Reverse()
             .ToList();
 
-        UpdateActivityCategoryButtons();
-        ActivityEmptyState.Visibility = visibleActivity.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        ActivityEventsPanel.Visibility = visibleActivity.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
-        ActivityFilterSummary.Text = selectedActivityCategory switch
+        if (events.Count == 0 && !includeEmpty)
         {
-            "vaults" => $"Showing {visibleActivity.Count} vault event{(visibleActivity.Count == 1 ? string.Empty : "s")}",
-            "recovery" => $"Showing {visibleActivity.Count} recovery event{(visibleActivity.Count == 1 ? string.Empty : "s")}",
-            "passwords" => $"Showing {visibleActivity.Count} password event{(visibleActivity.Count == 1 ? string.Empty : "s")}",
-            "doctor" => $"Showing {visibleActivity.Count} Vault Doctor event{(visibleActivity.Count == 1 ? string.Empty : "s")}",
-            _ => $"Showing all {visibleActivity.Count} event{(visibleActivity.Count == 1 ? string.Empty : "s")}"
-        };
-        ActivityEmptyTitle.Text = selectedActivityCategory == "all"
-            ? "No activity yet"
-            : $"No {ActivityCategoryLabel(selectedActivityCategory).ToLowerInvariant()} activity yet";
-        ActivityEmptyDescription.Text = selectedActivityCategory switch
-        {
-            "vaults" => "Creating, connecting, unlocking, locking, renaming, and removing vaults will appear here.",
-            "recovery" => "Recovery-key and restored-access events will appear here.",
-            "passwords" => "Successful vault password changes will appear here. Passwords themselves are never recorded.",
-            "doctor" => "Completed Vault Doctor checks will appear here as the diagnostic history grows.",
-            _ => "Important vault, recovery, password, and Doctor actions will appear here."
-        };
-
-        foreach (SessionActivity activity in visibleActivity)
-        {
-            (string glyph, Color color) = activity.Category switch
-            {
-                "unlock" => ("\uE785", Color.FromArgb(255, 73, 205, 112)),
-                "lock" => ("\uE72E", Color.FromArgb(255, 78, 161, 255)),
-                "create" => ("\uE710", Color.FromArgb(255, 78, 161, 255)),
-                "connect" => ("\uE8B7", Color.FromArgb(255, 78, 161, 255)),
-                "recovery" => ("\uE8D7", Color.FromArgb(255, 73, 205, 112)),
-                "remove" => ("\uE74D", Color.FromArgb(255, 174, 183, 190)),
-                _ => ("\uE7ED", Color.FromArgb(255, 78, 161, 255))
-            };
-
-            var grid = new Grid { ColumnSpacing = 15 };
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            var iconBorder = new Border
-            {
-                Width = 44,
-                Height = 44,
-                CornerRadius = new CornerRadius(22),
-                Background = new SolidColorBrush(Color.FromArgb(255, 45, 52, 57)),
-                Child = new FontIcon { Glyph = glyph, FontSize = 20, Foreground = new SolidColorBrush(color) }
-            };
-
-            var text = new StackPanel { Spacing = 3, VerticalAlignment = VerticalAlignment.Center };
-            text.Children.Add(new TextBlock { Text = activity.Title, FontSize = 17, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
-            text.Children.Add(new TextBlock
-            {
-                Text = activity.Detail,
-                FontSize = 13,
-                Foreground = new SolidColorBrush(Color.FromArgb(255, 174, 183, 190)),
-                TextWrapping = TextWrapping.Wrap
-            });
-            Grid.SetColumn(text, 1);
-
-            var time = new TextBlock
-            {
-                Text = activity.Timestamp.ToString("h:mm tt"),
-                FontSize = 12,
-                Foreground = new SolidColorBrush(Color.FromArgb(255, 146, 156, 163)),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            Grid.SetColumn(time, 2);
-
-            grid.Children.Add(iconBorder);
-            grid.Children.Add(text);
-            grid.Children.Add(time);
-
-            var card = new Border
-            {
-                Background = new SolidColorBrush(Color.FromArgb(255, 58, 66, 72)),
-                BorderBrush = new SolidColorBrush(Color.FromArgb(255, 82, 93, 101)),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(10),
-                Padding = new Thickness(18, 14, 18, 14),
-                Child = grid
-            };
-            AutomationProperties.SetName(card, $"{activity.Title}. {activity.Detail}. {activity.Timestamp:h:mm tt}");
-            ActivityEventsPanel.Children.Add(card);
+            return;
         }
+
+        var content = new StackPanel { Spacing = 10, Padding = new Thickness(4, 8, 4, 4) };
+        if (events.Count == 0)
+        {
+            content.Children.Add(new TextBlock
+            {
+                Text = category switch
+                {
+                    "vaults" => "No vault activity has been recorded yet.",
+                    "recovery" => "No recovery activity has been recorded yet.",
+                    "passwords" => "No password activity has been recorded yet. Passwords themselves are never recorded.",
+                    _ => "No Vault Doctor activity has been recorded yet."
+                },
+                Foreground = PaletteBrush("MutedTextBrush"),
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(8, 4, 8, 8)
+            });
+        }
+        else
+        {
+            foreach (IGrouping<DateTime, SessionActivity> day in events.GroupBy(activity => activity.Timestamp.Date))
+            {
+                content.Children.Add(new TextBlock
+                {
+                    Text = ActivityDayLabel(day.Key),
+                    FontSize = 13,
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Foreground = PaletteBrush("MutedTextBrush"),
+                    Margin = new Thickness(8, content.Children.Count == 0 ? 2 : 12, 8, 0)
+                });
+
+                foreach (SessionActivity activity in day)
+                {
+                    content.Children.Add(CreateActivityEventCard(activity));
+                }
+            }
+        }
+
+        var header = new Grid { ColumnSpacing = 12 };
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        header.Children.Add(new FontIcon
+        {
+            Glyph = glyph,
+            FontSize = 19,
+            Foreground = new SolidColorBrush(accent),
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        var titleBlock = new TextBlock
+        {
+            Text = title,
+            FontSize = 19,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(titleBlock, 1);
+        header.Children.Add(titleBlock);
+        var countBadge = new Border
+        {
+            MinWidth = 38,
+            Padding = new Thickness(10, 4, 10, 4),
+            CornerRadius = new CornerRadius(14),
+            Background = PaletteBrush("SubtleBadgeBrush"),
+            BorderBrush = new SolidColorBrush(accent),
+            BorderThickness = new Thickness(1),
+            Child = new TextBlock
+            {
+                Text = events.Count.ToString(),
+                Foreground = new SolidColorBrush(accent),
+                HorizontalAlignment = HorizontalAlignment.Center
+            }
+        };
+        Grid.SetColumn(countBadge, 2);
+        header.Children.Add(countBadge);
+
+        var expander = new Expander
+        {
+            Header = header,
+            Content = content,
+            IsExpanded = expandMatches ? events.Count > 0 : expandedActivityCategories.Contains(category),
+            Tag = category,
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+        expander.Expanding += (_, _) => expandedActivityCategories.Add(category);
+        expander.Collapsed += (_, _) => expandedActivityCategories.Remove(category);
+        AutomationProperties.SetName(expander, $"{title}, {events.Count} event{(events.Count == 1 ? string.Empty : "s")}");
+
+        ActivityEventsPanel.Children.Add(new Border
+        {
+            Background = PaletteBrush("CardBrush"),
+            BorderBrush = new SolidColorBrush(accent),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(14, 8, 14, 8),
+            Child = expander
+        });
     }
 
-    private void UpdateActivityCategoryButtons()
+    private static string ActivityDayLabel(DateTime date)
     {
-        Button[] buttons = [ActivityAllButton, ActivityVaultsButton, ActivityRecoveryButton, ActivityPasswordsButton, ActivityDoctorButton];
-        foreach (Button button in buttons)
+        DateTime today = DateTime.Today;
+        if (date == today)
         {
-            string category = button.Tag as string ?? "all";
-            int count = category == "all"
-                ? activityHistory.Count
-                : activityHistory.Count(activity => ActivitySectionFor(activity.Category) == category);
-            button.Content = $"{ActivityCategoryLabel(category)}  {count}";
-
-            bool selected = category == selectedActivityCategory;
-            button.Background = new SolidColorBrush(selected
-                ? Color.FromArgb(255, 45, 63, 78)
-                : Color.FromArgb(255, 45, 50, 53));
-            button.BorderBrush = new SolidColorBrush(selected
-                ? Color.FromArgb(255, 78, 161, 255)
-                : Color.FromArgb(255, 82, 93, 101));
-            button.BorderThickness = new Thickness(selected ? 2 : 1);
-            button.Foreground = new SolidColorBrush(selected
-                ? Color.FromArgb(255, 78, 161, 255)
-                : Color.FromArgb(255, 236, 239, 241));
-            AutomationProperties.SetName(button, $"{ActivityCategoryLabel(category)}, {count} events{(selected ? ", selected" : string.Empty)}");
+            return "TODAY";
         }
+
+        if (date == today.AddDays(-1))
+        {
+            return "YESTERDAY";
+        }
+
+        return date.ToString("dddd, MMMM d, yyyy").ToUpperInvariant();
+    }
+
+    private Border CreateActivityEventCard(SessionActivity activity)
+    {
+        (string glyph, Color color) = activity.Category switch
+        {
+            "unlock" => ("\uE785", Color.FromArgb(255, 73, 205, 112)),
+            "lock" => ("\uE72E", Color.FromArgb(255, 78, 161, 255)),
+            "create" => ("\uE710", Color.FromArgb(255, 78, 161, 255)),
+            "connect" => ("\uE8B7", Color.FromArgb(255, 78, 161, 255)),
+            "recovery" => ("\uE8D7", Color.FromArgb(255, 73, 205, 112)),
+            "security" => ("\uE72E", Color.FromArgb(255, 224, 171, 52)),
+            "doctor" => ("\uE95E", Color.FromArgb(255, 78, 161, 255)),
+            "remove" => ("\uE74D", Color.FromArgb(255, 174, 183, 190)),
+            _ => ("\uE7ED", Color.FromArgb(255, 78, 161, 255))
+        };
+
+        var grid = new Grid { ColumnSpacing = 15 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.Children.Add(new Border
+        {
+            Width = 44,
+            Height = 44,
+            CornerRadius = new CornerRadius(22),
+            Background = PaletteBrush("SubtleBadgeBrush"),
+            Child = new FontIcon { Glyph = glyph, FontSize = 20, Foreground = new SolidColorBrush(color) }
+        });
+
+        var text = new StackPanel { Spacing = 3, VerticalAlignment = VerticalAlignment.Center };
+        text.Children.Add(new TextBlock { Text = activity.Title, FontSize = 17, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
+        text.Children.Add(new TextBlock
+        {
+            Text = activity.Detail,
+            FontSize = 13,
+            Foreground = PaletteBrush("MutedTextBrush"),
+            TextWrapping = TextWrapping.Wrap
+        });
+        Grid.SetColumn(text, 1);
+        grid.Children.Add(text);
+
+        var time = new TextBlock
+        {
+            Text = activity.Timestamp.ToString("h:mm tt"),
+            FontSize = 12,
+            Foreground = PaletteBrush("MutedTextBrush"),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(time, 2);
+        grid.Children.Add(time);
+
+        var card = new Border
+        {
+            Background = PaletteBrush("ListSurfaceStrongBrush"),
+            BorderBrush = PaletteBrush("CardBorderBrush"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(16, 12, 16, 12),
+            Child = grid
+        };
+        AutomationProperties.SetName(card, $"{activity.Title}. {activity.Detail}. {activity.Timestamp:h:mm tt}");
+        return card;
     }
 
     private static string ActivitySectionFor(string category) => category switch
@@ -3251,6 +5062,8 @@ public sealed partial class MainPage : Page
         {
             // Activity is optional and must never prevent VaultKind from starting.
         }
+
+        UpdateDashboardRecentActivity();
     }
 
     private void SaveActivityHistory()
@@ -3280,8 +5093,8 @@ public sealed partial class MainPage : Page
 
     private void SetSelectedDestination(Button selected, Button unselected, string selectedName)
     {
-        var blue = new SolidColorBrush(Color.FromArgb(255, 78, 161, 255));
-        selected.Background = new SolidColorBrush(Color.FromArgb(255, 58, 66, 72));
+        SolidColorBrush blue = PaletteBrush("BrandBlueBrush");
+        selected.Background = PaletteBrush("SelectedSurfaceBrush");
         selected.BorderBrush = blue;
         selected.BorderThickness = new Thickness(3, 0, 0, 0);
         SetContentForeground(selected, blue);
@@ -3290,12 +5103,12 @@ public sealed partial class MainPage : Page
         SetDestinationUnselected(unselected, unselected == DashboardButton ? "Dashboard" : "Vault Doctor");
     }
 
-    private static void SetDestinationUnselected(Button button, string name)
+    private void SetDestinationUnselected(Button button, string name)
     {
         button.Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
         button.BorderBrush = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
         button.BorderThickness = new Thickness(0);
-        SetContentForeground(button, new SolidColorBrush(Color.FromArgb(255, 255, 255, 255)));
+        SetContentForeground(button, PaletteBrush("PrimaryTextBrush"));
         AutomationProperties.SetName(button, name);
     }
 
@@ -3339,5 +5152,11 @@ public sealed partial class MainPage : Page
     }
 
     private sealed record SessionActivity(DateTime Timestamp, string Title, string Detail, string Category);
+    private sealed record DoctorCheck(string Message, string Kind, string? AssistantCaseId = null);
+    private sealed record DoctorAssistantHandoff(string CaseId, string Evidence, string Scope);
     private sealed record AssistantCase(string Id, string Category, string Title, string Cause, string Checks, string Fix, string Keywords);
+    private sealed record LearningDestination(string Topic, string Section);
+    private sealed record LearningArticle(string Introduction, IReadOnlyList<LearningSection> Sections, string Tip);
+    private sealed record LearningSection(string Title, string Body);
+    private sealed record LearningSectionViewEntry(LearningSection Section, string Category, Button Button, TextBlock Answer, FontIcon Chevron, bool IsHighlightedAnswer);
 }

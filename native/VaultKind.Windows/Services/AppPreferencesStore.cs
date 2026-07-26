@@ -4,7 +4,10 @@ namespace VaultKind_Windows.Services;
 
 internal sealed record AppPreferences(
     bool RememberWindowPlacement = true,
-    bool RecordActivityHistory = true);
+    bool RecordActivityHistory = true,
+    string AppearanceMode = "dark",
+    bool UseLargerText = false,
+    string LanguageCode = "system");
 
 internal static class AppPreferencesStore
 {

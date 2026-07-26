@@ -1,5 +1,7 @@
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Windowing;
+using Windows.UI;
 using Windows.Graphics;
 using VaultKind_Windows.Services;
 
@@ -34,6 +36,17 @@ public sealed partial class MainWindow : Window
 
         // Navigate the root frame to the main page on startup.
         RootFrame.Navigate(typeof(MainPage));
+        ApplyAppearance(string.Equals(AppPreferencesStore.Load().AppearanceMode, "light", StringComparison.OrdinalIgnoreCase));
+    }
+
+    internal void ApplyAppearance(bool useLightMode)
+    {
+        ElementTheme theme = useLightMode ? ElementTheme.Light : ElementTheme.Dark;
+        RootFrame.RequestedTheme = theme;
+        AppTitleBar.RequestedTheme = theme;
+        AppTitleBar.Background = new SolidColorBrush(useLightMode
+            ? Color.FromArgb(255, 242, 244, 246)
+            : Color.FromArgb(255, 29, 32, 34));
     }
 
     private void EnsureContentKeyboardFocus(object sender, WindowActivatedEventArgs args)

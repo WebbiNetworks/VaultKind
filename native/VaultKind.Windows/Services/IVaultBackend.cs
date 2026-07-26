@@ -16,6 +16,8 @@ internal interface IVaultBackend
     Task<VaultCommandResult> ResetPasswordAsync(string vaultId, string recoveryKey, string newPassword, CancellationToken cancellationToken = default);
     Task<VaultCreateResult> CreateAsync(string path, string password, bool createRecoveryKey, bool useShortNames, CancellationToken cancellationToken = default);
     Task<VaultCreateResult> ConnectAsync(string path, CancellationToken cancellationToken = default);
+    Task<MountSettingsResult> GetMountSettingsAsync(CancellationToken cancellationToken = default);
+    Task<MountSettingsResult> SetMountServiceAsync(string mountServiceId, CancellationToken cancellationToken = default);
 }
 
 internal enum BackendConnectionState
@@ -37,6 +39,10 @@ internal sealed record VaultStatisticsResult(bool Succeeded, string? Error, Vaul
 internal sealed record FileNameDecryptResult(bool Succeeded, string? Error, FileNameMapping? Mapping);
 
 internal sealed record FileNameMapping(string EncryptedName, string CleartextName);
+
+internal sealed record MountServiceOption(string Id, string Name, bool MountPoint, bool DriveLetter, bool LoopbackPort, bool MountFlags, bool ReadOnly);
+
+internal sealed record MountSettingsResult(bool Succeeded, string? Error, string? SelectedMountService, IReadOnlyList<MountServiceOption> MountServices);
 
 internal sealed record VaultStatistics(
     long BytesPerSecondRead,

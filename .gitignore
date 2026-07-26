@@ -11,3 +11,7 @@ pom.xml.versionsBackup
 
 # Java Crash Logs
 hs_err_pid*.log
+
+# Local review and generated media artifacts
+artifacts/
+.codex-video-*/

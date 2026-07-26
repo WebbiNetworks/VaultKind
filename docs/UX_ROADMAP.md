@@ -1,38 +1,44 @@
 # VaultKind UX Roadmap
 
-This file records agreed future UX ideas that are intentionally outside the current implementation milestone.
+This file records the current native-shell UX state and the agreed ideas that remain outside the current implementation milestone.
 
 All roadmap work follows the product direction in [PRODUCT_PHILOSOPHY.md](PRODUCT_PHILOSOPHY.md): **Desktop First. Windows Focused. Privacy Always.** Windows is the sole supported platform, and cross-platform parity is not a roadmap objective.
 
-## Learning Center
+## Learning Center — implemented in the native shell
 
-Evolve the current Help area into a **Learning Center** that supports guided, self-paced onboarding.
+VaultKind now includes a **Learning Center** that supports guided, self-paced onboarding.
 
-- Rename the Help sidebar heading from **Learn** to **Learning Center**.
-- Add a search field inside the Learning Center so users can quickly find guidance by topic or terminology.
-- Show a completion checkmark beside each topic after the user opens it, treating that topic as read or learned.
-- Keep progress lightweight and local to the device; it should guide users without blocking access to any topic.
-- Provide a way to revisit completed topics and, if useful, reset learning progress.
-- Preserve accessible contrast and ensure completion is communicated by text or state as well as color.
+- The main sidebar opens the Learning Center directly, and `/` provides a keyboard shortcut from anywhere outside an input field.
+- Search matches both headings and the detailed text inside each chapter.
+- Topic progress is lightweight, local to the device, and can be reset.
+- Detailed guidance is progressively disclosed one answer at a time instead of becoming a long manual page.
+- Contextual Assistant links open and strongly highlight the exact relevant answer.
+- An open answer can be copied or saved as a focused plain-text guide without including vault state or private vault data.
+- Completion and selection use text, icons, borders, and contrast rather than color alone.
 
-### VaultKind Assistant — Troubleshooter
+### VaultKind Assistant — implemented foundation
 
-Add an optional assistant inside the Learning Center that helps users understand errors and safely troubleshoot common VaultKind problems.
+The optional Assistant inside the Learning Center helps users understand errors and safely troubleshoot common VaultKind problems.
 
-- Explain errors in plain language and recommend clear next steps.
-- Use the current screen, vault state, and locally available diagnostic information only with explicit user consent.
-- Never read or transmit vault contents, passwords, recovery keys, master keys, or decrypted file names.
-- Keep troubleshooting entirely local and deterministic.
-- Present only reviewed product guidance and link to the relevant Learning Center topic.
-- Require confirmation before performing any action that changes vault settings, files, or system configuration.
-- Remain optional and never depend on an online service.
+- It explains reviewed diagnostic cases in plain language and recommends clear next steps.
+- Search and case filtering are instant, local, and deterministic.
+- It never reads or transmits vault contents, passwords, recovery keys, master keys, or decrypted file names.
+- Each case links to the strongest matching Learning Center answer.
+- Actionable Vault Doctor findings can open their exact Assistant case with the finding and report scope carried forward as local evidence.
+- It performs no repair automatically and never depends on an online service.
 
 Current topic set:
 
 - How VaultKind Works
-- Creating Your First Vault
+- Your First Vault
 - Recovery Keys
 - Cloud Storage
 - Virtual Drives
 - Security Tips
-- Frequently Asked Questions
+- FAQ
+
+### Next Learning Center milestones
+
+- Grow the reviewed diagnostic catalogue when real, reproducible Windows failures are found; do not add speculative cases simply to increase the count.
+- Consider optional Windows printing for selected guidance if it adds value beyond the implemented copy and plain-text export actions.
+- Continue accessibility review at minimum supported window sizes and increased Windows text scaling.

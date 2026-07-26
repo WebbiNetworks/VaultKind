@@ -13,35 +13,37 @@ public class NativeUiProtocol {
 
 	public static final int VERSION = 1;
 	public static final int MAX_MESSAGE_BYTES = 64 * 1024;
-	public static final List<String> CAPABILITIES = List.of("vault.list", "vault.unlock", "vault.lock", "vault.reveal", "vault.remove", "vault.rename", "vault.stats", "vault.locate_encrypted", "vault.decrypt_filename", "vault.create", "vault.connect", "vault.reset_password", "vault.change_password", "vault.show_recovery_key", "backend.shutdown");
+	public static final List<String> CAPABILITIES = List.of("vault.list", "vault.unlock", "vault.lock", "vault.reveal", "vault.remove", "vault.rename", "vault.stats", "vault.locate_encrypted", "vault.decrypt_filename", "vault.create", "vault.connect", "vault.reset_password", "vault.change_password", "vault.show_recovery_key", "settings.mount.list", "settings.mount.select", "backend.shutdown");
 	private final ObjectMapper objectMapper;
 	private final VaultSummarySource vaultSummarySource;
 	private final VaultCommandSource vaultCommandSource;
 	private final VaultCreateSource vaultCreateSource;
 	private final VaultConnectSource vaultConnectSource;
 	private final ShutdownSource shutdownSource;
+	private final MountSettingsSource mountSettingsSource;
 	private final NativeBackendTerminator terminator;
 
 	@Inject
-	public NativeUiProtocol(VaultListSnapshotProvider vaultListSnapshotProvider, NativeVaultOperations vaultOperations, NativeVaultCreator vaultCreator, NativeBackendTerminator terminator) {
-		this(new ObjectMapper(), vaultListSnapshotProvider::get, vaultOperations::execute, vaultCreator::create, vaultCreator::connect, vaultOperations::lockAll, terminator);
+	public NativeUiProtocol(VaultListSnapshotProvider vaultListSnapshotProvider, NativeVaultOperations vaultOperations, NativeVaultCreator vaultCreator, NativeMountSettings mountSettings, NativeBackendTerminator terminator) {
+		this(new ObjectMapper(), vaultListSnapshotProvider::get, vaultOperations::execute, vaultCreator::create, vaultCreator::connect, vaultOperations::lockAll, (operation, serviceId) -> "settings.mount.select".equals(operation) ? mountSettings.select(serviceId) : mountSettings.get(), terminator);
 	}
 
 	NativeUiProtocol(ObjectMapper objectMapper, VaultSummarySource vaultSummarySource) {
-		this(objectMapper, vaultSummarySource, (operation, vaultId, password, recoveryKey, newPassword, displayName, vaultPath) -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), (path, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), path -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), () -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), new NativeBackendTerminator());
+		this(objectMapper, vaultSummarySource, (operation, vaultId, password, recoveryKey, newPassword, displayName, vaultPath) -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), (path, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), path -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), () -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), (operation, serviceId) -> new NativeMountSettings.NativeMountSettingsResult(false, "unsupported_operation", null, List.of()), new NativeBackendTerminator());
 	}
 
 	NativeUiProtocol(ObjectMapper objectMapper, VaultSummarySource vaultSummarySource, VaultCommandSource vaultCommandSource) {
-		this(objectMapper, vaultSummarySource, vaultCommandSource, (path, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), path -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), () -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), new NativeBackendTerminator());
+		this(objectMapper, vaultSummarySource, vaultCommandSource, (path, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), path -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), () -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), (operation, serviceId) -> new NativeMountSettings.NativeMountSettingsResult(false, "unsupported_operation", null, List.of()), new NativeBackendTerminator());
 	}
 
-	NativeUiProtocol(ObjectMapper objectMapper, VaultSummarySource vaultSummarySource, VaultCommandSource vaultCommandSource, VaultCreateSource vaultCreateSource, VaultConnectSource vaultConnectSource, ShutdownSource shutdownSource, NativeBackendTerminator terminator) {
+	NativeUiProtocol(ObjectMapper objectMapper, VaultSummarySource vaultSummarySource, VaultCommandSource vaultCommandSource, VaultCreateSource vaultCreateSource, VaultConnectSource vaultConnectSource, ShutdownSource shutdownSource, MountSettingsSource mountSettingsSource, NativeBackendTerminator terminator) {
 		this.objectMapper = objectMapper;
 		this.vaultSummarySource = vaultSummarySource;
 		this.vaultCommandSource = vaultCommandSource;
 		this.vaultCreateSource = vaultCreateSource;
 		this.vaultConnectSource = vaultConnectSource;
 		this.shutdownSource = shutdownSource;
+		this.mountSettingsSource = mountSettingsSource;
 		this.terminator = terminator;
 	}
 
@@ -64,6 +66,9 @@ public class NativeUiProtocol {
 		} else if ("vault.connect".equals(request.operation())) {
 			var result = vaultConnectSource.connect(request.vaultPath());
 			response = result.ok() ? NativeUiResponse.created(request.requestId(), result.state(), result.vaultId(), null) : NativeUiResponse.error(request.requestId(), result.error());
+		} else if ("settings.mount.list".equals(request.operation()) || "settings.mount.select".equals(request.operation())) {
+			var result = mountSettingsSource.execute(request.operation(), request.mountService());
+			response = result.ok() ? NativeUiResponse.mountSettings(request.requestId(), result.selectedMountService(), result.mountServices()) : NativeUiResponse.error(request.requestId(), result.error());
 		} else if ("backend.shutdown".equals(request.operation())) {
 			var result = shutdownSource.lockAll();
 			response = result.ok() ? NativeUiResponse.command(request.requestId(), result.state()) : NativeUiResponse.error(request.requestId(), result.error());
@@ -95,28 +100,28 @@ public class NativeUiProtocol {
 		out.flush();
 	}
 
-	public record NativeUiRequest(int protocol, String requestId, String operation, String vaultId, char[] password, char[] recoveryKey, char[] newPassword, String displayName, String vaultPath, boolean createRecoveryKey, boolean useShortNames) {
+	public record NativeUiRequest(int protocol, String requestId, String operation, String vaultId, char[] password, char[] recoveryKey, char[] newPassword, String displayName, String vaultPath, boolean createRecoveryKey, boolean useShortNames, String mountService) {
 		public NativeUiRequest(int protocol, String requestId, String operation) {
-			this(protocol, requestId, operation, null, null, null, null, null, null, false, false);
+			this(protocol, requestId, operation, null, null, null, null, null, null, false, false, null);
 		}
 
 		public NativeUiRequest(int protocol, String requestId, String operation, String vaultId, char[] password) {
-			this(protocol, requestId, operation, vaultId, password, null, null, null, null, false, false);
+			this(protocol, requestId, operation, vaultId, password, null, null, null, null, false, false, null);
 		}
 	}
 
-	public record NativeUiResponse(int protocol, String requestId, boolean ok, String backend, String error, List<VaultSummary> vaults, String state, String vaultId, String recoveryKey, org.cryptomator.common.vaults.VaultStats.NativeSnapshot statistics, NativeVaultOperations.FileNameMapping fileNameMapping, List<String> capabilities) {
+	public record NativeUiResponse(int protocol, String requestId, boolean ok, String backend, String error, List<VaultSummary> vaults, String state, String vaultId, String recoveryKey, org.cryptomator.common.vaults.VaultStats.NativeSnapshot statistics, NativeVaultOperations.FileNameMapping fileNameMapping, List<String> capabilities, String selectedMountService, List<NativeMountSettings.NativeMountService> mountServices) {
 
 		static NativeUiResponse hello(String requestId) {
-			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, null, null, null, null, null, CAPABILITIES);
+			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, null, null, null, null, null, CAPABILITIES, null, null);
 		}
 
 		static NativeUiResponse vaultList(String requestId, List<VaultSummary> vaults) {
-			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, List.copyOf(vaults), null, null, null, null, null, null);
+			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, List.copyOf(vaults), null, null, null, null, null, null, null, null);
 		}
 
 		static NativeUiResponse command(String requestId, String state) {
-			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, state, null, null, null, null, null);
+			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, state, null, null, null, null, null, null, null);
 		}
 
 		static NativeUiResponse command(String requestId, String state, String recoveryKey) {
@@ -124,15 +129,19 @@ public class NativeUiProtocol {
 		}
 
 		static NativeUiResponse command(String requestId, String state, String recoveryKey, org.cryptomator.common.vaults.VaultStats.NativeSnapshot statistics, NativeVaultOperations.FileNameMapping fileNameMapping) {
-			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, state, null, recoveryKey, statistics, fileNameMapping, null);
+			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, state, null, recoveryKey, statistics, fileNameMapping, null, null, null);
 		}
 
 		static NativeUiResponse created(String requestId, String state, String vaultId, String recoveryKey) {
-			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, state, vaultId, recoveryKey, null, null, null);
+			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, state, vaultId, recoveryKey, null, null, null, null, null);
+		}
+
+		static NativeUiResponse mountSettings(String requestId, String selectedMountService, List<NativeMountSettings.NativeMountService> mountServices) {
+			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, null, null, null, null, null, null, selectedMountService, List.copyOf(mountServices));
 		}
 
 		static NativeUiResponse error(String requestId, String error) {
-			return new NativeUiResponse(VERSION, requestId, false, null, error, null, null, null, null, null, null, null);
+			return new NativeUiResponse(VERSION, requestId, false, null, error, null, null, null, null, null, null, null, null, null);
 		}
 	}
 
@@ -159,5 +168,10 @@ public class NativeUiProtocol {
 	@FunctionalInterface
 	interface ShutdownSource {
 		NativeVaultOperations.NativeCommandResult lockAll();
+	}
+
+	@FunctionalInterface
+	interface MountSettingsSource {
+		NativeMountSettings.NativeMountSettingsResult execute(String operation, String serviceId);
 	}
 }

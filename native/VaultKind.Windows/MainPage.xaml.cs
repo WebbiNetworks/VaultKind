@@ -1633,10 +1633,10 @@ public sealed partial class MainPage : Page
 
         if (isFaq)
         {
-            var categories = new StackPanel
+            var categories = new ItemsControl
             {
-                Orientation = Orientation.Horizontal,
-                Spacing = 8
+                ItemsPanel = (ItemsPanelTemplate)Resources["LearningCategoryWrapPanel"],
+                HorizontalAlignment = HorizontalAlignment.Stretch
             };
             foreach ((string id, string label) in new[]
             {
@@ -1651,14 +1651,17 @@ public sealed partial class MainPage : Page
                 {
                     Tag = id,
                     Content = label,
-                    Padding = new Thickness(15, 8, 15, 8),
+                    Padding = new Thickness(12, 8, 12, 8),
+                    Margin = new Thickness(0, 0, 8, 8),
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    HorizontalContentAlignment = HorizontalAlignment.Center,
                     BorderBrush = new SolidColorBrush(id == selectedFaqCategory
                         ? Color.FromArgb(255, 78, 161, 255)
                         : Color.FromArgb(255, 82, 93, 101)),
                     BorderThickness = new Thickness(id == selectedFaqCategory ? 2 : 1)
                 };
                 button.Click += SelectFaqCategory;
-                categories.Children.Add(button);
+                categories.Items.Add(button);
             }
             LearningArticleSectionsPanel.Children.Add(categories);
         }
@@ -1691,9 +1694,9 @@ public sealed partial class MainPage : Page
         };
         learningSaveGuidanceButton.Click += SaveSelectedLearningGuidance;
 
-        var learningResultRow = new Grid { ColumnSpacing = 12 };
-        learningResultRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        learningResultRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var learningResultRow = new Grid { RowSpacing = 10 };
+        learningResultRow.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        learningResultRow.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         learningResultRow.Children.Add(learningSectionResultCount);
         var learningCopyActions = new StackPanel
         {
@@ -1706,7 +1709,8 @@ public sealed partial class MainPage : Page
                 learningSaveGuidanceButton
             }
         };
-        Grid.SetColumn(learningCopyActions, 1);
+        learningCopyActions.HorizontalAlignment = HorizontalAlignment.Right;
+        Grid.SetRow(learningCopyActions, 1);
         learningResultRow.Children.Add(learningCopyActions);
         LearningArticleSectionsPanel.Children.Add(learningResultRow);
 
@@ -2183,22 +2187,26 @@ public sealed partial class MainPage : Page
 
         foreach (AssistantCase item in visibleCases)
         {
+            var caseContent = new Grid { ColumnSpacing = 10 };
+            caseContent.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            caseContent.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            caseContent.Children.Add(new TextBlock
+            {
+                Text = item.Id,
+                Foreground = new SolidColorBrush(Color.FromArgb(255, 78, 161, 255)),
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+            });
+            var caseTitle = new TextBlock { Text = item.Title, TextWrapping = TextWrapping.Wrap };
+            Grid.SetColumn(caseTitle, 1);
+            caseContent.Children.Add(caseTitle);
+
             var button = new Button
             {
                 Tag = item.Id,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
-                HorizontalContentAlignment = HorizontalAlignment.Left,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
                 Padding = new Thickness(14, 10, 14, 10),
-                Content = new StackPanel
-                {
-                    Orientation = Orientation.Horizontal,
-                    Spacing = 10,
-                    Children =
-                    {
-                        new TextBlock { Text = item.Id, Foreground = new SolidColorBrush(Color.FromArgb(255, 78, 161, 255)), FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
-                        new TextBlock { Text = item.Title, TextWrapping = TextWrapping.Wrap }
-                    }
-                }
+                Content = caseContent
             };
             button.Click += OpenAssistantCaseFromButton;
             AssistantResultsPanel.Children.Add(button);
@@ -2314,14 +2322,9 @@ public sealed partial class MainPage : Page
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(10),
             Padding = new Thickness(14),
-            Child = new Grid
+            Child = new StackPanel
             {
-                ColumnSpacing = 14,
-                ColumnDefinitions =
-                {
-                    new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) },
-                    new ColumnDefinition { Width = GridLength.Auto }
-                },
+                Spacing = 12,
                 Children =
                 {
                     AssistantLearningText(learningDestination),
@@ -2361,7 +2364,8 @@ public sealed partial class MainPage : Page
             Tag = destination,
             Content = $"Open {LearningTopicName(destination.Topic)}",
             Padding = new Thickness(16, 9, 16, 9),
-            VerticalAlignment = VerticalAlignment.Center
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Left
         };
         Grid.SetColumn(button, 1);
         button.Click += OpenRelatedLearningTopic;
@@ -3799,13 +3803,87 @@ public sealed partial class MainPage : Page
 
     private void ShowVaultShareGuide(object sender, RoutedEventArgs e)
     {
+        if (activeVault is null)
+        {
+            return;
+        }
+
         VaultManagementHome.Visibility = Visibility.Collapsed;
         VaultShareGuide.Visibility = Visibility.Visible;
         VaultChangePassword.Visibility = Visibility.Collapsed;
         VaultRecoveryKeyDisplay.Visibility = Visibility.Collapsed;
+        ShareVaultPathText.Text = activeVault.Path;
+        ShareVaultStatus.Text = string.Empty;
+        ShareVaultStatus.Visibility = Visibility.Collapsed;
         ContextTitle.Text = "Share Vault";
         ContextSubtitle.Text = "Share encrypted storage safely without exposing readable files.";
         VaultManagementView.ChangeView(null, 0, null, true);
+    }
+
+    private async void OpenShareVaultFolder(object sender, RoutedEventArgs e)
+    {
+        if (activeVault is null || string.IsNullOrWhiteSpace(activeVault.Path) || !Directory.Exists(activeVault.Path))
+        {
+            ShowShareVaultStatus("The encrypted storage folder is not currently available.", false);
+            return;
+        }
+
+        try
+        {
+            Windows.Storage.StorageFolder folder = await Windows.Storage.StorageFolder.GetFolderFromPathAsync(activeVault.Path);
+            bool opened = await Launcher.LaunchFolderAsync(folder);
+            ShowShareVaultStatus(opened
+                ? "Opened the encrypted storage folder in Windows Explorer."
+                : "Windows could not open the encrypted storage folder.", opened);
+        }
+        catch (Exception)
+        {
+            ShowShareVaultStatus("Windows could not open the encrypted storage folder.", false);
+        }
+    }
+
+    private async void CopyShareVaultPath(object sender, RoutedEventArgs e)
+    {
+        if (activeVault is null || string.IsNullOrWhiteSpace(activeVault.Path))
+        {
+            ShowShareVaultStatus("No encrypted storage folder is available to copy.", false);
+            return;
+        }
+
+        string path = activeVault.Path;
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            try
+            {
+                DataPackage package = new();
+                package.SetText(path);
+                Clipboard.SetContent(package);
+                Clipboard.Flush();
+                ShowShareVaultStatus("Encrypted storage folder path copied to the Windows clipboard.", true);
+                return;
+            }
+            catch (Exception) when (attempt < 2)
+            {
+                // Windows can hold the clipboard briefly while another process is using it.
+                // Retry inside the same click so the user never has to click Copy twice.
+                await System.Threading.Tasks.Task.Delay(80);
+            }
+            catch (Exception)
+            {
+                break;
+            }
+        }
+
+        ShowShareVaultStatus("VaultKind could not copy the folder path. You can still select it above.", false);
+    }
+
+    private void ShowShareVaultStatus(string message, bool success)
+    {
+        ShareVaultStatus.Text = message;
+        ShareVaultStatus.Foreground = new SolidColorBrush(success
+            ? Color.FromArgb(255, 73, 205, 112)
+            : Color.FromArgb(255, 255, 102, 93));
+        ShareVaultStatus.Visibility = Visibility.Visible;
     }
 
     private void HideVaultShareGuide(object sender, RoutedEventArgs e)
@@ -4425,6 +4503,14 @@ public sealed partial class MainPage : Page
 
             if (pathExists)
             {
+                string configurationPath = Path.Combine(vault.Path, "vault.cryptomator");
+                checks.Add(CheckVaultConfiguration(vault.Name, configurationPath));
+
+                string encryptedDataPath = Path.Combine(vault.Path, "d");
+                checks.Add(Directory.Exists(encryptedDataPath)
+                    ? new($"{vault.Name}: encrypted data directory is present", "healthy")
+                    : new($"{vault.Name}: encrypted data directory is missing", "attention", "VK-3002"));
+
                 try
                 {
                     string? root = Path.GetPathRoot(vault.Path);
@@ -4472,6 +4558,34 @@ public sealed partial class MainPage : Page
         AddDoctorCheckGroup(checks, "healthy", "Healthy", "✓");
         AddDoctorCheckGroup(checks, "information", "Information", "ⓘ");
         QueueTextScaleRefresh();
+    }
+
+    private static DoctorCheck CheckVaultConfiguration(string vaultName, string configurationPath)
+    {
+        if (!File.Exists(configurationPath))
+        {
+            return new($"{vaultName}: vault.cryptomator is missing from the encrypted storage folder", "attention", "VK-1003");
+        }
+
+        try
+        {
+            using FileStream configuration = new(
+                configurationPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.ReadWrite | FileShare.Delete);
+            return configuration.ReadByte() == -1
+                ? new($"{vaultName}: vault.cryptomator is empty", "attention", "VK-1003")
+                : new($"{vaultName}: vault.cryptomator is present, non-empty, and readable", "healthy");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return new($"{vaultName}: vault.cryptomator cannot be read by this Windows account", "attention", "VK-1003");
+        }
+        catch (IOException)
+        {
+            return new($"{vaultName}: vault.cryptomator is present but could not be read", "attention", "VK-1003");
+        }
     }
 
     private async void SaveDoctorReport(object sender, RoutedEventArgs e)
@@ -4980,7 +5094,7 @@ public sealed partial class MainPage : Page
         });
 
         var text = new StackPanel { Spacing = 3, VerticalAlignment = VerticalAlignment.Center };
-        text.Children.Add(new TextBlock { Text = activity.Title, FontSize = 17, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
+        text.Children.Add(new TextBlock { Text = activity.Title, FontSize = 17, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap });
         text.Children.Add(new TextBlock
         {
             Text = activity.Detail,

@@ -4,6 +4,8 @@ This file records the current native-shell UX state and the agreed ideas that re
 
 All roadmap work follows the product direction in [PRODUCT_PHILOSOPHY.md](PRODUCT_PHILOSOPHY.md): **Desktop First. Windows Focused. Privacy Always.** Windows is the sole supported platform, and cross-platform parity is not a roadmap objective.
 
+VaultKind 1.0.0 is intentionally English-only. Localization is outside the 1.0 roadmap and must not be reintroduced piecemeal; a later localization effort requires complete translation and security review.
+
 ## Learning Center — implemented in the native shell
 
 VaultKind now includes a **Learning Center** that supports guided, self-paced onboarding.

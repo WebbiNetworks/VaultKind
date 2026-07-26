@@ -9,6 +9,10 @@
 target/
 pom.xml.versionsBackup
 
+# .NET #
+**/bin/
+**/obj/
+
 # Java Crash Logs
 hs_err_pid*.log
 

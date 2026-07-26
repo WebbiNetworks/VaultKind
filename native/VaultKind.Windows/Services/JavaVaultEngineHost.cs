@@ -6,9 +6,9 @@ using System.Text.Json;
 namespace VaultKind_Windows.Services;
 
 /// <summary>
-/// Starts the existing Java vault engine for the native Windows shell during development.
-/// The future packaged build will use a bundled Java runtime and engine location; these
-/// discovery fallbacks keep the current source-tree preview self-starting.
+/// Starts the existing Java vault engine for the native Windows shell. Release builds use
+/// the deterministic Engine directory beside the app; source-tree discovery remains as a
+/// development fallback only.
 /// </summary>
 internal sealed class JavaVaultEngineHost : IDisposable
 {
@@ -34,9 +34,10 @@ internal sealed class JavaVaultEngineHost : IDisposable
             }
         }
 
-        string? repositoryRoot = FindRepositoryRoot();
-        string? javaExecutable = FindJavaExecutable(repositoryRoot);
-        if (repositoryRoot is null || javaExecutable is null)
+        BundledEngineLayout? bundledEngine = FindBundledEngine();
+        string? repositoryRoot = bundledEngine is null ? FindRepositoryRoot() : null;
+        string? javaExecutable = bundledEngine?.JavaExecutable ?? FindJavaExecutable(repositoryRoot);
+        if (javaExecutable is null || (bundledEngine is null && repositoryRoot is null))
         {
             return false;
         }
@@ -44,20 +45,23 @@ internal sealed class JavaVaultEngineHost : IDisposable
         var startInfo = new ProcessStartInfo
         {
             FileName = javaExecutable,
-            WorkingDirectory = repositoryRoot,
+            WorkingDirectory = bundledEngine?.EngineRoot ?? repositoryRoot!,
             UseShellExecute = false,
             CreateNoWindow = true
         };
 
-        string profileRoot = Path.Combine(repositoryRoot, "target", "ui-dev-profile");
-        startInfo.ArgumentList.Add($"-Dlogback.configurationFile={Path.Combine(repositoryRoot, "target", "classes", "logback-native.xml")}");
+        string profileRoot = bundledEngine is null
+            ? Path.Combine(repositoryRoot!, "target", "ui-dev-profile")
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultKind", "engine");
+        string classesDirectory = bundledEngine?.ClassesDirectory ?? Path.Combine(repositoryRoot!, "target", "classes");
+        startInfo.ArgumentList.Add($"-Dlogback.configurationFile={Path.Combine(classesDirectory, "logback-native.xml")}");
         startInfo.ArgumentList.Add($"-Dcryptomator.settingsPath={Path.Combine(profileRoot, "settings.json")}");
         startInfo.ArgumentList.Add($"-Dcryptomator.pluginDir={Path.Combine(profileRoot, "plugins")}");
         startInfo.ArgumentList.Add($"-Dcryptomator.logDir={Path.Combine(profileRoot, "logs")}");
         startInfo.ArgumentList.Add($"-Dcryptomator.mountPointsDir={Path.Combine(profileRoot, "mnt")}");
         startInfo.ArgumentList.Add("-Dcryptomator.disableUpdateCheck=true");
         startInfo.ArgumentList.Add("-cp");
-        startInfo.ArgumentList.Add(BuildDevelopmentClasspath(repositoryRoot));
+        startInfo.ArgumentList.Add(bundledEngine?.BuildClasspath() ?? BuildDevelopmentClasspath(repositoryRoot!));
         startInfo.ArgumentList.Add("org.cryptomator.launcher.Cryptomator");
         startInfo.ArgumentList.Add("--native-backend");
 
@@ -186,6 +190,19 @@ internal sealed class JavaVaultEngineHost : IDisposable
         return !File.Exists(SocketPath);
     }
 
+    private static BundledEngineLayout? FindBundledEngine()
+    {
+        string engineRoot = Path.Combine(AppContext.BaseDirectory, "Engine");
+        string javaExecutable = Path.Combine(engineRoot, "runtime", "bin", "javaw.exe");
+        string classesDirectory = Path.Combine(engineRoot, "classes");
+        string librariesDirectory = Path.Combine(engineRoot, "lib");
+        return File.Exists(javaExecutable)
+            && Directory.Exists(classesDirectory)
+            && Directory.Exists(librariesDirectory)
+                ? new BundledEngineLayout(engineRoot, javaExecutable, classesDirectory, librariesDirectory)
+                : null;
+    }
+
     private static string? FindRepositoryRoot()
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
@@ -285,5 +302,19 @@ internal sealed class JavaVaultEngineHost : IDisposable
                     ? Path.Combine(localRepository, entry[(marker + repositoryMarker.Length)..])
                     : entry;
             }));
+    }
+
+    private sealed record BundledEngineLayout(
+        string EngineRoot,
+        string JavaExecutable,
+        string ClassesDirectory,
+        string LibrariesDirectory)
+    {
+        internal string BuildClasspath()
+        {
+            IEnumerable<string> libraries = Directory.EnumerateFiles(LibrariesDirectory, "*.jar", SearchOption.TopDirectoryOnly)
+                .OrderBy(path => path, StringComparer.OrdinalIgnoreCase);
+            return string.Join(Path.PathSeparator, libraries.Prepend(ClassesDirectory));
+        }
     }
 }

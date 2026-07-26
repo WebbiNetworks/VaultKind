@@ -44,6 +44,14 @@ VaultKind should provide useful, task-focused detail without becoming a manual t
 - Do not weaken the Windows experience merely to preserve visual or behavioral parity with another platform.
 - Test releases against supported Windows versions and document Windows-specific requirements plainly.
 
+### English-only version 1.0.0
+
+VaultKind 1.0.0 uses one reviewed English interface. It does not include a display-language selector, runtime translation machinery, or partially translated safety guidance.
+
+Security, recovery, deletion, integrity, and error messages must preserve exact meaning. An incomplete or ambiguous translation can change the user's understanding of risk, so localization is deferred until every user-facing string can be translated consistently, reviewed by qualified speakers, and tested as a complete experience. English-only is a deliberate release boundary, not a permanent rejection of other languages.
+
+Localization may return in a later release only through an explicit product decision with translation ownership, security review, accessibility testing, and complete coverage. Until then, new interface text is authored and reviewed in English.
+
 VaultKind inherits cross-platform code and automation from its upstream foundation. That inherited material may remain while the fork is young, especially where removing it could destabilize security-sensitive code. Its presence does not imply product support. Removal should be deliberate, tested, and separated from cryptographic changes.
 
 ### Future Windows-only consolidation

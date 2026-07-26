@@ -7,7 +7,6 @@ internal sealed record AppPreferences(
     bool RecordActivityHistory = true,
     string AppearanceMode = "dark",
     bool UseLargerText = false,
-    string LanguageCode = "system",
     bool SignatureSoundsEnabled = true);
 
 internal static class AppPreferencesStore

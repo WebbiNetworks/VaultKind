@@ -208,12 +208,6 @@
                         <Setter Target="SettingsAboutButton.(Grid.Row)" Value="1" />
                         <Setter Target="SettingsAboutButton.(Grid.Column)" Value="3" />
                         <Setter Target="SettingsAboutButton.(Grid.ColumnSpan)" Value="3" />
-                        <Setter Target="LanguageSelector.(Grid.Row)" Value="1" />
-                        <Setter Target="LanguageSelector.(Grid.Column)" Value="1" />
-                        <Setter Target="LanguageSelector.(Grid.ColumnSpan)" Value="2" />
-                        <Setter Target="LanguageSelector.Width" Value="Auto" />
-                        <Setter Target="LanguageSelector.HorizontalAlignment" Value="Stretch" />
-                        <Setter Target="LanguageSelector.Margin" Value="0,10,0,0" />
                         <Setter Target="DiagnosticsFolderButton.(Grid.Row)" Value="1" />
                         <Setter Target="DiagnosticsFolderButton.(Grid.Column)" Value="1" />
                         <Setter Target="DiagnosticsFolderButton.HorizontalAlignment" Value="Left" />
@@ -428,12 +422,6 @@
                         <Setter Target="SettingsAboutButton.(Grid.Row)" Value="0" />
                         <Setter Target="SettingsAboutButton.(Grid.Column)" Value="4" />
                         <Setter Target="SettingsAboutButton.(Grid.ColumnSpan)" Value="1" />
-                        <Setter Target="LanguageSelector.(Grid.Row)" Value="0" />
-                        <Setter Target="LanguageSelector.(Grid.Column)" Value="2" />
-                        <Setter Target="LanguageSelector.(Grid.ColumnSpan)" Value="1" />
-                        <Setter Target="LanguageSelector.Width" Value="320" />
-                        <Setter Target="LanguageSelector.HorizontalAlignment" Value="Stretch" />
-                        <Setter Target="LanguageSelector.Margin" Value="0" />
                         <Setter Target="DiagnosticsFolderButton.(Grid.Row)" Value="0" />
                         <Setter Target="DiagnosticsFolderButton.(Grid.Column)" Value="2" />
                         <Setter Target="DiagnosticsFolderButton.HorizontalAlignment" Value="Stretch" />
@@ -859,9 +847,6 @@
 
                     <Border x:Name="SettingsGeneralPanel" Style="{StaticResource MetricCardStyle}" Padding="22">
                         <StackPanel Spacing="17">
-                            <StackPanel Spacing="3"><TextBlock x:Name="LanguageHeadingText" Text="Language" FontSize="20" FontWeight="SemiBold" /><TextBlock Text="Choose the language used throughout VaultKind." Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" /></StackPanel>
-                            <Grid ColumnSpacing="14"><Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><FontIcon Glyph="&#xE774;" Foreground="{StaticResource BrandBlueBrush}" FontSize="20" /><StackPanel Grid.Column="1" Spacing="2"><TextBlock x:Name="LanguageChoiceText" Text="Display language" FontSize="16" /><TextBlock Text="Changes are applied immediately. New VaultKind guidance falls back to English when a translation is not yet available." Foreground="{StaticResource MutedTextBrush}" FontSize="12" TextWrapping="Wrap" /></StackPanel><ComboBox x:Name="LanguageSelector" Grid.Column="2" Width="320" MaxDropDownHeight="540" DisplayMemberPath="DisplayName" SelectionChanged="LanguageSelectionChanged" AutomationProperties.Name="VaultKind display language" /></Grid>
-                            <Border BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="0,1,0,0" />
                             <StackPanel Spacing="3"><TextBlock Text="Windows behavior" FontSize="20" FontWeight="SemiBold" /><TextBlock Text="Choose how VaultKind behaves while keeping secure shutdown protection in place." Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" /></StackPanel>
                             <Grid ColumnSpacing="14"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions><FontIcon Glyph="&#xE768;" Foreground="{StaticResource BrandBlueBrush}" FontSize="20" /><StackPanel Grid.Column="1" Spacing="2"><TextBlock Text="Launch VaultKind when Windows starts" FontSize="16" /><TextBlock Text="Registers this desktop app for your Windows account. Vaults remain locked until you choose to unlock them." Foreground="{StaticResource MutedTextBrush}" FontSize="12" TextWrapping="Wrap" /></StackPanel><ToggleSwitch x:Name="LaunchWithWindowsToggle" Grid.Column="2" OnContent="On" OffContent="Off" Toggled="LaunchWithWindowsChanged" VerticalAlignment="Center" AutomationProperties.Name="Launch VaultKind when Windows starts" /></Grid>
                             <TextBlock x:Name="LaunchWithWindowsStatus" Visibility="Collapsed" Foreground="#FF5C57" FontSize="12" TextWrapping="Wrap" />

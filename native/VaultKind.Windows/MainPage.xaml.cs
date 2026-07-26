@@ -25,7 +25,6 @@ namespace VaultKind_Windows;
 public sealed partial class MainPage : Page
 {
     private readonly IVaultBackend backend = new LocalSocketVaultBackend();
-    private readonly LocalizationService localization = new();
     private readonly SignatureSoundService signatureSounds = new();
     private readonly List<Button> vaultButtons = [];
     private VaultSummary? activeVault;
@@ -65,68 +64,6 @@ public sealed partial class MainPage : Page
     private string? recoveryTargetVaultId;
     private bool recoveryOpenedFromVaultManagement;
     private string? doctorFocusVaultId;
-    private readonly List<LocalizedVisual> localizedVisuals = [];
-    private readonly HashSet<DependencyObject> localizedVisualElements = [];
-
-    private enum LocalizedVisualProperty
-    {
-        Text,
-        Content,
-        Placeholder
-    }
-
-    private sealed record LocalizedVisual(DependencyObject Element, LocalizedVisualProperty Property, string Key, string Fallback);
-
-    private static readonly IReadOnlyDictionary<string, string> StaticLocalizationKeys =
-        new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["Back"] = "generic.button.back",
-            ["Next"] = "generic.button.next",
-            ["Done"] = "generic.button.done",
-            ["Cancel"] = "generic.button.cancel",
-            ["Add Vault"] = "addvaultwizard.title",
-            ["Create a new vault"] = "addvaultwizard.start.create.title",
-            ["Add an existing vault"] = "addvaultwizard.start.existing.title",
-            ["Connect an existing vault"] = "addvaultwizard.existing.title",
-            ["Create vault  →"] = "addvaultwizard.start.create.action",
-            ["Choose vault  →"] = "addvaultwizard.start.existing.action",
-            ["Having trouble with a vault?"] = "addvaultwizard.start.recovery.prompt",
-            ["Repair or Recover"] = "addvaultwizard.start.recovery.action",
-            ["Name your vault"] = "addvaultwizard.new.nameTitle",
-            ["Vault name"] = "addvaultwizard.new.reviewName",
-            ["For example: Personal files"] = "addvaultwizard.new.namePrompt",
-            ["Use letters, numbers, spaces, hyphens, or underscores."] = "addvaultwizard.new.validCharacters.simple",
-            ["Choose where to store it"] = "addvaultwizard.new.locationTitle",
-            ["Storage location"] = "addvaultwizard.new.locationLabel",
-            ["Custom location"] = "addvaultwizard.new.directoryPickerLabel",
-            ["Choose folder..."] = "addvaultwizard.new.directoryPickerButton",
-            ["Review your vault"] = "addvaultwizard.new.reviewTitle",
-            ["Change encrypted file-name length"] = "addvaultwizard.new.expertSettings.enableExpertSettingsCheckbox",
-            ["Create Vault"] = "addvaultwizard.new.createVaultBtn",
-            ["Create a recovery key (recommended)"] = "addvaultwizard.new.generateRecoveryKeyChoice.yes",
-            ["Continue without a recovery key"] = "addvaultwizard.new.generateRecoveryKeyChoice.no",
-            ["Connect Vault"] = "addvaultwizard.existing.connectBtn",
-            ["Choose Folder..."] = "addvaultwizard.existing.chooseBtn",
-            ["General"] = "preferences.general",
-            ["Appearance"] = "preferences.interface",
-            ["Virtual Drive"] = "preferences.volume",
-            ["About"] = "preferences.about",
-            ["Dark"] = "preferences.interface.theme.dark",
-            ["Light"] = "preferences.interface.theme.light",
-            ["Launch VaultKind when Windows starts"] = "preferences.general.autoStart",
-            ["Protect vaults when VaultKind closes"] = "preferences.general.autoCloseVaults",
-            ["Enable debug logging"] = "preferences.general.debugLogging",
-            ["Reveal log files"] = "preferences.general.debugDirectory",
-            ["Default Volume Type"] = "preferences.volume.type",
-            ["Automatic"] = "preferences.volume.type.automatic",
-            ["Third-party licenses"] = "preferences.about.thirdPartyLicenses",
-            ["Recent Activity"] = "main.home.dashboard.recentActivity",
-            ["No activity recorded yet"] = "main.home.dashboard.noActivity",
-            ["Important local actions will appear here."] = "main.home.dashboard.noActivityDescription",
-            ["View Activity"] = "main.home.dashboard.viewActivity",
-            ["Automatic, private health checks across VaultKind and your configured vaults."] = "main.vaultDoctor.subtitle",
-            ["Open Doctor"] = "main.vaultDoctor.dashboardAction"
-        };
 
     private static readonly IReadOnlyList<AssistantCase> AssistantCases =
     [
@@ -228,7 +165,6 @@ public sealed partial class MainPage : Page
     public MainPage()
     {
         InitializeComponent();
-        CaptureLocalizedVisuals(this);
         foreach ((Button button, string _, string _, FontIcon _) in LearningTopicButtons())
         {
             button.KeyDown += LearningTopicKeyDown;
@@ -246,12 +182,6 @@ public sealed partial class MainPage : Page
                 doctorSummary.Information,
                 doctorSummary.CompletedAt);
         }
-        localization.SelectLanguage(preferences.LanguageCode);
-        LanguageSelector.ItemsSource = localization.GetLanguageOptions();
-        LanguageSelector.SelectedItem = ((IEnumerable<LanguageOption>)LanguageSelector.ItemsSource)
-            .FirstOrDefault(option => option.Code.Equals(preferences.LanguageCode, StringComparison.OrdinalIgnoreCase))
-            ?? ((IEnumerable<LanguageOption>)LanguageSelector.ItemsSource).First();
-        ApplyLocalizedShell();
         DarkAppearanceToggle.IsOn = !string.Equals(preferences.AppearanceMode, "light", StringComparison.OrdinalIgnoreCase);
         ApplyAppearanceMode(DarkAppearanceToggle.IsOn, persist: false);
         LargerTextToggle.IsOn = preferences.UseLargerText;
@@ -348,8 +278,8 @@ public sealed partial class MainPage : Page
         VaultBackendSnapshot snapshot = await backend.GetSnapshotAsync();
         for (int attempt = 0; attempt < 12 && snapshot.ConnectionState != BackendConnectionState.Ready; attempt++)
         {
-            DashboardHealthDescription.Text = localization.Get("main.home.dashboard.engineStarting", "Starting the VaultKind vault engine…");
-            EngineStatusFooter.Text = localization.Get("main.home.dashboard.engineConnecting", "Connecting securely to the local vault engine.");
+            DashboardHealthDescription.Text = "Starting the VaultKind vault engine…";
+            EngineStatusFooter.Text = "Connecting securely to the local vault engine.";
             await Task.Delay(500);
             snapshot = await backend.GetSnapshotAsync();
         }
@@ -371,8 +301,8 @@ public sealed partial class MainPage : Page
         AttentionVaultsCard.IsEnabled = attentionCount > 0;
         UpdateDashboardHealth(snapshot, attentionCount);
         EngineStatusFooter.Text = snapshot.ConnectionState == BackendConnectionState.Ready
-            ? localization.Get("main.home.dashboard.engineConnected", "Connected securely to the local VaultKind engine.")
-            : localization.Get("main.home.dashboard.engineUnavailable", "The local VaultKind engine is unavailable.");
+            ? "Connected securely to the local VaultKind engine."
+            : "The local VaultKind engine is unavailable.";
         RenderVaultSidebar(snapshot.Vaults);
     }
 
@@ -380,8 +310,8 @@ public sealed partial class MainPage : Page
     {
         if (snapshot.ConnectionState != BackendConnectionState.Ready)
         {
-            DashboardHealthTitle.Text = localization.Get("main.home.dashboard.engineAttention", "VaultKind needs your attention");
-            DashboardHealthDescription.Text = localization.Get("main.home.dashboard.engineAttentionDescription", "The local vault engine is unavailable. Vault states may be out of date.");
+            DashboardHealthTitle.Text = "VaultKind needs your attention";
+            DashboardHealthDescription.Text = "The local vault engine is unavailable. Vault states may be out of date.";
             DashboardHealthIcon.Glyph = "\uE7BA";
             DashboardHealthIcon.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 193, 46));
             DashboardHealthCard.Background = new SolidColorBrush(Color.FromArgb(255, 62, 55, 31));
@@ -392,9 +322,9 @@ public sealed partial class MainPage : Page
         if (attentionCount > 0)
         {
             DashboardHealthTitle.Text = attentionCount == 1
-                ? localization.Get("main.home.dashboard.reviewOne", "One vault is worth reviewing")
-                : string.Format(localization.Get("main.home.dashboard.reviewMany", "{0} vaults are worth reviewing"), attentionCount);
-            DashboardHealthDescription.Text = localization.Get("main.home.dashboard.reviewDescription", "Open the Attention card above to review the affected vault.");
+                ? "One vault is worth reviewing"
+                : $"{attentionCount} vaults are worth reviewing";
+            DashboardHealthDescription.Text = "Open the Attention card above to review the affected vault.";
             DashboardHealthIcon.Glyph = "\uE7BA";
             DashboardHealthIcon.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 193, 46));
             DashboardHealthCard.Background = new SolidColorBrush(Color.FromArgb(255, 62, 55, 31));
@@ -402,10 +332,8 @@ public sealed partial class MainPage : Page
             return;
         }
 
-        DashboardHealthTitle.Text = localization.Get("main.home.dashboard.healthy.title", "Everything looks good");
-        DashboardHealthDescription.Text = string.Format(
-            localization.Get("main.home.dashboard.readyStatus", "Connected securely to the local vault engine. {0} configured vault(s) reported."),
-            snapshot.Vaults.Count);
+        DashboardHealthTitle.Text = "Everything looks good";
+        DashboardHealthDescription.Text = $"Connected securely to the local vault engine. {snapshot.Vaults.Count} configured vault(s) reported.";
         DashboardHealthIcon.Glyph = "\uE73E";
         DashboardHealthIcon.Foreground = new SolidColorBrush(Color.FromArgb(255, 73, 205, 112));
         DashboardHealthCard.Background = new SolidColorBrush(Color.FromArgb(255, 41, 63, 52));
@@ -600,8 +528,8 @@ public sealed partial class MainPage : Page
         ActivityView.Visibility = Visibility.Collapsed;
         SettingsView.Visibility = Visibility.Collapsed;
         LearningView.Visibility = Visibility.Collapsed;
-        ContextTitle.Text = localization.Get("main.content.dashboard.title", "Dashboard");
-        ContextSubtitle.Text = localization.Get("main.content.dashboard.subtitle", "Your secure workspace at a glance.");
+        ContextTitle.Text = "Dashboard";
+        ContextSubtitle.Text = "Your secure workspace at a glance.";
         SetSelectedDestination(DashboardButton, DoctorButton, "Dashboard");
         SetDestinationUnselected(ActivityButton, "Activity");
         SetDestinationUnselected(SettingsButton, "Settings");
@@ -682,7 +610,7 @@ public sealed partial class MainPage : Page
         ActivityView.Visibility = Visibility.Collapsed;
         SettingsView.Visibility = Visibility.Collapsed;
         LearningView.Visibility = Visibility.Collapsed;
-        ContextTitle.Text = localization.Get("addvaultwizard.title", "Add Vault");
+        ContextTitle.Text = "Add Vault";
         ContextSubtitle.Text = "Create a new encrypted vault, connect an existing one, or recover access.";
         SetDestinationUnselected(DashboardButton, "Dashboard");
         SetDestinationUnselected(DoctorButton, "Vault Doctor");
@@ -716,7 +644,7 @@ public sealed partial class MainPage : Page
         ActivityView.Visibility = Visibility.Collapsed;
         SettingsView.Visibility = Visibility.Collapsed;
         LearningView.Visibility = Visibility.Collapsed;
-        ContextTitle.Text = localization.Get("addvaultwizard.existing.title", "Connect a Vault");
+        ContextTitle.Text = "Connect a Vault";
         ContextSubtitle.Text = "Add an existing encrypted vault without moving or changing its files.";
         selectedConnectVaultPath = null;
         ConnectVaultReviewCard.Visibility = Visibility.Collapsed;
@@ -747,7 +675,7 @@ public sealed partial class MainPage : Page
         UnlockView.Visibility = Visibility.Collapsed;
         RecoveryHubView.Visibility = Visibility.Collapsed;
         RecoveryResetView.Visibility = Visibility.Collapsed;
-        ContextTitle.Text = localization.Get("main.vaultlist.events", "Activity");
+        ContextTitle.Text = "Activity";
         ContextSubtitle.Text = "A private record of vault actions from this VaultKind session.";
         SetDestinationUnselected(DashboardButton, "Dashboard");
         SetDestinationUnselected(DoctorButton, "Vault Doctor");
@@ -1140,7 +1068,6 @@ public sealed partial class MainPage : Page
             RecordActivityHistoryToggle.IsOn,
             DarkAppearanceToggle.IsOn ? "dark" : "light",
             LargerTextToggle.IsOn,
-            LanguageSelector.SelectedItem is LanguageOption language ? language.Code : "system",
             SignatureSoundsToggle.IsOn));
     }
 
@@ -1163,117 +1090,6 @@ public sealed partial class MainPage : Page
             "locked" => SignatureSound.VaultLocked,
             _ => SignatureSound.Warning
         }, sound == "warning" ? SoundEmphasis.Strong : SoundEmphasis.Standard);
-    }
-
-    private void LanguageSelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (initializingPreferences || LanguageSelector.SelectedItem is not LanguageOption language)
-        {
-            return;
-        }
-
-        localization.SelectLanguage(language.Code);
-        ApplyLocalizedShell();
-        SavePreferences();
-    }
-
-    private void ApplyLocalizedShell()
-    {
-        DashboardNavText.Text = localization.Get("main.home", "Dashboard");
-        DoctorNavText.Text = localization.Get("main.vaultDoctor", "Vault Doctor");
-        VaultsNavText.Text = localization.Get("main.vaultlist", "Vaults");
-        AddVaultButton.Content = $"+ {localization.Get("main.vaultlist.addVaultButton.tooltip", "Add Vault")}";
-        ActivityNavText.Text = localization.Get("main.vaultlist.events", "Activity");
-        SettingsNavText.Text = localization.Get("preferences.title", "Settings");
-        LearningNavText.Text = localization.Get("main.vaultlist.help", "Learning Center");
-
-        SettingsGeneralText.Text = localization.Get("preferences.general", "General");
-        SettingsAppearanceText.Text = localization.Get("preferences.interface.theme", "Appearance");
-        SettingsVirtualDriveText.Text = localization.Get("preferences.volume", "Virtual Drive");
-        SettingsPrivacyText.Text = localization.Get("preferences.privacy", "Privacy");
-        SettingsAboutText.Text = localization.Get("preferences.about", "About");
-        var languageLabel = localization.Get("preferences.interface.language", "Language");
-        var qualifierIndex = languageLabel.IndexOfAny(['(', '（']);
-        if (qualifierIndex > 0)
-        {
-            languageLabel = languageLabel[..qualifierIndex].TrimEnd();
-        }
-
-        LanguageHeadingText.Text = languageLabel;
-        LanguageChoiceText.Text = languageLabel;
-        ApplyLocalizedPageContent();
-    }
-
-    private void CaptureLocalizedVisuals(DependencyObject parent)
-    {
-        int childCount = VisualTreeHelper.GetChildrenCount(parent);
-        for (int index = 0; index < childCount; index++)
-        {
-            DependencyObject child = VisualTreeHelper.GetChild(parent, index);
-            switch (child)
-            {
-                case TextBlock textBlock when TryResolveLocalizationKey(textBlock, textBlock.Text, out string textKey) && localizedVisualElements.Add(textBlock):
-                    localizedVisuals.Add(new(textBlock, LocalizedVisualProperty.Text, textKey, textBlock.Text));
-                    break;
-                case ContentControl contentControl when contentControl.Content is string content && TryResolveLocalizationKey(contentControl, content, out string contentKey) && localizedVisualElements.Add(contentControl):
-                    localizedVisuals.Add(new(contentControl, LocalizedVisualProperty.Content, contentKey, content));
-                    break;
-                case TextBox textBox when !string.IsNullOrWhiteSpace(textBox.PlaceholderText) && TryResolveLocalizationKey(textBox, textBox.PlaceholderText, out string textBoxKey) && localizedVisualElements.Add(textBox):
-                    localizedVisuals.Add(new(textBox, LocalizedVisualProperty.Placeholder, textBoxKey, textBox.PlaceholderText));
-                    break;
-                case PasswordBox passwordBox when !string.IsNullOrWhiteSpace(passwordBox.PlaceholderText) && TryResolveLocalizationKey(passwordBox, passwordBox.PlaceholderText, out string passwordKey) && localizedVisualElements.Add(passwordBox):
-                    localizedVisuals.Add(new(passwordBox, LocalizedVisualProperty.Placeholder, passwordKey, passwordBox.PlaceholderText));
-                    break;
-            }
-
-            CaptureLocalizedVisuals(child);
-        }
-    }
-
-    private bool TryResolveLocalizationKey(FrameworkElement element, string text, out string key)
-    {
-        if (element.Tag is string tag && tag.StartsWith("i18n:", StringComparison.Ordinal))
-        {
-            key = tag["i18n:".Length..];
-            return key.Length > 0;
-        }
-
-        return StaticLocalizationKeys.TryGetValue(text, out key!) ||
-               localization.TryFindKeyByEnglishText(text, out key!);
-    }
-
-    private void ApplyLocalizedPageContent()
-    {
-        // Views are materialized as the user visits them, so include any newly
-        // available controls before applying the selected language.
-        CaptureLocalizedVisuals(this);
-        foreach (LocalizedVisual visual in localizedVisuals)
-        {
-            // The shared hero describes the active workspace, not a static page.
-            // Its text is owned by navigation handlers and must never be reset to
-            // the Dashboard values captured when the application first loaded.
-            if (ReferenceEquals(visual.Element, ContextTitle) || ReferenceEquals(visual.Element, ContextSubtitle))
-            {
-                continue;
-            }
-
-            string value = localization.Get(visual.Key, visual.Fallback);
-            switch (visual.Element, visual.Property)
-            {
-                case (TextBlock textBlock, LocalizedVisualProperty.Text):
-                    textBlock.Text = value;
-                    break;
-                case (ContentControl contentControl, LocalizedVisualProperty.Content):
-                    contentControl.Content = value;
-                    break;
-                case (TextBox textBox, LocalizedVisualProperty.Placeholder):
-                    textBox.PlaceholderText = value;
-                    break;
-                case (PasswordBox passwordBox, LocalizedVisualProperty.Placeholder):
-                    passwordBox.PlaceholderText = value;
-                    break;
-            }
-        }
     }
 
     private void LargerTextChanged(object sender, RoutedEventArgs e)
@@ -2820,7 +2636,7 @@ public sealed partial class MainPage : Page
         VaultView.Visibility = Visibility.Collapsed;
         VaultManagementView.Visibility = Visibility.Collapsed;
         UnlockView.Visibility = Visibility.Collapsed;
-        ContextTitle.Text = localization.Get("addvaultwizard.new.title", "Create a Vault");
+        ContextTitle.Text = "Create a Vault";
         ContextSubtitle.Text = "Set up a new encrypted space in four clear steps.";
         CreateVaultNameInput.Text = string.Empty;
         CreateVaultNameStatus.Visibility = Visibility.Collapsed;
@@ -2867,7 +2683,7 @@ public sealed partial class MainPage : Page
         CreateVaultReviewView.Visibility = Visibility.Collapsed;
         CreateVaultProtectionView.Visibility = Visibility.Collapsed;
         CreateVaultSuccessView.Visibility = Visibility.Collapsed;
-        ContextTitle.Text = localization.Get("addvaultwizard.new.title", "Create a Vault");
+        ContextTitle.Text = "Create a Vault";
         ContextSubtitle.Text = "Set up a new encrypted space in four clear steps.";
         RefreshCreateVaultStorageLocation();
     }
@@ -4430,7 +4246,7 @@ public sealed partial class MainPage : Page
         VaultCommandResult result = await backend.LockAsync(vaultId);
         if (!result.Succeeded)
         {
-            if (result.Error == "vault_in_use")
+            if (SignatureSoundPolicy.ShouldWarnForLockFailure(result.Error))
             {
                 signatureSounds.Play(SignatureSound.Warning, SoundEmphasis.Strong);
             }
@@ -4649,7 +4465,7 @@ public sealed partial class MainPage : Page
         int healthy = checks.Count(check => check.Kind == "healthy");
         int attention = checks.Count(check => check.Kind == "attention");
         int information = checks.Count(check => check.Kind == "information");
-        if (checks.Any(IsCriticalDoctorFinding))
+        if (checks.Any(check => DoctorFindingPolicy.IsCritical(check.Kind, check.AssistantCaseId)))
         {
             signatureSounds.Play(SignatureSound.Warning, SoundEmphasis.Strong);
         }
@@ -4698,10 +4514,6 @@ public sealed partial class MainPage : Page
         doctorRunInProgress = false;
         QueueTextScaleRefresh();
     }
-
-    private static bool IsCriticalDoctorFinding(DoctorCheck check) =>
-        check.Kind == "attention"
-        && check.AssistantCaseId is "VK-1003" or "VK-3002";
 
     private void UpdateDashboardDoctorStatus(int healthy, int attention, int information, DateTimeOffset completedAt)
     {

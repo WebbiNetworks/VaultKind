@@ -30,7 +30,11 @@ The existing Java application remains in its original Maven project structure. W
 | `MainPage.xaml` | The current VaultKind Dashboard and sidebar appearance. XAML describes what appears and how it is arranged. |
 | `MainPage.xaml.cs` | Dashboard behavior, navigation, engine connection status, vault rendering, and native unlock/open/lock interactions. |
 | `Services/JavaVaultEngineHost.cs` | Development lifecycle host that starts and stops the existing Java vault engine with the native app. |
+| `Services/DoctorFindingPolicy.cs` | Defines the narrow evidence threshold for critical Vault Doctor warnings. |
+| `Services/SignatureSoundPolicy.cs` | Keeps warning audio limited to explicitly approved safety events. |
 | `Services/WindowPlacementStore.cs` | Saves the last window placement locally and safely brings it back on-screen if the monitor layout later changes. |
+| `../VaultKind.Windows.Tests` | Package-free native policy and preference regression checks. |
+| `../../scripts/build-native-release.ps1` | Stages the self-contained frontend, bundled Java engine/runtime, notices, and optional signatures. |
 
 ## Two languages, two jobs
 
@@ -48,17 +52,18 @@ The interface should keep visual definitions in XAML and application behavior in
 
 The native frontend remains deliberately disconnected from:
 
-- Recovery keys
 - Cryptographic implementation details
 - Direct virtual-drive mounting code
-- Cloud storage
+- Cloud-provider APIs
 - The internet
 
-The versioned local contract permits backend identity negotiation, privacy-limited vault summaries, and narrowly scoped vault commands. A password crosses the owner-only local socket only for `vault.unlock`, is never persisted or logged, and is cleared by the Java command handler after use. The Java engine remains solely responsible for password validation, encryption, mounting, revealing the readable view, and safe locking.
+The versioned local contract permits backend identity negotiation, privacy-limited vault summaries, and narrowly scoped vault commands, including password and recovery-key operations whose cryptographic work remains in the Java engine. Secrets cross the owner-only local socket only for the requested command, are never persisted or logged by the native frontend, and are cleared by the Java command handler after use. The Java engine remains solely responsible for password validation, recovery-key processing, encryption, mounting, revealing the readable view, and safe locking.
+
+The version 1.0.0 native interface is intentionally English-only. No runtime translation service or partial language bundle is shipped; localization requires a later complete translation and security-review milestone.
 
 ## Engine lifecycle in the source-tree preview
 
-Launching the native executable now starts the Java vault engine automatically when no local engine socket already exists. Closing the native app requests a graceful backend shutdown; the engine locks every open vault first and refuses to exit if Windows still has a vault in use. During development, the host discovers the repository build output and an installed Java runtime. A distributable build will replace this discovery with fixed, bundled runtime and engine locations.
+Launching the native executable now starts the Java vault engine automatically when no compatible local engine socket already exists. Closing the native app requests a graceful backend shutdown for the engine process it owns; the engine locks every open vault first and refuses to exit if Windows still has a vault in use. A staged build uses fixed `Engine/runtime`, `Engine/classes`, and `Engine/lib` locations beside the app. Repository build output and an installed Java runtime remain development fallbacks only.
 
 ## How it runs today
 

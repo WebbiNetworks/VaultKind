@@ -13,6 +13,7 @@ VaultKind is derived from [Cryptomator](https://github.com/cryptomator/cryptomat
 - Dark, Light, and System themes included for everyone
 - Clear first-run onboarding and approachable security language
 - Accessible contrast, scalable layouts, and keyboard-friendly interaction
+- English-only interface for version 1.0.0; localization is intentionally deferred until translations can receive complete security review
 - Compatibility with Cryptomator vaults
 - Security-sensitive code kept close to upstream to make review and updates safer
 - No VaultKind updater until a dedicated, signed release channel exists
@@ -28,6 +29,7 @@ This repository is private while the product identity, security update process, 
 ### Requirements
 
 - JDK 26 (for example Eclipse Temurin or Azul Zulu)
+- .NET 10 SDK with the Windows App SDK workload used by the native project
 
 ### Build and test
 
@@ -36,6 +38,15 @@ This repository is private while the product identity, security update process, 
 ```
 
 The assembled modules and platform-specific dependencies are written beneath `target`.
+
+Build the native Windows frontend and run its package-free policy checks with:
+
+```powershell
+dotnet build native\VaultKind.Windows\VaultKind.Windows.csproj -c Debug --no-restore
+dotnet run --project native\VaultKind.Windows.Tests\VaultKind.Windows.Tests.csproj -c Release
+```
+
+Release staging and signing requirements are documented in [RELEASE_READINESS.md](docs/RELEASE_READINESS.md). Unsigned development or staged builds are not release candidates.
 
 ## Upstream and licensing
 

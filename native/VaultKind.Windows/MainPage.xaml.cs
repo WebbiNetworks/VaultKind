@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Input;
@@ -35,6 +36,7 @@ public sealed partial class MainPage : Page
     private readonly List<SessionActivity> activityHistory = [];
     private readonly HashSet<string> expandedActivityCategories = [];
     private Microsoft.UI.Dispatching.DispatcherQueueTimer? navigationFocusTimer;
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? keyboardEntryFocusTimer;
     private bool initializingPreferences = true;
     private bool loadingMountServices;
     private readonly Dictionary<DependencyObject, double> baselineFontSizes = [];
@@ -54,6 +56,7 @@ public sealed partial class MainPage : Page
     private Button? learningSaveGuidanceButton;
     private TextBlock? learningCopyGuidanceStatus;
     private string selectedFaqCategory = "all";
+    private bool restoreFaqCategoryFocusAfterRender;
     private string selectedLearningTopic = "how";
     private string selectedAssistantCategory = "all";
     private string? doctorAssistantCaseId;
@@ -78,7 +81,7 @@ public sealed partial class MainPage : Page
         new("VK-2002", "filesystem", "The storage location is full", "The encrypted storage, system drive, or temporary-file location may lack enough free space.", "1. Check free space on encrypted storage and the system drive.\n2. Check cloud quota.\n3. Allow room for synchronization overhead.", "Free sufficient space or increase the storage quota, then allow synchronization to finish before retrying.", "disk full no space storage full insufficient space quota"),
         new("VK-2003", "filesystem", "The vault is still in use", "An application or File Explorer window may still hold a file handle inside the unlocked virtual drive.", "1. Save open work.\n2. Close documents and windows using the vault.\n3. Pause tools scanning or indexing the unlocked drive.", "Close the process using the vault and try Lock again. Avoid forcing removal while writes are active.", "file locked cannot lock vault busy in use open files"),
         new("VK-2004", "filesystem", "Cloud synchronization is incomplete or conflicted", "The cloud client may be offline, paused, out of quota, or resolving conflicting encrypted files.", "1. Keep the vault locked.\n2. Confirm the cloud client is online.\n3. Resolve quota or conflict warnings.\n4. Wait for synchronization to finish.", "Retry only after the provider reports synchronization complete. Do not open the same vault on another device during conflict resolution.", "cloud unavailable sync conflict synchronization problem dropbox onedrive google drive"),
-        new("VK-2005", "filesystem", "The virtual drive could not be mounted", "The selected mounting service may be unavailable, misconfigured, or unable to claim the requested drive location.", "1. Open Settings and review Virtual Drive.\n2. Confirm an available mounting service is selected.\n3. Check whether the requested drive letter or path is already in use.", "Select an available mounting service or mount location, then lock and unlock the vault again.", "mount failed virtual drive missing mounting service bts9 kt9r nosuchelementexception no value present"),
+        new("VK-2005", "filesystem", "The virtual drive could not be mounted", "The selected mounting service may be unavailable, misconfigured, or unable to claim the requested drive location.", "1. Open Preferences and review Virtual Drive.\n2. Confirm an available mounting service is selected.\n3. Check whether the requested drive letter or path is already in use.", "Select an available mounting service or mount location, then lock and unlock the vault again.", "mount failed virtual drive missing mounting service bts9 kt9r nosuchelementexception no value present"),
         new("VK-3001", "recovery", "Access must be restored with a recovery key", "The password is no longer known, but a valid recovery key may still restore access.", "1. Locate the recovery key stored outside the vault.\n2. Confirm it belongs to this vault.\n3. Enter every word exactly.", "Complete the recovery workflow and choose a new strong password. Store the recovery key securely and never share it.", "forgot password recovery key reset password recover access"),
         new("VK-3002", "recovery", "Vault integrity needs verification", "Interrupted synchronization, storage failure, or manual changes may have left inconsistent encrypted data.", "1. Stop synchronization changes.\n2. Preserve a backup of the encrypted vault.\n3. Run Vault Doctor and review each reported item.", "Follow only the repair action associated with a verified result. Preserve backups until the vault has been opened and checked successfully.", "health check vault doctor verify integrity damaged vault corrupted vault")
     ];
@@ -86,6 +89,7 @@ public sealed partial class MainPage : Page
     private static readonly IReadOnlyDictionary<string, LearningArticle> LearningArticles =
         new Dictionary<string, LearningArticle>(StringComparer.Ordinal)
         {
+            ["keyboard"] = CreateKeyboardControlsLearningArticle(),
             ["first"] = new(
                 "VaultKind creates an encrypted storage folder and a separate readable Windows drive. The four-step setup keeps those two locations clear from the beginning.",
                 [
@@ -166,6 +170,7 @@ public sealed partial class MainPage : Page
     public MainPage()
     {
         InitializeComponent();
+        InitializeLiveRegions();
         foreach ((Button button, string _, string _, FontIcon _) in LearningTopicButtons())
         {
             button.KeyDown += LearningTopicKeyDown;
@@ -173,6 +178,7 @@ public sealed partial class MainPage : Page
         LoadActivityHistory();
         LoadLearningProgress();
         UpdateLearningProgressDisplay();
+        UpdateLearningTopicAutomationNames();
         AppPreferences preferences = AppPreferencesStore.Load();
         DoctorRunSummary? doctorSummary = DoctorSummaryStore.Load();
         if (doctorSummary is not null)
@@ -197,6 +203,64 @@ public sealed partial class MainPage : Page
         Loaded += EnsureInitialKeyboardTarget;
     }
 
+    private void InitializeLiveRegions()
+    {
+        TextBlock[] regions =
+        [
+            DoctorSaveReportStatus,
+            EngineStatusFooter,
+            LaunchWithWindowsStatus,
+            DiagnosticsFolderStatus,
+            MountServiceStatus,
+            AboutWebsiteStatus,
+            RecoveryPasswordStatus,
+            RecoveryStatus,
+            ConnectVaultStatus,
+            CreateVaultNameStatus,
+            CreateVaultStorageStatus,
+            CreateVaultPasswordMatchStatus,
+            CreateVaultPasswordStrength,
+            CreateVaultCreationStatus,
+            CreatedRecoveryKeyCopyStatus,
+            VaultActionStatus,
+            ManagedVaultRenameStatus,
+            ShareVaultStatus,
+            ChangePasswordMatchStatus,
+            ChangePasswordStatus,
+            RecoveryKeyDisplayStatus,
+            ManagedRecoveryKeyCopyStatus,
+            VaultStatisticsStatus,
+            LocateEncryptedFileStatus,
+            DecryptFileNameStatus,
+            UnlockStatus
+        ];
+
+        foreach (TextBlock region in regions)
+        {
+            RegisterLiveRegion(region);
+        }
+    }
+
+    private static void RegisterLiveRegion(TextBlock region)
+    {
+        region.RegisterPropertyChangedCallback(TextBlock.TextProperty, (_, _) => AnnounceLiveRegion(region));
+        region.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (_, _) => AnnounceLiveRegion(region));
+    }
+
+    private static void AnnounceLiveRegion(TextBlock region)
+    {
+        if (region.Visibility != Visibility.Visible
+            || string.IsNullOrWhiteSpace(region.Text)
+            || !AutomationPeer.ListenerExists(AutomationEvents.LiveRegionChanged))
+        {
+            return;
+        }
+
+        AutomationPeer? peer = FrameworkElementAutomationPeer.FromElement(region)
+            ?? FrameworkElementAutomationPeer.CreatePeerForElement(region);
+        peer?.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
+    }
+
     private void EnsureInitialKeyboardTarget(object sender, RoutedEventArgs e)
     {
         DispatcherQueue.TryEnqueue(EnsureKeyboardEntryPoint);
@@ -204,9 +268,33 @@ public sealed partial class MainPage : Page
 
     public void EnsureKeyboardEntryPoint()
     {
-        if (XamlRoot is null)
+        if (HasKeyboardFocusWithinPage())
         {
             return;
+        }
+
+        TryFocusDashboardEntryPoint();
+        keyboardEntryFocusTimer?.Stop();
+        keyboardEntryFocusTimer = DispatcherQueue.CreateTimer();
+        keyboardEntryFocusTimer.Interval = TimeSpan.FromMilliseconds(150);
+        keyboardEntryFocusTimer.IsRepeating = false;
+        keyboardEntryFocusTimer.Tick += (_, _) =>
+        {
+            keyboardEntryFocusTimer?.Stop();
+            if (!HasKeyboardFocusWithinPage())
+            {
+                TryFocusDashboardEntryPoint();
+            }
+            keyboardEntryFocusTimer = null;
+        };
+        keyboardEntryFocusTimer.Start();
+    }
+
+    private bool HasKeyboardFocusWithinPage()
+    {
+        if (XamlRoot is null)
+        {
+            return false;
         }
 
         DependencyObject? current = FocusManager.GetFocusedElement(XamlRoot) as DependencyObject;
@@ -214,15 +302,27 @@ public sealed partial class MainPage : Page
         {
             if (ReferenceEquals(current, this))
             {
-                return;
+                return true;
             }
 
             current = VisualTreeHelper.GetParent(current);
         }
 
+        return false;
+    }
+
+    private void TryFocusDashboardEntryPoint()
+    {
+        if (XamlRoot is null || !DashboardButton.IsLoaded)
+        {
+            return;
+        }
+
         // Focus can initially remain in the native title bar. Give keyboard
         // input a stable route into the page without changing the visible view.
-        DashboardButton.Focus(FocusState.Programmatic);
+        DashboardButton.UpdateLayout();
+        DashboardButton.StartBringIntoView();
+        DashboardButton.Focus(FocusState.Keyboard);
     }
 
     private void MainPageCharacterReceived(UIElement sender, CharacterReceivedRoutedEventArgs e)
@@ -412,6 +512,7 @@ public sealed partial class MainPage : Page
             };
             AutomationProperties.SetName(vaultButton, $"{vault.Name}, {FriendlyVaultState(vault.State)}, {vault.Path}");
             vaultButton.Click += (_, _) => ShowVault(vault, vaultButton);
+            vaultButton.KeyDown += SidebarNavigationKeyDown;
             vaultButtons.Add(vaultButton);
             VaultListPanel.Children.Add(vaultButton);
         }
@@ -510,6 +611,50 @@ public sealed partial class MainPage : Page
         _ => "Unavailable"
     };
 
+    private void SidebarNavigationKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (sender is not Button current)
+        {
+            return;
+        }
+
+        List<Button> destinations =
+        [
+            DashboardButton,
+            DoctorButton,
+            AddVaultButton,
+            .. vaultButtons,
+            ActivityButton,
+            SettingsButton,
+            LearningButton
+        ];
+        destinations = destinations
+            .Where(button => button.Visibility == Visibility.Visible && button.IsEnabled)
+            .ToList();
+
+        KeyboardNavigationCommand command = e.Key switch
+        {
+            VirtualKey.Up => KeyboardNavigationCommand.Previous,
+            VirtualKey.Down => KeyboardNavigationCommand.Next,
+            VirtualKey.Home => KeyboardNavigationCommand.First,
+            VirtualKey.End => KeyboardNavigationCommand.Last,
+            _ => KeyboardNavigationCommand.None
+        };
+        int nextIndex = KeyboardNavigationPolicy.ResolveNextIndex(
+            destinations.IndexOf(current),
+            destinations.Count,
+            command);
+        if (nextIndex < 0)
+        {
+            return;
+        }
+
+        Button target = destinations[nextIndex];
+        target.StartBringIntoView();
+        target.Focus(FocusState.Keyboard);
+        e.Handled = true;
+    }
+
     private void ShowDashboard(object sender, RoutedEventArgs e)
     {
         DashboardView.Visibility = Visibility.Visible;
@@ -533,7 +678,7 @@ public sealed partial class MainPage : Page
         ContextSubtitle.Text = "Your secure workspace at a glance.";
         SetSelectedDestination(DashboardButton, DoctorButton, "Dashboard");
         SetDestinationUnselected(ActivityButton, "Activity");
-        SetDestinationUnselected(SettingsButton, "Settings");
+        SetDestinationUnselected(SettingsButton, "Preferences");
         SetDestinationUnselected(LearningButton, "Learning Center");
         ClearVaultSelection();
         SetAddVaultUnselected();
@@ -575,7 +720,7 @@ public sealed partial class MainPage : Page
         ContextSubtitle.Text = "Automatic, private checks across VaultKind and your configured vaults.";
         SetSelectedDestination(DoctorButton, DashboardButton, "Vault Doctor");
         SetDestinationUnselected(ActivityButton, "Activity");
-        SetDestinationUnselected(SettingsButton, "Settings");
+        SetDestinationUnselected(SettingsButton, "Preferences");
         SetDestinationUnselected(LearningButton, "Learning Center");
         ClearVaultSelection();
         SetAddVaultUnselected();
@@ -616,7 +761,7 @@ public sealed partial class MainPage : Page
         SetDestinationUnselected(DashboardButton, "Dashboard");
         SetDestinationUnselected(DoctorButton, "Vault Doctor");
         SetDestinationUnselected(ActivityButton, "Activity");
-        SetDestinationUnselected(SettingsButton, "Settings");
+        SetDestinationUnselected(SettingsButton, "Preferences");
         SetDestinationUnselected(LearningButton, "Learning Center");
         ClearVaultSelection();
         AddVaultButton.Background = new SolidColorBrush(Color.FromArgb(255, 58, 66, 72));
@@ -624,6 +769,7 @@ public sealed partial class MainPage : Page
         AddVaultButton.BorderThickness = new Thickness(1);
         AutomationProperties.SetName(AddVaultButton, "Add Vault, selected");
         DispatcherQueue.TryEnqueue(() => AddVaultView.ChangeView(null, 0, null, true));
+        FocusAfterNavigation(CreateNewVaultButton);
     }
 
     private void ShowConnectVault(object sender, RoutedEventArgs e)
@@ -655,6 +801,7 @@ public sealed partial class MainPage : Page
         ConnectVaultStepText.Text = "STEP 1 OF 2";
         ConnectVaultSecondStepBar.Background = new SolidColorBrush(Color.FromArgb(255, 88, 97, 104));
         ConnectVaultButton.IsEnabled = false;
+        FocusAfterNavigation(ConnectVaultFolderButton);
     }
 
     private void ShowActivity(object sender, RoutedEventArgs e)
@@ -680,13 +827,14 @@ public sealed partial class MainPage : Page
         ContextSubtitle.Text = "A private record of vault actions from this VaultKind session.";
         SetDestinationUnselected(DashboardButton, "Dashboard");
         SetDestinationUnselected(DoctorButton, "Vault Doctor");
-        SetDestinationUnselected(SettingsButton, "Settings");
+        SetDestinationUnselected(SettingsButton, "Preferences");
         SetDestinationUnselected(LearningButton, "Learning Center");
         SelectSidebarDestination(ActivityButton, "Activity");
         ClearVaultSelection();
         SetAddVaultUnselected();
         ActivityClearConfirmation.Visibility = Visibility.Collapsed;
         RenderActivity();
+        FocusAfterNavigation(ActivitySearchInput);
     }
 
     private void ShowRecentActivity(object sender, RoutedEventArgs e)
@@ -723,6 +871,7 @@ public sealed partial class MainPage : Page
         ActivitySearchInput.Text = string.Empty;
         RenderActivity();
         UpdateDashboardRecentActivity();
+        FocusAfterNavigation(ActivitySearchInput);
     }
 
     private void ShowSettings(object sender, RoutedEventArgs e)
@@ -750,10 +899,11 @@ public sealed partial class MainPage : Page
         SetDestinationUnselected(DoctorButton, "Vault Doctor");
         SetDestinationUnselected(ActivityButton, "Activity");
         SetDestinationUnselected(LearningButton, "Learning Center");
-        SelectSidebarDestination(SettingsButton, "Settings");
+        SelectSidebarDestination(SettingsButton, "Preferences");
         ClearVaultSelection();
         SetAddVaultUnselected();
         SelectSettingsSection("general");
+        FocusAfterNavigation(SettingsGeneralButton);
     }
 
     private void SelectSettingsSection(object sender, RoutedEventArgs e)
@@ -924,7 +1074,7 @@ public sealed partial class MainPage : Page
         MountServiceSelector.SelectedItem = result.MountServices.FirstOrDefault(service => string.Equals(service.Id, result.SelectedMountService, StringComparison.Ordinal)) ?? result.MountServices[0];
         MountServiceSelector.IsEnabled = true;
         UpdateMountServiceCapabilities(MountServiceSelector.SelectedItem as MountServiceOption);
-        MountServiceStatus.Text = $"{result.MountServices.Count - 1} installed provider(s) reported by the local engine. Automatic is recommended.";
+        MountServiceStatus.Text = $"VaultKind found {result.MountServices.Count - 1} available drive providers. Automatic is recommended.";
         MountServiceStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 73, 205, 112));
         loadingMountServices = false;
     }
@@ -1241,13 +1391,23 @@ public sealed partial class MainPage : Page
 
     private void ApplySettingsButtonPalette(string section)
     {
-        foreach (Button button in new[] { SettingsGeneralButton, SettingsAppearanceButton, SettingsVirtualDriveButton, SettingsPrivacyButton, SettingsAboutButton })
+        (Button Button, string Name)[] settingsSections =
+        [
+            (SettingsGeneralButton, "General preferences"),
+            (SettingsAppearanceButton, "Appearance preferences"),
+            (SettingsVirtualDriveButton, "Virtual Drive preferences"),
+            (SettingsPrivacyButton, "Privacy preferences"),
+            (SettingsAboutButton, "About VaultKind")
+        ];
+
+        foreach ((Button button, string name) in settingsSections)
         {
             bool selected = string.Equals(button.Tag as string, section, StringComparison.Ordinal);
             button.Background = selected ? PaletteBrush("SelectedSurfaceBrush") : new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
             button.BorderBrush = selected ? PaletteBrush("BrandBlueBrush") : PaletteBrush("CardBorderBrush");
             button.BorderThickness = selected ? new Thickness(2) : new Thickness(1);
             button.Foreground = selected ? PaletteBrush("BrandBlueBrush") : PaletteBrush("PrimaryTextBrush");
+            AutomationProperties.SetName(button, selected ? $"{name}, selected" : name);
         }
     }
 
@@ -1300,7 +1460,7 @@ public sealed partial class MainPage : Page
         SetDestinationUnselected(DashboardButton, "Dashboard");
         SetDestinationUnselected(DoctorButton, "Vault Doctor");
         SetDestinationUnselected(ActivityButton, "Activity");
-        SetDestinationUnselected(SettingsButton, "Settings");
+        SetDestinationUnselected(SettingsButton, "Preferences");
         SelectSidebarDestination(LearningButton, "Learning Center");
         ClearVaultSelection();
         SetAddVaultUnselected();
@@ -1445,6 +1605,7 @@ public sealed partial class MainPage : Page
             "cloud" => ("Cloud Storage", "Keep encrypted data synchronized with the provider you already use.", "Place the encrypted storage folder inside OneDrive, Dropbox, Google Drive, or another synchronized folder. Your provider receives encrypted data—not your readable files.", "Allow synchronization to finish before shutting down or making changes from another device.", "\uE753"),
             "drive" => ("Virtual Drives", "Work with readable files through a familiar Windows drive.", "After unlocking, VaultKind opens a familiar virtual drive. This is where you read, edit, add, and organize your files.", "Work in the virtual drive, not directly inside the encrypted storage folder. Lock the vault when finished.", "\uE7C3"),
             "security" => ("Security Tips", "Simple habits that strengthen the protection around your vaults.", "Use a unique password, protect your recovery key, keep reliable backups, install trusted Windows updates, and lock vaults you are no longer using.", "VaultKind protects file contents, but device security and safe backups remain important parts of your protection.", "\uE83D"),
+            "keyboard" => ("Keyboard Shortcuts", "Navigate VaultKind efficiently without leaving the keyboard.", string.Empty, string.Empty, "\uE765"),
             "faq" => ("FAQ", "Straight answers to common VaultKind questions.", "Does VaultKind upload my files?\nNo. VaultKind encrypts locally. Your existing cloud application handles synchronization if you choose a cloud folder.\n\nCan VaultKind reset my password?\nNo. Use your recovery key to restore access if you forget the password.\n\nCan I use the same vault on another Windows device?\nYes. Let the encrypted folder synchronize, then connect that existing vault on the other device.", "VaultKind is desktop first, Windows focused, and private by default.", "\uE897"),
             _ => ("How VaultKind Works", "Understand what is encrypted, where it is stored, and how you safely access it.", string.Empty, string.Empty, "\uE72E")
         };
@@ -1476,6 +1637,7 @@ public sealed partial class MainPage : Page
             check.Visibility = viewedLearningTopics.Contains(id) ? Visibility.Visible : Visibility.Collapsed;
         }
 
+        UpdateLearningTopicAutomationNames();
         UpdateLearningProgressDisplay();
         if (string.IsNullOrWhiteSpace(sectionTitle))
         {
@@ -1494,6 +1656,7 @@ public sealed partial class MainPage : Page
     {
         learningSectionViewEntries.Clear();
         bool isFaq = selectedLearningTopic == "faq";
+        Button? faqCategoryFocusTarget = null;
 
         var search = new TextBox
         {
@@ -1534,6 +1697,11 @@ public sealed partial class MainPage : Page
                         : Color.FromArgb(255, 82, 93, 101)),
                     BorderThickness = new Thickness(id == selectedFaqCategory ? 2 : 1)
                 };
+                AutomationProperties.SetName(button, id == selectedFaqCategory ? $"{label}, selected" : label);
+                if (restoreFaqCategoryFocusAfterRender && id == selectedFaqCategory)
+                {
+                    faqCategoryFocusTarget = button;
+                }
                 button.Click += SelectFaqCategory;
                 categories.Items.Add(button);
             }
@@ -1553,6 +1721,8 @@ public sealed partial class MainPage : Page
             VerticalAlignment = VerticalAlignment.Center,
             Visibility = Visibility.Collapsed
         };
+        AutomationProperties.SetLiveSetting(learningCopyGuidanceStatus, AutomationLiveSetting.Polite);
+        RegisterLiveRegion(learningCopyGuidanceStatus);
         learningCopyGuidanceButton = new Button
         {
             Content = "Copy Guidance",
@@ -1655,6 +1825,7 @@ public sealed partial class MainPage : Page
                 CornerRadius = new CornerRadius(9),
                 Content = content
             };
+            AutomationProperties.SetName(question, LearningSectionAutomationName(section.Title, isExpanded, isHighlightedAnswer));
             question.Click += ToggleLearningSection;
             learningSectionViewEntries.Add(new LearningSectionViewEntry(section, category, question, answer, chevron, isHighlightedAnswer));
             LearningArticleSectionsPanel.Children.Add(question);
@@ -1674,7 +1845,12 @@ public sealed partial class MainPage : Page
         ApplyLearningSectionFilter(search.Text);
         QueueTextScaleRefresh();
 
-        if (!string.IsNullOrWhiteSpace(selectedSection))
+        if (faqCategoryFocusTarget is not null)
+        {
+            restoreFaqCategoryFocusAfterRender = false;
+            FocusAfterNavigation(faqCategoryFocusTarget);
+        }
+        else if (!string.IsNullOrWhiteSpace(selectedSection))
         {
             LearningSectionViewEntry? selectedEntry = learningSectionViewEntries.FirstOrDefault(entry => entry.Section.Title == selectedSection);
             DispatcherQueue.TryEnqueue(() =>
@@ -1709,6 +1885,7 @@ public sealed partial class MainPage : Page
         }
 
         selectedFaqCategory = category;
+        restoreFaqCategoryFocusAfterRender = true;
         if (LearningArticles.TryGetValue("faq", out LearningArticle? article))
         {
             RenderLearningArticle(article);
@@ -1765,6 +1942,7 @@ public sealed partial class MainPage : Page
             entry.Button.Background = expanded ? PaletteBrush("InfoSurfaceBrush") : PaletteBrush("ListSurfaceBrush");
             entry.Button.BorderBrush = entry.IsHighlightedAnswer || expanded ? PaletteBrush("BrandBlueBrush") : PaletteBrush("CardBorderBrush");
             entry.Button.BorderThickness = new Thickness(entry.IsHighlightedAnswer ? 3 : 1);
+            AutomationProperties.SetName(entry.Button, LearningSectionAutomationName(entry.Section.Title, expanded, entry.IsHighlightedAnswer));
         }
 
         bool hasSelectedGuidance = !string.IsNullOrWhiteSpace(selectedLearningSections[selectedLearningTopic]);
@@ -1946,19 +2124,21 @@ public sealed partial class MainPage : Page
             check.Visibility = Visibility.Collapsed;
         }
         UpdateLearningProgressDisplay();
+        UpdateLearningTopicAutomationNames();
     }
 
     private void UpdateLearningProgressDisplay()
     {
         int viewed = viewedLearningTopics.Count;
-        bool complete = viewed == 7;
+        int topicCount = LearningTopicButtons().Length;
+        bool complete = viewed == topicCount;
         LearningProgressBar.Value = viewed;
         LearningProgressBar.Foreground = complete
             ? new SolidColorBrush(Color.FromArgb(255, 73, 205, 112))
             : PaletteBrush("BrandBlueBrush");
         LearningProgressText.Text = complete
-            ? "All 7 topics viewed — nice work"
-            : $"{viewed} of 7 topics viewed";
+            ? $"All {topicCount} topics viewed — nice work"
+            : $"{viewed} of {topicCount} topics viewed";
         LearningProgressText.Foreground = complete
             ? new SolidColorBrush(Color.FromArgb(255, 73, 205, 112))
             : PaletteBrush("MutedTextBrush");
@@ -1966,22 +2146,22 @@ public sealed partial class MainPage : Page
         DashboardLearningProgressBar.Foreground = LearningProgressBar.Foreground;
         DashboardLearningTitle.Text = complete ? "Learning Center complete" : "Continue learning";
         DashboardLearningDescription.Text = complete
-            ? "You have viewed all seven practical VaultKind topics. Revisit them whenever you need a refresher."
-            : $"{viewed} of 7 topics viewed. Continue with the next short, practical guide.";
+            ? "You have viewed every practical VaultKind topic. Revisit them whenever you need a refresher."
+            : $"{viewed} of {topicCount} topics viewed. Continue with the next short, practical guide.";
         DashboardLearningButton.Content = complete ? "Review Topics" : "Continue";
         DashboardLearningIcon.Glyph = complete ? "\uE73E" : "\uE82D";
         DashboardLearningIcon.Foreground = complete
             ? new SolidColorBrush(Color.FromArgb(255, 73, 205, 112))
             : PaletteBrush("BrandBlueBrush");
         AutomationProperties.SetName(DashboardLearningProgressBar, complete
-            ? "Learning Center progress complete, all 7 topics viewed"
-            : $"Learning Center progress, {viewed} of 7 topics viewed");
+            ? $"Learning Center progress complete, all {topicCount} topics viewed"
+            : $"Learning Center progress, {viewed} of {topicCount} topics viewed");
         AutomationProperties.SetName(DashboardLearningButton, complete
             ? "Review Learning Center topics"
             : "Continue to the next Learning Center topic");
         AutomationProperties.SetName(LearningProgressBar, complete
-            ? "Learning Center progress complete, all 7 topics viewed"
-            : $"Learning Center progress, {viewed} of 7 topics viewed");
+            ? $"Learning Center progress complete, all {topicCount} topics viewed"
+            : $"Learning Center progress, {viewed} of {topicCount} topics viewed");
     }
 
     private void LoadLearningProgress()
@@ -1997,7 +2177,7 @@ public sealed partial class MainPage : Page
             List<string>? stored = JsonSerializer.Deserialize<List<string>>(json);
             if (stored is not null)
             {
-                string[] validTopics = ["how", "first", "recovery", "cloud", "drive", "security", "faq"];
+                string[] validTopics = LearningTopicButtons().Select(topic => topic.Id).ToArray();
                 foreach (string topic in stored.Where(topic => validTopics.Contains(topic, StringComparer.Ordinal)))
                 {
                     viewedLearningTopics.Add(topic);
@@ -2051,8 +2231,26 @@ public sealed partial class MainPage : Page
         (LearningCloudButton, "cloud", "Cloud Storage", LearningCloudCheck),
         (LearningDriveButton, "drive", "Virtual Drives", LearningDriveCheck),
         (LearningSecurityButton, "security", "Security Tips", LearningSecurityCheck),
+        (LearningKeyboardButton, "keyboard", "Keyboard Shortcuts", LearningKeyboardCheck),
         (LearningFaqButton, "faq", "FAQ", LearningFaqCheck)
     ];
+
+    private void UpdateLearningTopicAutomationNames()
+    {
+        foreach ((Button button, string id, string title, FontIcon _) in LearningTopicButtons())
+        {
+            bool selected = string.Equals(id, selectedLearningTopic, StringComparison.Ordinal);
+            bool viewed = viewedLearningTopics.Contains(id);
+            string state = selected && viewed ? ", selected, viewed"
+                : selected ? ", selected"
+                : viewed ? ", viewed"
+                : string.Empty;
+            AutomationProperties.SetName(button, title + state);
+        }
+    }
+
+    private static string LearningSectionAutomationName(string title, bool expanded, bool highlighted) =>
+        $"{title}, {(expanded ? "expanded" : "collapsed")}{(highlighted ? ", answer for this issue" : string.Empty)}";
 
     private void ShowAssistant(object sender, RoutedEventArgs e)
     {
@@ -2118,6 +2316,7 @@ public sealed partial class MainPage : Page
                 Padding = new Thickness(14, 10, 14, 10),
                 Content = caseContent
             };
+            AutomationProperties.SetName(button, $"Open {item.Id}, {item.Title}");
             button.Click += OpenAssistantCaseFromButton;
             AssistantResultsPanel.Children.Add(button);
         }
@@ -2158,7 +2357,11 @@ public sealed partial class MainPage : Page
         if (sender is Button { Tag: string id }) ShowAssistantCase(id, 100, "You opened this reviewed diagnostic case directly.");
     }
 
-    private void BackToAssistantCases(object sender, RoutedEventArgs e) => ShowAssistantCaseList(selectedAssistantCategory);
+    private void BackToAssistantCases(object sender, RoutedEventArgs e)
+    {
+        ShowAssistantCaseList(selectedAssistantCategory);
+        FocusAfterNavigation(AssistantSearch);
+    }
 
     private void AssistantSearchKeyDown(object sender, KeyRoutedEventArgs e)
     {
@@ -2208,6 +2411,7 @@ public sealed partial class MainPage : Page
         AssistantBackToCasesButton.Visibility = Visibility.Visible;
         AssistantResultsPanel.Children.Clear();
         AssistantResultsPanel.Children.Add(new TextBlock { Text = body, TextWrapping = TextWrapping.Wrap, Foreground = new SolidColorBrush(Color.FromArgb(255, 185, 193, 199)), FontSize = 15 });
+        FocusAfterNavigation(AssistantBackToCasesButton);
         QueueTextScaleRefresh();
     }
 
@@ -2243,6 +2447,7 @@ public sealed partial class MainPage : Page
             }
         });
         DispatcherQueue.TryEnqueue(() => AssistantContentScroll.ChangeView(null, 0, null, true));
+        FocusAfterNavigation(AssistantBackToCasesButton);
         QueueTextScaleRefresh();
     }
 
@@ -2319,8 +2524,18 @@ public sealed partial class MainPage : Page
         "cloud" => "Cloud Storage",
         "drive" => "Virtual Drives",
         "security" => "Security Tips",
+        "keyboard" => "Keyboard Shortcuts",
         _ => "FAQ"
     };
+
+    private static LearningArticle CreateKeyboardControlsLearningArticle()
+    {
+        KeyboardControlsGuide guide = KeyboardControlsDocument.Load(typeof(MainPage).Assembly);
+        return new LearningArticle(
+            guide.Introduction,
+            guide.Sections.Select(section => new LearningSection(section.Title, section.Body)).ToArray(),
+            guide.Tip);
+    }
 
     private static StackPanel AssistantSection(string label, string body) => new()
     {
@@ -2358,11 +2573,12 @@ public sealed partial class MainPage : Page
         SetDestinationUnselected(DashboardButton, "Dashboard");
         SetDestinationUnselected(DoctorButton, "Vault Doctor");
         SetDestinationUnselected(ActivityButton, "Activity");
-        SetDestinationUnselected(SettingsButton, "Settings");
+        SetDestinationUnselected(SettingsButton, "Preferences");
         SetDestinationUnselected(LearningButton, "Learning Center");
         ClearVaultSelection();
         SetAddVaultUnselected();
         DispatcherQueue.TryEnqueue(() => RecoveryHubView.ChangeView(null, 0, null, true));
+        FocusAfterNavigation(RecoveryPasswordButton);
     }
 
     private async void ShowRecoveryReset(object sender, RoutedEventArgs e)
@@ -2393,7 +2609,7 @@ public sealed partial class MainPage : Page
         ContextTitle.Text = "Restore Password Access";
         ContextSubtitle.Text = "Use a saved recovery key to choose a new password for a locked vault.";
         SetDestinationUnselected(ActivityButton, "Activity");
-        SetDestinationUnselected(SettingsButton, "Settings");
+        SetDestinationUnselected(SettingsButton, "Preferences");
         SetDestinationUnselected(LearningButton, "Learning Center");
 
         RecoveryVaultPicker.Items.Clear();
@@ -2687,6 +2903,7 @@ public sealed partial class MainPage : Page
         ContextTitle.Text = "Create a Vault";
         ContextSubtitle.Text = "Set up a new encrypted space in four clear steps.";
         RefreshCreateVaultStorageLocation();
+        FocusAfterNavigation(CreateVaultStorageFolderButton);
     }
 
     private void ReturnToCreateVaultName(object sender, RoutedEventArgs e)
@@ -2764,6 +2981,7 @@ public sealed partial class MainPage : Page
         CreateVaultSuccessView.Visibility = Visibility.Collapsed;
         CreateVaultReviewName.Text = CreateVaultNameInput.Text.Trim();
         CreateVaultReviewPath.Text = CreateVaultStoragePath.Text;
+        FocusAfterNavigation(CreateVaultShortNamesOption);
     }
 
     private void CreateVaultShortNamesChanged(object sender, RoutedEventArgs e)
@@ -2779,6 +2997,7 @@ public sealed partial class MainPage : Page
         CreateVaultProtectionView.Visibility = Visibility.Collapsed;
         CreateVaultSuccessView.Visibility = Visibility.Collapsed;
         CreateVaultStorageView.Visibility = Visibility.Visible;
+        FocusAfterNavigation(CreateVaultStorageFolderButton);
     }
 
     private async void ShowCreateVaultProtection(object sender, RoutedEventArgs e)
@@ -2795,6 +3014,7 @@ public sealed partial class MainPage : Page
         CreateVaultProtectionView.Visibility = Visibility.Collapsed;
         CreateVaultSuccessView.Visibility = Visibility.Collapsed;
         CreateVaultReviewView.Visibility = Visibility.Visible;
+        FocusAfterNavigation(CreateVaultShortNamesOption);
     }
 
     private void CreateVaultPasswordChanged(object sender, RoutedEventArgs e)
@@ -2931,6 +3151,7 @@ public sealed partial class MainPage : Page
         CreatedRecoveryKeySaved.IsChecked = false;
         CreatedVaultDoneButton.IsEnabled = !hasRecoveryKey;
         CreatedVaultUnlockButton.IsEnabled = !hasRecoveryKey;
+        FocusAfterNavigation(hasRecoveryKey ? CreatedRecoveryKeyText : CreatedVaultUnlockButton);
     }
 
     private void CopyCreatedRecoveryKey(object sender, RoutedEventArgs e)
@@ -3060,7 +3281,7 @@ public sealed partial class MainPage : Page
         SetDestinationUnselected(DashboardButton, "Dashboard");
         SetDestinationUnselected(DoctorButton, "Vault Doctor");
         SetDestinationUnselected(ActivityButton, "Activity");
-        SetDestinationUnselected(SettingsButton, "Settings");
+        SetDestinationUnselected(SettingsButton, "Preferences");
         SetDestinationUnselected(LearningButton, "Learning Center");
         ClearVaultSelection();
         SetAddVaultUnselected();
@@ -3068,6 +3289,7 @@ public sealed partial class MainPage : Page
         selectedButton.BorderBrush = new SolidColorBrush(Color.FromArgb(255, 78, 161, 255));
         selectedButton.BorderThickness = new Thickness(3, 0, 0, 0);
         AutomationProperties.SetName(selectedButton, $"{vault.Name}, selected, {FriendlyVaultState(vault.State)}, {vault.Path}");
+        FocusAfterNavigation(unlocked ? OpenDriveButton : UnlockVaultButton);
     }
 
     private void ShowVaultManagement(object sender, RoutedEventArgs e)
@@ -3110,6 +3332,7 @@ public sealed partial class MainPage : Page
         ManagedChangePasswordButton.Content = unlocked ? "Lock Vault to Change" : "Change Password";
         ManagedRemoveButton.IsEnabled = !unlocked;
         ManagedRemoveHint.Visibility = unlocked ? Visibility.Visible : Visibility.Collapsed;
+        FocusAfterNavigation(ManagedVaultRenameButton);
     }
 
     private async void ShowVaultStatistics(object sender, RoutedEventArgs e)
@@ -3132,6 +3355,7 @@ public sealed partial class MainPage : Page
         ContextSubtitle.Text = "View local read, write, cache, and access activity for this vault.";
         VaultStatisticsSubtitle.Text = $"Current local activity for {activeVault.Name}.";
         VaultManagementView.ChangeView(null, 0, null, true);
+        FocusAfterNavigation(RefreshVaultStatisticsButton);
         await RefreshVaultStatisticsAsync();
     }
 
@@ -3141,6 +3365,7 @@ public sealed partial class MainPage : Page
         if (activeVault is not null && FindVaultButton(activeVault.Id) is Button button)
         {
             ShowVault(activeVault, button);
+            FocusAfterNavigation(VaultStatisticsButton);
         }
     }
 
@@ -3195,6 +3420,7 @@ public sealed partial class MainPage : Page
         if (activeVault is not null && FindVaultButton(activeVault.Id) is Button button)
         {
             ShowVault(activeVault, button);
+            FocusAfterNavigation(VaultLocateEncryptedFileButton);
         }
     }
 
@@ -3367,6 +3593,7 @@ public sealed partial class MainPage : Page
         if (activeVault is not null && FindVaultButton(activeVault.Id) is Button button)
         {
             ShowVault(activeVault, button);
+            FocusAfterNavigation(VaultDecryptFileNameButton);
         }
     }
 
@@ -3629,6 +3856,7 @@ public sealed partial class MainPage : Page
         ManagedVaultRenameEditor.Visibility = Visibility.Collapsed;
         ManagedVaultNameDisplay.Visibility = Visibility.Visible;
         ManagedVaultRenameStatus.Visibility = Visibility.Collapsed;
+        FocusAfterNavigation(ManagedVaultRenameButton);
     }
 
     private void ManagedVaultRenameKeyDown(object sender, KeyRoutedEventArgs e)
@@ -3726,6 +3954,7 @@ public sealed partial class MainPage : Page
         ContextTitle.Text = "Share Vault";
         ContextSubtitle.Text = "Share encrypted storage safely without exposing readable files.";
         VaultManagementView.ChangeView(null, 0, null, true);
+        FocusAfterNavigation(ShareOpenStorageFolderButton);
     }
 
     private async void OpenShareVaultFolder(object sender, RoutedEventArgs e)
@@ -3803,6 +4032,7 @@ public sealed partial class MainPage : Page
         ContextTitle.Text = "Manage Vault";
         ContextSubtitle.Text = "Share, recover, inspect, or remove this vault without leaving the main window.";
         VaultManagementView.ChangeView(null, 0, null, true);
+        FocusAfterNavigation(ManagedShareGuideButton);
     }
 
     private void ShowManagedChangePassword(object sender, RoutedEventArgs e)
@@ -3929,6 +4159,7 @@ public sealed partial class MainPage : Page
         ChangePasswordAcknowledge.IsChecked = false;
         ChangePasswordForm.Visibility = Visibility.Collapsed;
         ChangePasswordSuccess.Visibility = Visibility.Visible;
+        FocusAfterNavigation(ChangePasswordDoneButton);
         LogActivity("Vault password changed", $"{vaultName} now uses a new password.", "security");
     }
 
@@ -4033,6 +4264,7 @@ public sealed partial class MainPage : Page
         ManagedRecoveryKeyText.Text = result.RecoveryKey;
         RecoveryKeyPasswordForm.Visibility = Visibility.Collapsed;
         RecoveryKeyDisplayResult.Visibility = Visibility.Visible;
+        FocusAfterNavigation(ManagedRecoveryKeyText);
         LogActivity("Recovery key viewed", $"The recovery key for {vaultName} was displayed locally.", "recovery");
     }
 
@@ -4185,7 +4417,7 @@ public sealed partial class MainPage : Page
         ContextTitle.Text = "Unlock Vault";
         ContextSubtitle.Text = "Enter your password to securely open this vault.";
         SetDestinationUnselected(ActivityButton, "Activity");
-        SetDestinationUnselected(SettingsButton, "Settings");
+        SetDestinationUnselected(SettingsButton, "Preferences");
         SetDestinationUnselected(LearningButton, "Learning Center");
         UnlockVaultName.Text = activeVault.Name;
         UnlockVaultPath.Text = activeVault.Path;
@@ -4996,7 +5228,7 @@ public sealed partial class MainPage : Page
                 ? "Activity history is paused"
                 : "No activity recorded yet";
             DashboardRecentActivityDescription.Text = RecordActivityHistoryToggle?.IsOn == false
-                ? "Turn local Activity history on in Settings to record future VaultKind actions."
+                ? "Turn local Activity history on in Preferences to record future VaultKind actions."
                 : "Important vault, recovery, password, and Doctor actions will appear here.";
             DashboardRecentActivityTime.Text = string.Empty;
             DashboardRecentActivityButton.IsEnabled = false;

@@ -51,6 +51,29 @@ foreach ((string? error, bool expected) in lockFailureCases)
     failures++;
 }
 
+(int Current, int Count, KeyboardNavigationCommand Command, int Expected)[] keyboardNavigationCases =
+[
+    (0, 8, KeyboardNavigationCommand.Previous, 7),
+    (7, 8, KeyboardNavigationCommand.Next, 0),
+    (3, 8, KeyboardNavigationCommand.Previous, 2),
+    (3, 8, KeyboardNavigationCommand.Next, 4),
+    (3, 8, KeyboardNavigationCommand.First, 0),
+    (3, 8, KeyboardNavigationCommand.Last, 7),
+    (3, 8, KeyboardNavigationCommand.None, -1),
+    (-1, 8, KeyboardNavigationCommand.Next, -1)
+];
+foreach ((int current, int count, KeyboardNavigationCommand command, int expected) in keyboardNavigationCases)
+{
+    int actual = KeyboardNavigationPolicy.ResolveNextIndex(current, count, command);
+    if (actual == expected)
+    {
+        continue;
+    }
+
+    Console.Error.WriteLine($"FAIL: keyboard navigation current={current}, count={count}, command={command}, expected={expected}, actual={actual}");
+    failures++;
+}
+
 (string? Reported, string Expected, bool Matches)[] engineProfileCases =
 [
     (Path.Combine("C:\\", "VaultKind", "settings.json"), Path.Combine("c:\\", "vaultkind", "settings.json"), true),
@@ -108,13 +131,31 @@ if (migratedPreferences is null
     failures++;
 }
 
+KeyboardControlsGuide keyboardGuide = KeyboardControlsDocument.Load(typeof(KeyboardControlsDocument).Assembly);
+(string Name, bool Passed)[] keyboardDocumentCases =
+[
+    ("contains global slash shortcut", keyboardGuide.Sections.Any(section => section.Body.Contains("/: Opens Learning Center", StringComparison.Ordinal))),
+    ("contains sidebar navigation", keyboardGuide.Sections.Any(section => section.Title == "Main sidebar" && section.Body.Contains("Down Arrow", StringComparison.Ordinal))),
+    ("excludes release-only checklist", keyboardGuide.Sections.All(section => section.Title != "Release verification checklist"))
+];
+foreach ((string name, bool passed) in keyboardDocumentCases)
+{
+    if (passed)
+    {
+        continue;
+    }
+
+    Console.Error.WriteLine($"FAIL: embedded keyboard controls guide {name}.");
+    failures++;
+}
+
 if (failures > 0)
 {
     Console.Error.WriteLine($"{failures} native policy check(s) failed.");
     return 1;
 }
 
-Console.WriteLine($"Passed {doctorCases.Length + lockFailureCases.Length + engineProfileCases.Length + backendIdentityCases.Length + 1} native policy, backend identity, profile, and preference checks.");
+Console.WriteLine($"Passed {doctorCases.Length + lockFailureCases.Length + keyboardNavigationCases.Length + engineProfileCases.Length + backendIdentityCases.Length + keyboardDocumentCases.Length + 1} native policy, keyboard navigation, documentation, backend identity, profile, and preference checks.");
 return 0;
 
 static async Task<int> ProbeBundledEngineAsync(string socketPath)

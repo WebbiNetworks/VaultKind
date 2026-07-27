@@ -60,7 +60,18 @@ The script refuses to use `CN=VaultKind Development` for the production identity
 - Run native automated tests and the existing Java test suite from the exact release commit.
 - Verify unlock, readable-drive reveal, lock, shutdown protection, recovery, and upgrade against disposable test vaults.
 - Confirm the app is understandable and operable with signature sounds disabled.
+- Complete keyboard-only, Narrator, Windows text-scaling, high-DPI, and minimum-window accessibility passes on the release build.
 - Record checksums and retain the exact artifacts used for release.
+
+## Current accessibility baseline
+
+The native shell uses visible system focus indicators, moves keyboard focus into the workspace after navigation, and gives icon-only password-reveal controls explicit accessible names. The sidebar supports Up/Down movement plus Home/End jumps across Dashboard, Vault Doctor, Add Vault, configured vaults, Activity, Preferences, and Learning Center; Tab and Enter behavior remains available. The complete implemented key map and manual test matrix are maintained in [KEYBOARD_CONTROLS.md](KEYBOARD_CONTROLS.md). Dynamic workflow status text is exposed as a polite UI Automation live region, with a `LiveRegionChanged` event raised after a visible message changes. Busy indicators have task-specific names such as Opening vault, Creating vault, and Password recovery in progress rather than an unlabeled generic progress control.
+
+The static accessible-name and focus audit covers both fixed XAML controls and controls generated at runtime. Stateful Preferences, Learning Center, FAQ, and Assistant controls now expose their selected, viewed, expanded, collapsed, or case context in their accessible names. Navigation and replacement flows deliberately place or restore focus across primary workspaces, vault creation, management, sharing, statistics, file tools, FAQ filtering, Assistant results, and completion states.
+
+These semantic foundations do not replace hands-on assistive-technology testing. Before 1.0, test the exact release build with Narrator and keyboard-only input across creation, connection, unlock, lock, recovery, password change, removal, Vault Doctor, Preferences, Learning Center, and Assistant. Repeat the core flows at increased Windows text scale, supported DPI settings, and the minimum usable window size; record every blocker and retest its fix.
+
+On July 27, 2026, the current signed x64 Release development build passed a hands-on zero-vault accessibility pass with Greg. Confirmed behavior includes immediate `/` shortcut handling at startup; sidebar, Preferences-tab, Learning Center, Add Vault, and new-vault keyboard focus; Narrator control names and Vault Doctor live announcements; VaultKind larger text while Windows Text size was already set to Greg's normal 160%; minimum-window scrolling and reachability; visible focus in Light and Dark; and Windows High Contrast rendering. Moving the window to a television configured at an unusually large effective scale made navigation substantially different but remained functional, and moving between displays triggered immediate reflow. This is development evidence, not the final release gate. Vault context-menu access, connected-vault and sensitive workflows, broader supported-DPI coverage, and the complete repeat on the frozen release candidate remain outstanding.
 
 ## Deferred non-Store signed distribution
 
@@ -74,7 +85,7 @@ Run:
 dotnet run --project native\VaultKind.Windows.Tests\VaultKind.Windows.Tests.csproj -c Release
 ```
 
-The initial checks lock down critical Doctor classification, the exact vault-in-use warning boundary, and safe migration of preferences that still contain the retired `LanguageCode` property. This is only the first seam; backend protocol, persistence, and workflow coverage must continue to grow before 1.0.
+The current 32 checks lock down critical Doctor classification, the exact vault-in-use warning boundary, keyboard-navigation boundaries, safe migration of preferences that still contain the retired `LanguageCode` property, backend identity/profile validation, and loading the embedded keyboard guide from its authoritative Markdown source. This is still an early seam; backend protocol, persistence, and workflow coverage must continue to grow before 1.0.
 
 ## Explicitly excluded from 1.0
 

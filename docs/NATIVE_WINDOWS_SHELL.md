@@ -31,10 +31,13 @@ The existing Java application remains in its original Maven project structure. W
 | `MainPage.xaml.cs` | Dashboard behavior, navigation, engine connection status, vault rendering, and native unlock/open/lock interactions. |
 | `Services/JavaVaultEngineHost.cs` | Development lifecycle host that starts and stops the existing Java vault engine with the native app. |
 | `Services/DoctorFindingPolicy.cs` | Defines the narrow evidence threshold for critical Vault Doctor warnings. |
+| `Services/KeyboardNavigationPolicy.cs` | Defines testable sidebar Up/Down/Home/End movement and wrap boundaries. |
 | `Services/SignatureSoundPolicy.cs` | Keeps warning audio limited to explicitly approved safety events. |
 | `Services/WindowPlacementStore.cs` | Saves the last window placement locally and safely brings it back on-screen if the monitor layout later changes. |
 | `../VaultKind.Windows.Tests` | Package-free native policy and preference regression checks. |
 | `../../scripts/build-native-release.ps1` | Stages the self-contained frontend, bundled Java engine/runtime, notices, and optional signatures. |
+
+The complete implemented keyboard behavior, deliberate focus targets, and remaining manual release checks are documented in [KEYBOARD_CONTROLS.md](KEYBOARD_CONTROLS.md). That file is the source of truth for keyboard claims; do not infer a global Back or Escape command that the native shell does not implement.
 
 ## Two languages, two jobs
 

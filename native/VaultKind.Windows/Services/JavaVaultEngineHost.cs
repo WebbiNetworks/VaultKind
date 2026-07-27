@@ -17,7 +17,12 @@ internal sealed class JavaVaultEngineHost : IDisposable
 
     internal bool StartIfNeeded()
     {
-        if (IsCompatibleBackendListening(out bool backendListening))
+        BundledEngineLayout? bundledEngine = FindBundledEngine();
+        string? repositoryRoot = bundledEngine is null ? FindRepositoryRoot() : null;
+        string settingsPath = ResolveExpectedSettingsPath(bundledEngine, repositoryRoot);
+        string profileRoot = Path.GetDirectoryName(settingsPath)!;
+
+        if (IsCompatibleBackendListening(settingsPath, out bool backendListening))
         {
             return true;
         }
@@ -34,8 +39,6 @@ internal sealed class JavaVaultEngineHost : IDisposable
             }
         }
 
-        BundledEngineLayout? bundledEngine = FindBundledEngine();
-        string? repositoryRoot = bundledEngine is null ? FindRepositoryRoot() : null;
         string? javaExecutable = bundledEngine?.JavaExecutable ?? FindJavaExecutable(repositoryRoot);
         if (javaExecutable is null || (bundledEngine is null && repositoryRoot is null))
         {
@@ -50,12 +53,9 @@ internal sealed class JavaVaultEngineHost : IDisposable
             CreateNoWindow = true
         };
 
-        string profileRoot = bundledEngine is null
-            ? Path.Combine(repositoryRoot!, "target", "ui-dev-profile")
-            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultKind", "engine");
         string classesDirectory = bundledEngine?.ClassesDirectory ?? Path.Combine(repositoryRoot!, "target", "classes");
         startInfo.ArgumentList.Add($"-Dlogback.configurationFile={Path.Combine(classesDirectory, "logback-native.xml")}");
-        startInfo.ArgumentList.Add($"-Dcryptomator.settingsPath={Path.Combine(profileRoot, "settings.json")}");
+        startInfo.ArgumentList.Add($"-Dcryptomator.settingsPath={settingsPath}");
         startInfo.ArgumentList.Add($"-Dcryptomator.pluginDir={Path.Combine(profileRoot, "plugins")}");
         startInfo.ArgumentList.Add($"-Dcryptomator.logDir={Path.Combine(profileRoot, "logs")}");
         startInfo.ArgumentList.Add($"-Dcryptomator.mountPointsDir={Path.Combine(profileRoot, "mnt")}");
@@ -138,7 +138,7 @@ internal sealed class JavaVaultEngineHost : IDisposable
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private sealed record EngineRequest(int Protocol, string RequestId, string Operation);
-    private sealed record EngineResponse(int Protocol, string RequestId, bool Ok, string? Backend, string? Error, IReadOnlyList<string>? Capabilities);
+    private sealed record EngineResponse(int Protocol, string RequestId, bool Ok, string? Backend, string? Error, IReadOnlyList<string>? Capabilities, string? Profile);
 
     private static string SocketPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -146,7 +146,7 @@ internal sealed class JavaVaultEngineHost : IDisposable
         "bridge",
         "native-bridge-v1.sock");
 
-    private static bool IsCompatibleBackendListening(out bool backendListening)
+    private static bool IsCompatibleBackendListening(string expectedProfile, out bool backendListening)
     {
         backendListening = false;
         if (!File.Exists(SocketPath))
@@ -164,16 +164,53 @@ internal sealed class JavaVaultEngineHost : IDisposable
             string helloId = Guid.NewGuid().ToString("N");
             WriteFrame(stream, new EngineRequest(1, helloId, "backend.hello"));
             EngineResponse hello = ReadFrame(stream);
-            return hello.Ok &&
-                   hello.RequestId == helloId &&
-                   hello.Backend == "VaultKind Java Engine" &&
-                   hello.Capabilities is not null &&
-                   RequiredCapabilities.All(capability => hello.Capabilities.Contains(capability, StringComparer.Ordinal));
+            return IsExpectedBackendIdentity(hello.Protocol, hello.RequestId, hello.Ok, hello.Backend, hello.Capabilities, hello.Profile, helloId, expectedProfile);
         }
         catch (Exception)
         {
             return false;
         }
+    }
+
+    internal static bool IsExpectedProfile(string? reportedProfile, string expectedProfile)
+    {
+        if (string.IsNullOrWhiteSpace(reportedProfile) || string.IsNullOrWhiteSpace(expectedProfile))
+        {
+            return false;
+        }
+
+        try
+        {
+            return Path.GetFullPath(reportedProfile).Equals(Path.GetFullPath(expectedProfile), StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    internal static bool IsExpectedBackendIdentity(int protocol, string? requestId, bool ok, string? backend, IReadOnlyList<string>? capabilities, string? profile, string expectedRequestId, string expectedProfile) =>
+        protocol == 1 &&
+        requestId == expectedRequestId &&
+        ok &&
+        backend == "VaultKind Java Engine" &&
+        capabilities is not null &&
+        RequiredCapabilities.All(capability => capabilities.Contains(capability, StringComparer.Ordinal)) &&
+        IsExpectedProfile(profile, expectedProfile);
+
+    internal static string ResolveExpectedSettingsPath()
+    {
+        BundledEngineLayout? bundledEngine = FindBundledEngine();
+        string? repositoryRoot = bundledEngine is null ? FindRepositoryRoot() : null;
+        return ResolveExpectedSettingsPath(bundledEngine, repositoryRoot);
+    }
+
+    private static string ResolveExpectedSettingsPath(BundledEngineLayout? bundledEngine, string? repositoryRoot)
+    {
+        string profileRoot = bundledEngine is null
+            ? Path.Combine(repositoryRoot ?? string.Empty, "target", "ui-dev-profile")
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultKind", "engine");
+        return Path.Combine(profileRoot, "settings.json");
     }
 
     private static bool WaitForBackendToStop()

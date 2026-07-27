@@ -110,18 +110,18 @@ public class NativeUiProtocol {
 		}
 	}
 
-	public record NativeUiResponse(int protocol, String requestId, boolean ok, String backend, String error, List<VaultSummary> vaults, String state, String vaultId, String recoveryKey, org.cryptomator.common.vaults.VaultStats.NativeSnapshot statistics, NativeVaultOperations.FileNameMapping fileNameMapping, List<String> capabilities, String selectedMountService, List<NativeMountSettings.NativeMountService> mountServices) {
+	public record NativeUiResponse(int protocol, String requestId, boolean ok, String backend, String error, List<VaultSummary> vaults, String state, String vaultId, String recoveryKey, org.cryptomator.common.vaults.VaultStats.NativeSnapshot statistics, NativeVaultOperations.FileNameMapping fileNameMapping, List<String> capabilities, String selectedMountService, List<NativeMountSettings.NativeMountService> mountServices, String profile) {
 
 		static NativeUiResponse hello(String requestId) {
-			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, null, null, null, null, null, CAPABILITIES, null, null);
+			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, null, null, null, null, null, CAPABILITIES, null, null, System.getProperty("cryptomator.settingsPath"));
 		}
 
 		static NativeUiResponse vaultList(String requestId, List<VaultSummary> vaults) {
-			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, List.copyOf(vaults), null, null, null, null, null, null, null, null);
+			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, List.copyOf(vaults), null, null, null, null, null, null, null, null, null);
 		}
 
 		static NativeUiResponse command(String requestId, String state) {
-			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, state, null, null, null, null, null, null, null);
+			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, state, null, null, null, null, null, null, null, null);
 		}
 
 		static NativeUiResponse command(String requestId, String state, String recoveryKey) {
@@ -129,19 +129,19 @@ public class NativeUiProtocol {
 		}
 
 		static NativeUiResponse command(String requestId, String state, String recoveryKey, org.cryptomator.common.vaults.VaultStats.NativeSnapshot statistics, NativeVaultOperations.FileNameMapping fileNameMapping) {
-			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, state, null, recoveryKey, statistics, fileNameMapping, null, null, null);
+			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, state, null, recoveryKey, statistics, fileNameMapping, null, null, null, null);
 		}
 
 		static NativeUiResponse created(String requestId, String state, String vaultId, String recoveryKey) {
-			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, state, vaultId, recoveryKey, null, null, null, null, null);
+			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, state, vaultId, recoveryKey, null, null, null, null, null, null);
 		}
 
 		static NativeUiResponse mountSettings(String requestId, String selectedMountService, List<NativeMountSettings.NativeMountService> mountServices) {
-			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, null, null, null, null, null, null, selectedMountService, List.copyOf(mountServices));
+			return new NativeUiResponse(VERSION, requestId, true, "VaultKind Java Engine", null, null, null, null, null, null, null, null, selectedMountService, List.copyOf(mountServices), null);
 		}
 
 		static NativeUiResponse error(String requestId, String error) {
-			return new NativeUiResponse(VERSION, requestId, false, null, error, null, null, null, null, null, null, null, null, null);
+			return new NativeUiResponse(VERSION, requestId, false, null, error, null, null, null, null, null, null, null, null, null, null);
 		}
 	}
 

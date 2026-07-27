@@ -64,6 +64,7 @@ public sealed partial class MainPage : Page
     private string? recoveryTargetVaultId;
     private bool recoveryOpenedFromVaultManagement;
     private string? doctorFocusVaultId;
+    private CancellationTokenSource? sensitiveClipboardClearCancellation;
 
     private static readonly IReadOnlyList<AssistantCase> AssistantCases =
     [
@@ -2944,12 +2945,10 @@ public sealed partial class MainPage : Page
 
         try
         {
-            DataPackage package = new();
-            package.SetText(CreatedRecoveryKeyText.Text);
-            Clipboard.SetContent(package);
+            CopySensitiveTextToClipboard(CreatedRecoveryKeyText.Text, CreatedRecoveryKeyCopyStatus);
 
             CreatedRecoveryKeyCopyStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 58, 211, 111));
-            CreatedRecoveryKeyCopyStatus.Text = "Recovery key copied.";
+            CreatedRecoveryKeyCopyStatus.Text = "Recovery key copied. Clipboard clears in 60 seconds.";
         }
         catch (Exception)
         {
@@ -4048,11 +4047,9 @@ public sealed partial class MainPage : Page
 
         try
         {
-            DataPackage package = new();
-            package.SetText(ManagedRecoveryKeyText.Text);
-            Clipboard.SetContent(package);
+            CopySensitiveTextToClipboard(ManagedRecoveryKeyText.Text, ManagedRecoveryKeyCopyStatus);
             ManagedRecoveryKeyCopyStatus.Foreground = new SolidColorBrush(Color.FromArgb(255, 58, 211, 111));
-            ManagedRecoveryKeyCopyStatus.Text = "Recovery key copied.";
+            ManagedRecoveryKeyCopyStatus.Text = "Recovery key copied. Clipboard clears in 60 seconds.";
         }
         catch (Exception)
         {
@@ -4060,6 +4057,81 @@ public sealed partial class MainPage : Page
             ManagedRecoveryKeyCopyStatus.Text = "Clipboard unavailable. Select the key and press Ctrl+C.";
         }
         ManagedRecoveryKeyCopyStatus.Visibility = Visibility.Visible;
+    }
+
+    private void CopySensitiveTextToClipboard(string text, TextBlock status)
+    {
+        DataPackage package = new();
+        package.SetText(text);
+        ClipboardContentOptions options = new()
+        {
+            IsAllowedInHistory = false,
+            IsRoamable = false
+        };
+        if (!Clipboard.SetContentWithOptions(package, options))
+        {
+            throw new InvalidOperationException("Windows did not accept the sensitive clipboard content.");
+        }
+
+        sensitiveClipboardClearCancellation?.Cancel();
+        sensitiveClipboardClearCancellation?.Dispose();
+        sensitiveClipboardClearCancellation = new CancellationTokenSource();
+        _ = ClearSensitiveClipboardAfterDelayAsync(text, status, sensitiveClipboardClearCancellation);
+    }
+
+    private async Task ClearSensitiveClipboardAfterDelayAsync(string expectedText, TextBlock status, CancellationTokenSource cancellation)
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(60), cancellation.Token);
+            for (int attempt = 0; attempt < 5; attempt++)
+            {
+                try
+                {
+                    DataPackageView current = Clipboard.GetContent();
+                    if (!current.Contains(StandardDataFormats.Text))
+                    {
+                        return;
+                    }
+
+                    string currentText = await current.GetTextAsync();
+                    if (!string.Equals(currentText, expectedText, StringComparison.Ordinal))
+                    {
+                        return;
+                    }
+
+                    Clipboard.Clear();
+                    status.Foreground = new SolidColorBrush(Color.FromArgb(255, 174, 183, 190));
+                    status.Text = "Recovery key removed from the clipboard.";
+                    status.Visibility = Visibility.Visible;
+                    return;
+                }
+                catch (Exception) when (attempt < 4)
+                {
+                    await Task.Delay(100, cancellation.Token);
+                }
+            }
+
+            status.Foreground = new SolidColorBrush(Color.FromArgb(255, 255, 193, 46));
+            status.Text = "Windows kept the clipboard busy. Copy something else to replace the recovery key.";
+            status.Visibility = Visibility.Visible;
+        }
+        catch (OperationCanceledException)
+        {
+            // A newer sensitive copy owns the clipboard timeout.
+        }
+        catch (Exception)
+        {
+            // Clipboard access can be temporarily blocked by another process. Never interrupt vault work.
+        }
+        finally
+        {
+            if (ReferenceEquals(sensitiveClipboardClearCancellation, cancellation))
+            {
+                sensitiveClipboardClearCancellation.Dispose();
+                sensitiveClipboardClearCancellation = null;
+            }
+        }
     }
 
     private void ShowManagedRecovery(object sender, RoutedEventArgs e)

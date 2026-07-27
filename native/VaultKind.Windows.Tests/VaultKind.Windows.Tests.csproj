@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="..\VaultKind.Windows\Services\AppPreferencesStore.cs" Link="Services\AppPreferencesStore.cs" />
     <Compile Include="..\VaultKind.Windows\Services\DoctorFindingPolicy.cs" Link="Services\DoctorFindingPolicy.cs" />
+    <Compile Include="..\VaultKind.Windows\Services\JavaVaultEngineHost.cs" Link="Services\JavaVaultEngineHost.cs" />
     <Compile Include="..\VaultKind.Windows\Services\SignatureSoundPolicy.cs" Link="Services\SignatureSoundPolicy.cs" />
   </ItemGroup>
 </Project>

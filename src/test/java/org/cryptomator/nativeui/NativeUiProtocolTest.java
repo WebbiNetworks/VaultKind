@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.cryptomator.common.vaults.VaultSummary;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -36,6 +37,7 @@ class NativeUiProtocolTest {
 		assertEquals(1, response.protocol());
 		assertEquals("request-1", response.requestId());
 		assertEquals("VaultKind Java Engine", response.backend());
+		assertEquals(System.getProperty("cryptomator.settingsPath"), response.profile());
 		assertTrue(response.capabilities().contains("vault.show_recovery_key"));
 		assertTrue(response.capabilities().contains("vault.reset_password"));
 		assertTrue(response.capabilities().contains("vault.rename"));
@@ -197,6 +199,96 @@ class NativeUiProtocolTest {
 	}
 
 	@Test
+	void dispatchesVaultCreationAndReturnsOnlyRequestedRecoveryKey() throws IOException {
+		var password = "create-password".toCharArray();
+		protocol = new NativeUiProtocol(objectMapper, () -> List.of(),
+				(operation, vaultId, suppliedPassword, suppliedRecoveryKey, suppliedNewPassword, suppliedDisplayName, suppliedVaultPath) -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"),
+				(path, suppliedPassword, createRecoveryKey, useShortNames) -> {
+					assertEquals("F:\\Vaults\\Family", path);
+					assertEquals("create-password", new String(suppliedPassword));
+					assertTrue(createRecoveryKey);
+					assertTrue(useShortNames);
+					return NativeVaultCreator.NativeCreateResult.success("vault-created", "word one two three");
+				},
+				path -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"),
+				() -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"),
+				(operation, serviceId) -> new NativeMountSettings.NativeMountSettingsResult(false, "unsupported_operation", null, List.of()),
+				new NativeBackendTerminator());
+
+		var request = new NativeUiProtocol.NativeUiRequest(1, "request-create", "vault.create", null, password, null, null, null, "F:\\Vaults\\Family", true, true, null);
+		var response = exchange(request);
+
+		assertTrue(response.ok());
+		assertEquals("created", response.state());
+		assertEquals("vault-created", response.vaultId());
+		assertEquals("word one two three", response.recoveryKey());
+		assertEquals(null, response.vaults());
+	}
+
+	@Test
+	void dispatchesExistingVaultConnectionAndPropagatesFailure() throws IOException {
+		protocol = new NativeUiProtocol(objectMapper, () -> List.of(),
+				(operation, vaultId, suppliedPassword, suppliedRecoveryKey, suppliedNewPassword, suppliedDisplayName, suppliedVaultPath) -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"),
+				(path, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"),
+				path -> {
+					assertEquals("F:\\Vaults\\Existing", path);
+					return NativeVaultCreator.NativeCreateResult.error("already_connected");
+				},
+				() -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"),
+				(operation, serviceId) -> new NativeMountSettings.NativeMountSettingsResult(false, "unsupported_operation", null, List.of()),
+				new NativeBackendTerminator());
+
+		var request = new NativeUiProtocol.NativeUiRequest(1, "request-connect", "vault.connect", null, null, null, null, null, "F:\\Vaults\\Existing", false, false, null);
+		var response = exchange(request);
+
+		assertFalse(response.ok());
+		assertEquals("already_connected", response.error());
+		assertEquals(null, response.vaultId());
+	}
+
+	@Test
+	void dispatchesMountSelectionAndReturnsAvailableProviders() throws IOException {
+		var automatic = new NativeMountSettings.NativeMountService("automatic", "Automatic (recommended)", true, true, true, true, true);
+		protocol = new NativeUiProtocol(objectMapper, () -> List.of(),
+				(operation, vaultId, suppliedPassword, suppliedRecoveryKey, suppliedNewPassword, suppliedDisplayName, suppliedVaultPath) -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"),
+				(path, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"),
+				path -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"),
+				() -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"),
+				(operation, serviceId) -> {
+					assertEquals("settings.mount.select", operation);
+					assertEquals("automatic", serviceId);
+					return new NativeMountSettings.NativeMountSettingsResult(true, null, "automatic", List.of(automatic));
+				},
+				new NativeBackendTerminator());
+
+		var request = new NativeUiProtocol.NativeUiRequest(1, "request-mount", "settings.mount.select", null, null, null, null, null, null, false, false, "automatic");
+		var response = exchange(request);
+
+		assertTrue(response.ok());
+		assertEquals("automatic", response.selectedMountService());
+		assertEquals(List.of(automatic), response.mountServices());
+	}
+
+	@Test
+	void terminatesBackendOnlyAfterAllVaultsLock() throws IOException {
+		var terminator = Mockito.mock(NativeBackendTerminator.class);
+		protocol = protocolWithShutdown(() -> NativeVaultOperations.NativeCommandResult.error("lock_failed"), terminator);
+
+		var failedResponse = exchange(new NativeUiProtocol.NativeUiRequest(1, "request-shutdown-failed", "backend.shutdown"));
+
+		assertFalse(failedResponse.ok());
+		assertEquals("lock_failed", failedResponse.error());
+		Mockito.verify(terminator, Mockito.never()).requestShutdown();
+
+		protocol = protocolWithShutdown(() -> NativeVaultOperations.NativeCommandResult.success("locked_all"), terminator);
+		var successfulResponse = exchange(new NativeUiProtocol.NativeUiRequest(1, "request-shutdown-success", "backend.shutdown"));
+
+		assertTrue(successfulResponse.ok());
+		assertEquals("locked_all", successfulResponse.state());
+		Mockito.verify(terminator, Mockito.times(1)).requestShutdown();
+	}
+
+	@Test
 	void rejectsOversizedFramesBeforeParsing() {
 		var bytes = new ByteArrayOutputStream();
 		try (var out = new DataOutputStream(bytes)) {
@@ -221,5 +313,15 @@ class NativeUiProtocolTest {
 		try (var in = new DataInputStream(new ByteArrayInputStream(responseBytes.toByteArray()))) {
 			return objectMapper.readValue(in.readNBytes(in.readInt()), NativeUiProtocol.NativeUiResponse.class);
 		}
+	}
+
+	private NativeUiProtocol protocolWithShutdown(NativeUiProtocol.ShutdownSource shutdownSource, NativeBackendTerminator terminator) {
+		return new NativeUiProtocol(objectMapper, () -> List.of(),
+				(operation, vaultId, password, recoveryKey, newPassword, displayName, vaultPath) -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"),
+				(path, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"),
+				path -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"),
+				shutdownSource,
+				(operation, serviceId) -> new NativeMountSettings.NativeMountSettingsResult(false, "unsupported_operation", null, List.of()),
+				terminator);
 	}
 }

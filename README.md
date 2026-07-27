@@ -46,7 +46,7 @@ dotnet build native\VaultKind.Windows\VaultKind.Windows.csproj -c Debug --no-res
 dotnet run --project native\VaultKind.Windows.Tests\VaultKind.Windows.Tests.csproj -c Release
 ```
 
-Release staging and signing requirements are documented in [RELEASE_READINESS.md](docs/RELEASE_READINESS.md). Unsigned development or staged builds are not release candidates.
+Release staging and distribution requirements are documented in [RELEASE_READINESS.md](docs/RELEASE_READINESS.md). A Microsoft Store MSIX path is now in certification testing; an unsigned portable Windows archive remains the fallback, with the associated Windows warning and policy limitations documented plainly.
 
 ## Upstream and licensing
 

@@ -63,7 +63,7 @@ The version 1.0.0 native interface is intentionally English-only. No runtime tra
 
 ## Engine lifecycle in the source-tree preview
 
-Launching the native executable now starts the Java vault engine automatically when no compatible local engine socket already exists. Closing the native app requests a graceful backend shutdown for the engine process it owns; the engine locks every open vault first and refuses to exit if Windows still has a vault in use. A staged build uses fixed `Engine/runtime`, `Engine/classes`, and `Engine/lib` locations beside the app. Repository build output and an installed Java runtime remain development fallbacks only.
+Launching the native executable now starts the Java vault engine automatically when no compatible local engine with the expected settings profile already exists. The `backend.hello` handshake reports the engine profile, preventing a development build from accidentally reusing a portable, installed, or isolated-test engine and displaying that profile's vault list. The lifecycle host validates this identity before startup reuse, and the native client revalidates the exact protocol, request identifier, capabilities, backend name, and settings profile on every command connection. A mismatched engine is asked to lock its vaults and shut down safely before the correct engine starts. Closing the native app requests the same graceful shutdown for the engine process it owns; the engine refuses to exit if Windows still has a vault in use. A staged build uses fixed `Engine/runtime`, `Engine/classes`, and `Engine/lib` locations beside the app. Repository build output and an installed Java runtime remain development fallbacks only.
 
 ## How it runs today
 

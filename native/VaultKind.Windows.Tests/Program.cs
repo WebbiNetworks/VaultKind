@@ -51,6 +51,48 @@ foreach ((string? error, bool expected) in lockFailureCases)
     failures++;
 }
 
+(string? Reported, string Expected, bool Matches)[] engineProfileCases =
+[
+    (Path.Combine("C:\\", "VaultKind", "settings.json"), Path.Combine("c:\\", "vaultkind", "settings.json"), true),
+    (Path.Combine("C:\\", "VaultKind", "portable", "settings.json"), Path.Combine("C:\\", "VaultKind", "development", "settings.json"), false),
+    (null, Path.Combine("C:\\", "VaultKind", "settings.json"), false),
+    ("", Path.Combine("C:\\", "VaultKind", "settings.json"), false)
+];
+foreach ((string? reported, string expected, bool matches) in engineProfileCases)
+{
+    bool actual = JavaVaultEngineHost.IsExpectedProfile(reported, expected);
+    if (actual == matches)
+    {
+        continue;
+    }
+
+    Console.Error.WriteLine($"FAIL: engine profile={reported ?? "<null>"}, expected={expected}, match={matches}, actual={actual}");
+    failures++;
+}
+
+string expectedBackendProfile = Path.Combine("C:\\", "VaultKind", "development", "settings.json");
+string[] requiredCapabilities = ["vault.list", "vault.unlock", "vault.lock", "vault.reveal", "vault.remove", "vault.rename", "vault.stats", "vault.locate_encrypted", "vault.decrypt_filename", "vault.create", "vault.connect", "vault.reset_password", "vault.change_password", "vault.show_recovery_key", "settings.mount.list", "settings.mount.select", "backend.shutdown"];
+(int Protocol, string? RequestId, bool Ok, string? Backend, IReadOnlyList<string>? Capabilities, string? Profile, bool Expected)[] backendIdentityCases =
+[
+    (1, "hello-1", true, "VaultKind Java Engine", requiredCapabilities, expectedBackendProfile, true),
+    (1, "hello-1", true, "VaultKind Java Engine", requiredCapabilities, null, false),
+    (1, "hello-1", true, "VaultKind Java Engine", requiredCapabilities, Path.Combine("C:\\", "VaultKind", "portable", "settings.json"), false),
+    (1, "wrong-request", true, "VaultKind Java Engine", requiredCapabilities, expectedBackendProfile, false),
+    (2, "hello-1", true, "VaultKind Java Engine", requiredCapabilities, expectedBackendProfile, false),
+    (1, "hello-1", true, "VaultKind Java Engine", requiredCapabilities[..^1], expectedBackendProfile, false)
+];
+foreach ((int protocol, string? requestId, bool ok, string? backend, IReadOnlyList<string>? capabilities, string? profile, bool expected) in backendIdentityCases)
+{
+    bool actual = JavaVaultEngineHost.IsExpectedBackendIdentity(protocol, requestId, ok, backend, capabilities, profile, "hello-1", expectedBackendProfile);
+    if (actual == expected)
+    {
+        continue;
+    }
+
+    Console.Error.WriteLine($"FAIL: backend identity protocol={protocol}, request={requestId ?? "<null>"}, profile={profile ?? "<null>"}, expected={expected}, actual={actual}");
+    failures++;
+}
+
 const string previousPreferenceJson = """
     {"RememberWindowPlacement":false,"RecordActivityHistory":false,"AppearanceMode":"light","UseLargerText":true,"LanguageCode":"de","SignatureSoundsEnabled":false}
     """;
@@ -72,7 +114,7 @@ if (failures > 0)
     return 1;
 }
 
-Console.WriteLine($"Passed {doctorCases.Length + lockFailureCases.Length + 1} native policy and preference checks.");
+Console.WriteLine($"Passed {doctorCases.Length + lockFailureCases.Length + engineProfileCases.Length + backendIdentityCases.Length + 1} native policy, backend identity, profile, and preference checks.");
 return 0;
 
 static async Task<int> ProbeBundledEngineAsync(string socketPath)
@@ -87,7 +129,8 @@ static async Task<int> ProbeBundledEngineAsync(string socketPath)
         using JsonDocument hello = await InvokeAsync(stream, "backend.hello", timeout.Token);
         JsonElement helloRoot = hello.RootElement;
         if (!helloRoot.GetProperty("ok").GetBoolean()
-            || helloRoot.GetProperty("backend").GetString() != "VaultKind Java Engine")
+            || helloRoot.GetProperty("backend").GetString() != "VaultKind Java Engine"
+            || string.IsNullOrWhiteSpace(helloRoot.GetProperty("profile").GetString()))
         {
             throw new InvalidDataException("Unexpected backend.hello response.");
         }

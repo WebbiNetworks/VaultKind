@@ -9,8 +9,6 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
     private const int ProtocolVersion = 1;
     private const int MaxMessageBytes = 64 * 1024;
     private static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(2);
-    private static readonly string[] RequiredCapabilities = ["vault.list", "vault.unlock", "vault.lock", "vault.reveal", "vault.remove", "vault.rename", "vault.stats", "vault.locate_encrypted", "vault.decrypt_filename", "vault.create", "vault.connect", "vault.reset_password", "vault.change_password", "vault.show_recovery_key", "settings.mount.list", "settings.mount.select", "backend.shutdown"];
-
     public async Task<VaultBackendSnapshot> GetSnapshotAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -252,12 +250,15 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
     private static VaultBackendSnapshot Unavailable(string message) => new(BackendConnectionState.Unavailable, [], message);
 
     private static bool IsValidHello(ProtocolResponse response, string requestId) =>
-        response.Protocol == ProtocolVersion &&
-        response.RequestId == requestId &&
-        response.Ok &&
-        response.Backend == "VaultKind Java Engine" &&
-        response.Capabilities is not null &&
-        RequiredCapabilities.All(capability => response.Capabilities.Contains(capability, StringComparer.Ordinal));
+        JavaVaultEngineHost.IsExpectedBackendIdentity(
+            response.Protocol,
+            response.RequestId,
+            response.Ok,
+            response.Backend,
+            response.Capabilities,
+            response.Profile,
+            requestId,
+            JavaVaultEngineHost.ResolveExpectedSettingsPath());
 
     private static async Task WriteFrameAsync<T>(Stream stream, T message, CancellationToken cancellationToken)
     {
@@ -292,9 +293,9 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private sealed record ProtocolRequest(int Protocol, string RequestId, string Operation, string? VaultId = null, string? Password = null, string? RecoveryKey = null, string? NewPassword = null, string? DisplayName = null, string? VaultPath = null, bool CreateRecoveryKey = false, bool UseShortNames = false, string? MountService = null);
-    private sealed record ProtocolResponse(int Protocol, string RequestId, bool Ok, string? Backend, string? Error, IReadOnlyList<ProtocolVault>? Vaults, string? State, string? VaultId, string? RecoveryKey, ProtocolStatistics? Statistics, ProtocolFileNameMapping? FileNameMapping, IReadOnlyList<string>? Capabilities, string? SelectedMountService, IReadOnlyList<ProtocolMountService>? MountServices)
+    private sealed record ProtocolResponse(int Protocol, string RequestId, bool Ok, string? Backend, string? Error, IReadOnlyList<ProtocolVault>? Vaults, string? State, string? VaultId, string? RecoveryKey, ProtocolStatistics? Statistics, ProtocolFileNameMapping? FileNameMapping, IReadOnlyList<string>? Capabilities, string? SelectedMountService, IReadOnlyList<ProtocolMountService>? MountServices, string? Profile)
     {
-        internal static ProtocolResponse Failure(string error) => new(ProtocolVersion, string.Empty, false, null, error, null, null, null, null, null, null, null, null, null);
+        internal static ProtocolResponse Failure(string error) => new(ProtocolVersion, string.Empty, false, null, error, null, null, null, null, null, null, null, null, null, null);
     }
     private sealed record ProtocolVault(string Id, string Name, string State, string Path, string? MountPath);
     private sealed record ProtocolStatistics(long BytesPerSecondRead, long BytesPerSecondWritten, long BytesPerSecondDecrypted, long BytesPerSecondEncrypted, double CacheHitRate, long TotalBytesRead, long TotalBytesWritten, long TotalBytesDecrypted, long TotalBytesEncrypted, long TotalFilesAccessed);

@@ -8,6 +8,15 @@ param(
 
     [string]$SigningThumbprint,
 
+    [string]$PackagePublisher,
+
+    [ValidatePattern("^[A-Za-z0-9.-]+$")]
+    [string]$PackageName = "WebbiNetworks.VaultKind",
+
+    [switch]$CreateMsix,
+
+    [switch]$CreatePortableArchive,
+
     [switch]$SkipEngineBuild
 )
 
@@ -68,6 +77,14 @@ foreach ($compiledResource in @("App.xbf", "MainPage.xbf", "MainWindow.xbf", "Va
     Copy-Item -LiteralPath $resourcePath -Destination (Join-Path $stageRoot $compiledResource) -Force
 }
 
+$compiledAssetsSource = Join-Path $compiledResourceSource.DirectoryName "Assets"
+if (-not (Test-Path -LiteralPath (Join-Path $compiledAssetsSource "StoreLogo.png") -PathType Leaf)) {
+    throw "The native Release output is missing its compiled Assets directory."
+}
+$compiledAssetsTarget = Join-Path $stageRoot "Assets"
+New-Item -ItemType Directory -Path $compiledAssetsTarget -Force | Out-Null
+Copy-Item -Path (Join-Path $compiledAssetsSource "*") -Destination $compiledAssetsTarget -Recurse -Force
+
 foreach ($directory in Get-ChildItem -LiteralPath $stageRoot -Directory) {
     try {
         $culture = [System.Globalization.CultureInfo]::GetCultureInfo($directory.Name)
@@ -121,9 +138,25 @@ if (Test-Path -LiteralPath $thirdPartyNotice) {
 }
 
 if (-not [string]::IsNullOrWhiteSpace($SigningThumbprint)) {
-    $signTool = (Get-Command signtool.exe -ErrorAction SilentlyContinue).Source
-    if ([string]::IsNullOrWhiteSpace($signTool)) {
-        throw "signtool.exe is required when SigningThumbprint is supplied."
+    [xml]$projectXml = Get-Content -LiteralPath $project -Raw
+    $buildToolsReference = @($projectXml.Project.ItemGroup.PackageReference) |
+        Where-Object { $_.Include -eq "Microsoft.Windows.SDK.BuildTools" } |
+        Select-Object -First 1
+    if ($null -eq $buildToolsReference) {
+        throw "The native project does not reference Microsoft.Windows.SDK.BuildTools."
+    }
+    $buildToolsVersion = [string]$buildToolsReference.Version
+    $userProfile = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
+    $buildToolsRoot = Join-Path $userProfile ".nuget\packages\microsoft.windows.sdk.buildtools\$buildToolsVersion"
+    $buildToolsProps = Join-Path $buildToolsRoot "build\Microsoft.Windows.SDK.BuildTools.props"
+    if (-not (Test-Path -LiteralPath $buildToolsProps -PathType Leaf)) {
+        throw "Restore the native project so the Windows SDK Build Tools package is available."
+    }
+    [xml]$propsXml = Get-Content -LiteralPath $buildToolsProps -Raw
+    $sdkToolsVersion = [string]$propsXml.Project.PropertyGroup.WindowsSDKBuildToolsVersion
+    $signTool = Join-Path $buildToolsRoot "bin\$sdkToolsVersion\x64\signtool.exe"
+    if (-not (Test-Path -LiteralPath $signTool -PathType Leaf)) {
+        throw "The Windows SDK SignTool is missing: $signTool"
     }
 
     foreach ($authoredBinary in @("VaultKind.Windows.exe", "VaultKind.Windows.dll")) {
@@ -139,11 +172,43 @@ $manifest = [ordered]@{
     runtimeIdentifier = $RuntimeIdentifier
     language = "en-US"
     signed = -not [string]::IsNullOrWhiteSpace($SigningThumbprint)
+    distribution = if ($CreatePortableArchive) { "portable-zip" } else { "staged-layout" }
     generatedAtUtc = [DateTimeOffset]::UtcNow.ToString("O")
 }
 $manifest | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $stageRoot "release-manifest.json") -Encoding utf8
 
+Get-ChildItem -LiteralPath $stageRoot -Filter "*.pdb" -File -Recurse | Remove-Item -Force
+
+if ($CreatePortableArchive) {
+    $archivePath = Join-Path $artifactsRoot "VaultKind-$Version-$RuntimeIdentifier.zip"
+    if (Test-Path -LiteralPath $archivePath) {
+        Remove-Item -LiteralPath $archivePath -Force
+    }
+    Compress-Archive -Path (Join-Path $stageRoot "*") -DestinationPath $archivePath -CompressionLevel Optimal
+    $archiveHash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
+    Set-Content -LiteralPath "$archivePath.sha256" -Value "$archiveHash  $([System.IO.Path]::GetFileName($archivePath))" -Encoding ascii
+    Write-Host "VaultKind portable archive created at $archivePath"
+    Write-Host "SHA-256: $archiveHash"
+}
+
+if ($CreateMsix) {
+    if ([string]::IsNullOrWhiteSpace($SigningThumbprint) -or [string]::IsNullOrWhiteSpace($PackagePublisher)) {
+        throw "CreateMsix requires both SigningThumbprint and PackagePublisher."
+    }
+
+    $msixScript = Join-Path $repositoryRoot "scripts\build-native-msix.ps1"
+    $msixVersion = "$Version.0"
+    & $msixScript `
+        -BinaryRoot $stageRoot `
+        -RuntimeIdentifier $RuntimeIdentifier `
+        -Version $msixVersion `
+        -PackageName $PackageName `
+        -Publisher $PackagePublisher `
+        -SigningThumbprint $SigningThumbprint
+    if ($LASTEXITCODE -ne 0) { throw "The signed MSIX build failed." }
+}
+
 Write-Host "VaultKind release layout created at $stageRoot"
 if ([string]::IsNullOrWhiteSpace($SigningThumbprint)) {
-    Write-Warning "The layout is unsigned and may be blocked by Windows Application Control. It is not a release candidate."
+    Write-Warning "The layout is unsigned. Windows may warn about or block it on some systems."
 }

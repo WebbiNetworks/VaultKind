@@ -8,11 +8,16 @@
 
   <ItemGroup>
     <EmbeddedResource Include="..\..\docs\KEYBOARD_CONTROLS.md" LogicalName="VaultKind.KeyboardControls.md" />
+    <Compile Include="..\VaultKind.Windows\Services\ActivityHistoryStore.cs" Link="Services\ActivityHistoryStore.cs" />
     <Compile Include="..\VaultKind.Windows\Services\AppPreferencesStore.cs" Link="Services\AppPreferencesStore.cs" />
     <Compile Include="..\VaultKind.Windows\Services\DoctorFindingPolicy.cs" Link="Services\DoctorFindingPolicy.cs" />
+    <Compile Include="..\VaultKind.Windows\Services\DoctorSummaryStore.cs" Link="Services\DoctorSummaryStore.cs" />
+    <Compile Include="..\VaultKind.Windows\Services\IVaultBackend.cs" Link="Services\IVaultBackend.cs" />
     <Compile Include="..\VaultKind.Windows\Services\JavaVaultEngineHost.cs" Link="Services\JavaVaultEngineHost.cs" />
     <Compile Include="..\VaultKind.Windows\Services\KeyboardNavigationPolicy.cs" Link="Services\KeyboardNavigationPolicy.cs" />
     <Compile Include="..\VaultKind.Windows\Services\KeyboardControlsDocument.cs" Link="Services\KeyboardControlsDocument.cs" />
+    <Compile Include="..\VaultKind.Windows\Services\LearningProgressStore.cs" Link="Services\LearningProgressStore.cs" />
     <Compile Include="..\VaultKind.Windows\Services\SignatureSoundPolicy.cs" Link="Services\SignatureSoundPolicy.cs" />
+    <Compile Include="..\VaultKind.Windows\Services\WindowPlacementPersistence.cs" Link="Services\WindowPlacementPersistence.cs" />
   </ItemGroup>
 </Project>

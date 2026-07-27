@@ -23,7 +23,7 @@ VaultKind 1.0.0 is intentionally English-only. Localization is outside the 1.0 r
 - Focus is deliberately placed and restored around embedded workflows so keyboard and screen-reader users remain oriented inside the main workspace.
 - A static accessible-name and focus audit now covers fixed and generated controls. Stateful Preferences, Learning Center, FAQ, and Assistant controls announce selection, viewed, expanded, collapsed, and diagnostic-case context where applicable.
 - Primary workspaces, creation steps, vault tools, management subflows, FAQ category rebuilding, Assistant result replacement, and completion screens now receive or restore a deliberate keyboard focus target.
-- Automated coverage now includes 32 native policy, keyboard-navigation, embedded-documentation, backend-identity, profile, and preference checks.
+- Automated coverage now includes 62 native policy, persistence, keyboard-navigation, embedded-documentation, backend-identity, profile, preference, and workflow checks. Activity history, application preferences, cached Vault Doctor summaries, Learning Center progress, and window placement have direct file-level coverage. Dashboard locked/unlocked counts cover empty, mixed-case, and unknown vault states.
 - A July 27, 2026 hands-on pass confirmed the zero-vault shell with keyboard-only navigation, Narrator names and live Doctor status, larger text, minimum-window layout, High Contrast, and visible focus in Light and Dark.
 
 ### Next accessibility milestones

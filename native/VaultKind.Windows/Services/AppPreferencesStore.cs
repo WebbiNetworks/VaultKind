@@ -11,16 +11,19 @@ internal sealed record AppPreferences(
 
 internal static class AppPreferencesStore
 {
-    internal static AppPreferences Load()
+    internal static AppPreferences Load() => Load(PreferencesPath);
+
+    internal static AppPreferences Load(string path)
     {
         try
         {
-            if (!File.Exists(PreferencesPath))
+            if (!File.Exists(path))
             {
                 return new AppPreferences();
             }
 
-            return JsonSerializer.Deserialize<AppPreferences>(File.ReadAllText(PreferencesPath)) ?? new AppPreferences();
+            AppPreferences preferences = JsonSerializer.Deserialize<AppPreferences>(File.ReadAllText(path)) ?? new AppPreferences();
+            return Normalize(preferences);
         }
         catch (Exception)
         {
@@ -28,20 +31,35 @@ internal static class AppPreferencesStore
         }
     }
 
-    internal static void Save(AppPreferences preferences)
+    internal static void Save(AppPreferences preferences) => Save(PreferencesPath, preferences);
+
+    internal static void Save(string path, AppPreferences preferences)
     {
         try
         {
-            Directory.CreateDirectory(SettingsDirectory);
-            string temporaryPath = PreferencesPath + ".tmp";
-            File.WriteAllText(temporaryPath, JsonSerializer.Serialize(preferences));
-            File.Move(temporaryPath, PreferencesPath, true);
+            string? directory = Path.GetDirectoryName(path);
+            if (string.IsNullOrWhiteSpace(directory))
+            {
+                return;
+            }
+
+            Directory.CreateDirectory(directory);
+            string temporaryPath = path + ".tmp";
+            File.WriteAllText(temporaryPath, JsonSerializer.Serialize(Normalize(preferences)));
+            File.Move(temporaryPath, path, true);
         }
         catch (Exception)
         {
             // Preferences are convenience state and must never interrupt vault work.
         }
     }
+
+    private static AppPreferences Normalize(AppPreferences preferences) => preferences with
+    {
+        AppearanceMode = string.Equals(preferences.AppearanceMode, "light", StringComparison.OrdinalIgnoreCase)
+            ? "light"
+            : "dark"
+    };
 
     private static string SettingsDirectory => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

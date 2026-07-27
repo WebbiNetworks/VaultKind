@@ -10,21 +10,23 @@ internal sealed record DoctorRunSummary(
 
 internal static class DoctorSummaryStore
 {
-    internal static DoctorRunSummary? Load()
+    internal static DoctorRunSummary? Load() => Load(SummaryPath, DateTimeOffset.Now);
+
+    internal static DoctorRunSummary? Load(string path, DateTimeOffset now)
     {
         try
         {
-            if (!File.Exists(SummaryPath))
+            if (!File.Exists(path))
             {
                 return null;
             }
 
-            DoctorRunSummary? summary = JsonSerializer.Deserialize<DoctorRunSummary>(File.ReadAllText(SummaryPath));
+            DoctorRunSummary? summary = JsonSerializer.Deserialize<DoctorRunSummary>(File.ReadAllText(path));
             return summary is not null
                 && summary.Healthy >= 0
                 && summary.Attention >= 0
                 && summary.Information >= 0
-                && summary.CompletedAt <= DateTimeOffset.Now.AddMinutes(5)
+                && summary.CompletedAt <= now.AddMinutes(5)
                     ? summary
                     : null;
         }
@@ -34,14 +36,22 @@ internal static class DoctorSummaryStore
         }
     }
 
-    internal static void Save(DoctorRunSummary summary)
+    internal static void Save(DoctorRunSummary summary) => Save(SummaryPath, summary);
+
+    internal static void Save(string path, DoctorRunSummary summary)
     {
         try
         {
-            Directory.CreateDirectory(SettingsDirectory);
-            string temporaryPath = SummaryPath + ".tmp";
+            string? directory = Path.GetDirectoryName(path);
+            if (string.IsNullOrWhiteSpace(directory))
+            {
+                return;
+            }
+
+            Directory.CreateDirectory(directory);
+            string temporaryPath = path + ".tmp";
             File.WriteAllText(temporaryPath, JsonSerializer.Serialize(summary));
-            File.Move(temporaryPath, SummaryPath, true);
+            File.Move(temporaryPath, path, true);
         }
         catch (Exception)
         {

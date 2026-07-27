@@ -1,32 +1,14 @@
-using System.Text.Json;
 using Microsoft.UI.Windowing;
 using Windows.Graphics;
 
 namespace VaultKind_Windows.Services;
-
-internal sealed record WindowPlacement(int X, int Y, int Width, int Height, bool Maximized);
 
 internal static class WindowPlacementStore
 {
     private const int MinimumWidth = 960;
     private const int MinimumHeight = 680;
 
-    internal static WindowPlacement? Load()
-    {
-        try
-        {
-            if (!File.Exists(SettingsPath))
-            {
-                return null;
-            }
-
-            return JsonSerializer.Deserialize<WindowPlacement>(File.ReadAllText(SettingsPath));
-        }
-        catch (Exception)
-        {
-            return null;
-        }
-    }
+    internal static WindowPlacement? Load() => WindowPlacementPersistence.Load();
 
     internal static RectInt32 MakeVisible(WindowPlacement placement)
     {
@@ -43,26 +25,12 @@ internal static class WindowPlacementStore
 
     internal static void Save(RectInt32 restoredBounds, bool maximized)
     {
-        try
-        {
-            Directory.CreateDirectory(SettingsDirectory);
-            var placement = new WindowPlacement(
-                restoredBounds.X,
-                restoredBounds.Y,
-                restoredBounds.Width,
-                restoredBounds.Height,
-                maximized);
-            File.WriteAllText(SettingsPath, JsonSerializer.Serialize(placement));
-        }
-        catch (Exception)
-        {
-            // Window placement is convenience state. A write failure must never block shutdown.
-        }
+        var placement = new WindowPlacement(
+            restoredBounds.X,
+            restoredBounds.Y,
+            restoredBounds.Width,
+            restoredBounds.Height,
+            maximized);
+        WindowPlacementPersistence.Save(placement);
     }
-
-    private static string SettingsDirectory => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "VaultKind");
-
-    private static string SettingsPath => Path.Combine(SettingsDirectory, "native-window-placement.json");
 }

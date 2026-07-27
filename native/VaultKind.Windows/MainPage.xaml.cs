@@ -11,7 +11,6 @@ using Windows.UI;
 using System.Globalization;
 using System.IO;
 using Microsoft.Win32;
-using System.Text.Json;
 using VaultKind_Windows.Services;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -42,8 +41,6 @@ public sealed partial class MainPage : Page
     private readonly Dictionary<DependencyObject, double> baselineFontSizes = [];
     private bool useLargerText;
     private bool textScaleRefreshQueued;
-    private static readonly string ActivityHistoryPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultKind", "activity.json");
-    private static readonly string LearningProgressPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultKind", "learning-progress.json");
     private readonly HashSet<string> viewedLearningTopics = [];
     private readonly Dictionary<string, double> learningTopicScrollOffsets = [];
     private readonly List<LearningSectionViewEntry> learningSectionViewEntries = [];
@@ -2166,62 +2163,11 @@ public sealed partial class MainPage : Page
 
     private void LoadLearningProgress()
     {
-        try
-        {
-            if (!File.Exists(LearningProgressPath))
-            {
-                return;
-            }
-
-            string json = File.ReadAllText(LearningProgressPath);
-            List<string>? stored = JsonSerializer.Deserialize<List<string>>(json);
-            if (stored is not null)
-            {
-                string[] validTopics = LearningTopicButtons().Select(topic => topic.Id).ToArray();
-                foreach (string topic in stored.Where(topic => validTopics.Contains(topic, StringComparer.Ordinal)))
-                {
-                    viewedLearningTopics.Add(topic);
-                }
-            }
-        }
-        catch (JsonException)
-        {
-            // Learning progress is optional and must never prevent VaultKind from starting.
-        }
-        catch (IOException)
-        {
-            // Learning progress is optional and must never prevent VaultKind from starting.
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // Learning progress is optional and must never prevent VaultKind from starting.
-        }
+        string[] validTopics = LearningTopicButtons().Select(topic => topic.Id).ToArray();
+        viewedLearningTopics.UnionWith(LearningProgressStore.Load(validTopics));
     }
 
-    private void SaveLearningProgress()
-    {
-        try
-        {
-            string? directory = Path.GetDirectoryName(LearningProgressPath);
-            if (string.IsNullOrWhiteSpace(directory))
-            {
-                return;
-            }
-
-            Directory.CreateDirectory(directory);
-            string temporaryPath = LearningProgressPath + ".tmp";
-            File.WriteAllText(temporaryPath, JsonSerializer.Serialize(viewedLearningTopics.OrderBy(topic => topic)));
-            File.Move(temporaryPath, LearningProgressPath, true);
-        }
-        catch (IOException)
-        {
-            // A progress write failure must not interrupt Learning Center navigation.
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // A progress write failure must not interrupt Learning Center navigation.
-        }
-    }
+    private void SaveLearningProgress() => LearningProgressStore.Save(viewedLearningTopics);
 
     private (Button Button, string Id, string Title, FontIcon Check)[] LearningTopicButtons() =>
     [
@@ -5478,62 +5424,11 @@ public sealed partial class MainPage : Page
 
     private void LoadActivityHistory()
     {
-        try
-        {
-            if (!File.Exists(ActivityHistoryPath))
-            {
-                return;
-            }
-
-            string json = File.ReadAllText(ActivityHistoryPath);
-            List<SessionActivity>? stored = JsonSerializer.Deserialize<List<SessionActivity>>(json);
-            if (stored is not null)
-            {
-                activityHistory.AddRange(stored
-                    .Where(item => !string.IsNullOrWhiteSpace(item.Title) && !string.IsNullOrWhiteSpace(item.Category))
-                    .TakeLast(500));
-            }
-        }
-        catch (JsonException)
-        {
-            // Preserve an unreadable history file and begin with an empty in-memory history.
-        }
-        catch (IOException)
-        {
-            // Activity is optional and must never prevent VaultKind from starting.
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // Activity is optional and must never prevent VaultKind from starting.
-        }
-
+        activityHistory.AddRange(ActivityHistoryStore.Load());
         UpdateDashboardRecentActivity();
     }
 
-    private void SaveActivityHistory()
-    {
-        try
-        {
-            string? directory = Path.GetDirectoryName(ActivityHistoryPath);
-            if (string.IsNullOrWhiteSpace(directory))
-            {
-                return;
-            }
-
-            Directory.CreateDirectory(directory);
-            string temporaryPath = ActivityHistoryPath + ".tmp";
-            File.WriteAllText(temporaryPath, JsonSerializer.Serialize(activityHistory));
-            File.Move(temporaryPath, ActivityHistoryPath, true);
-        }
-        catch (IOException)
-        {
-            // A history write failure must not interrupt a vault operation.
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // A history write failure must not interrupt a vault operation.
-        }
-    }
+    private void SaveActivityHistory() => ActivityHistoryStore.Save(activityHistory);
 
     private void SetSelectedDestination(Button selected, Button unselected, string selectedName)
     {
@@ -5595,7 +5490,6 @@ public sealed partial class MainPage : Page
         }
     }
 
-    private sealed record SessionActivity(DateTime Timestamp, string Title, string Detail, string Category);
     private sealed record DoctorCheck(string Message, string Kind, string? AssistantCaseId = null);
     private sealed record DoctorAssistantHandoff(string CaseId, string Evidence, string Scope);
     private sealed record AssistantCase(string Id, string Category, string Title, string Cause, string Checks, string Fix, string Keywords);

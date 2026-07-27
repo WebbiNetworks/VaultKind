@@ -85,7 +85,7 @@ Run:
 dotnet run --project native\VaultKind.Windows.Tests\VaultKind.Windows.Tests.csproj -c Release
 ```
 
-The current 32 checks lock down critical Doctor classification, the exact vault-in-use warning boundary, keyboard-navigation boundaries, safe migration of preferences that still contain the retired `LanguageCode` property, backend identity/profile validation, and loading the embedded keyboard guide from its authoritative Markdown source. This is still an early seam; backend protocol, persistence, and workflow coverage must continue to grow before 1.0.
+The current 62 checks lock down critical Doctor classification, the exact vault-in-use warning boundary, keyboard-navigation boundaries, backend identity/profile validation, the embedded keyboard guide, local convenience-state persistence, atomic window-placement replacement, Learning Center progress filtering, and Dashboard locked/unlocked counts. This is still an early seam; backend protocol and workflow coverage must continue to grow before 1.0.
 
 ## Explicitly excluded from 1.0
 

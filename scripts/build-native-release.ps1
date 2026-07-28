@@ -41,8 +41,29 @@ if (-not $SkipEngineBuild) {
 }
 
 $classpathFile = Join-Path $repositoryRoot "target\native-release-classpath.txt"
-& $mavenWrapper -B dependency:build-classpath "-Dmdep.includeScope=runtime" "-Dmdep.outputFile=$classpathFile"
+& $mavenWrapper -B dependency:build-classpath "-DincludeScope=runtime" "-Dmdep.outputFile=$classpathFile" "-Dmdep.regenerateFile=true"
 if ($LASTEXITCODE -ne 0) { throw "Maven could not resolve the release runtime classpath." }
+
+$forbiddenReleaseLibraries = @(
+    "apiguardian-api-*.jar",
+    "byte-buddy-*.jar",
+    "hamcrest-*.jar",
+    "javafx-swing-*.jar",
+    "jimfs-*.jar",
+    "junit-*.jar",
+    "mockito-*.jar",
+    "objenesis-*.jar",
+    "opentest4j-*.jar"
+)
+$releaseClasspathEntries = (Get-Content -LiteralPath $classpathFile -Raw).Trim().Split([System.IO.Path]::PathSeparator, [System.StringSplitOptions]::RemoveEmptyEntries)
+$unexpectedTestLibraries = @($releaseClasspathEntries | Where-Object {
+    $fileName = [System.IO.Path]::GetFileName($_)
+    $forbiddenReleaseLibraries | Where-Object { $fileName -like $_ }
+})
+if ($unexpectedTestLibraries.Count -gt 0) {
+    $unexpectedNames = $unexpectedTestLibraries | ForEach-Object { [System.IO.Path]::GetFileName($_) }
+    throw "The production classpath contains test-only libraries: $($unexpectedNames -join ', ')"
+}
 
 $javaHome = [Environment]::GetEnvironmentVariable("JAVA_HOME")
 $jlink = if ([string]::IsNullOrWhiteSpace($javaHome)) { $null } else { Join-Path $javaHome "bin\jlink.exe" }
@@ -110,8 +131,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $classesSource "logback-native.xml")
 Copy-Item -Path (Join-Path $classesSource "*") -Destination $classesTarget -Recurse -Force
 
 $seenLibraries = @{}
-$classpathEntries = (Get-Content -LiteralPath $classpathFile -Raw).Trim().Split([System.IO.Path]::PathSeparator, [System.StringSplitOptions]::RemoveEmptyEntries)
-foreach ($entry in $classpathEntries) {
+foreach ($entry in $releaseClasspathEntries) {
     $resolvedEntry = [System.IO.Path]::GetFullPath($entry)
     if (-not (Test-Path -LiteralPath $resolvedEntry -PathType Leaf)) {
         throw "Runtime dependency is missing: $resolvedEntry"

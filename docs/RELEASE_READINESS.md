@@ -16,7 +16,9 @@ The native host first looks for `Engine/runtime/bin/javaw.exe`, `Engine/classes`
 
 Run `powershell -ExecutionPolicy Bypass -File scripts\test-bundled-engine.ps1 -BinaryRoot <staged-layout>` to start the staged Java runtime with an isolated profile, verify the native protocol identity, and request graceful shutdown. This avoids reusing a compatible development engine that may already own the normal local socket.
 
-The staging pass removes non-English .NET/WinUI satellite-resource directories. Inherited Java-engine resource bundles remain internal compatibility dependencies of the retained upstream engine; the native 1.0 interface does not load or expose them as selectable languages.
+The staging pass removes non-English .NET/WinUI satellite-resource directories. The Java engine also carries only the reviewed default English resource bundle; translation configuration and inherited localized bundles are excluded from the version 1.0 source and release.
+
+The release classpath is resolved with Maven's runtime scope and the build fails if test-only libraries such as JUnit, Mockito, Byte Buddy, Hamcrest, Jimfs, or JavaFX Swing appear. The July 27 cleanup reduced the staged engine from 72 to 55 libraries and removed approximately 11.55 MB of test dependencies. Together with the English-only resource cleanup, the unpacked x64 stage decreased from about 283 MB to 269.69 MB while retaining a successful `backend.hello` and graceful-shutdown smoke test.
 
 ## Version 1.0 distribution boundary
 
@@ -62,6 +64,7 @@ The script refuses to use `CN=VaultKind Development` for the production identity
 - Confirm the app is understandable and operable with signature sounds disabled.
 - Complete keyboard-only, Narrator, Windows text-scaling, high-DPI, and minimum-window accessibility passes on the release build.
 - Record checksums and retain the exact artifacts used for release.
+- Rebuild portable ZIP and Store-upload artifacts from the frozen release commit; superseded local packages must not be retained as release candidates.
 
 ## Current accessibility baseline
 

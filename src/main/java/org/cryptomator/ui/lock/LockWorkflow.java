@@ -97,14 +97,14 @@ public class LockWorkflow extends Task<Void> {
 	@Override
 	protected void succeeded() {
 		LOG.info("Lock of {} succeeded.", vault.getDisplayName());
-		vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
+		vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
 	}
 
 	@Override
 	protected void failed() {
 		final var throwable = super.getException();
 		LOG.warn("Lock of {} failed.", vault.getDisplayName(), throwable);
-		vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.UNLOCKED);
+		vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.UNLOCKED);
 		if (throwable instanceof UnmountFailedException) { //TODO: check if correct exception caught
 			lockWindow.setScene(lockFailedScene.get());
 			lockWindow.show();
@@ -116,7 +116,7 @@ public class LockWorkflow extends Task<Void> {
 	@Override
 	protected void cancelled() {
 		LOG.debug("Lock of {} canceled.", vault.getDisplayName());
-		vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.UNLOCKED);
+		vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.UNLOCKED);
 	}
 
 }

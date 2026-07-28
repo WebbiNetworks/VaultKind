@@ -5,9 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javafx.application.Platform;
-import javafx.beans.value.ObservableObjectValue;
-import javafx.beans.value.ObservableValueBase;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
@@ -15,7 +13,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 @PerVault
-public class VaultState extends ObservableValueBase<VaultState.Value> implements ObservableObjectValue<VaultState.Value> {
+public class VaultState {
 
 	private static final Logger LOG = LoggerFactory.getLogger(VaultState.class);
 
@@ -62,6 +60,7 @@ public class VaultState extends ObservableValueBase<VaultState.Value> implements
 	}
 
 	private final AtomicReference<Value> value;
+	private final CopyOnWriteArrayList<Listener> listeners = new CopyOnWriteArrayList<>();
 	private final Lock lock = new ReentrantLock();
 	private final Condition valueChanged = lock.newCondition();
 
@@ -70,14 +69,16 @@ public class VaultState extends ObservableValueBase<VaultState.Value> implements
 		this.value = new AtomicReference<>(initialValue);
 	}
 
-	@Override
 	public Value get() {
-		return getValue();
+		return value.get();
 	}
 
-	@Override
-	public Value getValue() {
-		return value.get();
+	public void addListener(Listener listener) {
+		listeners.add(listener);
+	}
+
+	public void removeListener(Listener listener) {
+		listeners.remove(listener);
 	}
 
 	/**
@@ -91,9 +92,9 @@ public class VaultState extends ObservableValueBase<VaultState.Value> implements
 		Preconditions.checkArgument(fromState != toState, "fromState must be different than toState");
 		boolean success = value.compareAndSet(fromState, toState);
 		if (success) {
-			fireValueChangedEvent();
+			stateChanged(fromState, toState);
 		} else {
-			LOG.debug("Failed transiting into state {}: Expected state was not {}.", fromState, toState);
+			LOG.debug("Failed transitioning into state {}: Current state was not {}.", toState, fromState);
 		}
 		return success;
 	}
@@ -101,7 +102,7 @@ public class VaultState extends ObservableValueBase<VaultState.Value> implements
 	public void set(Value newState) {
 		var oldState = value.getAndSet(newState);
 		if (oldState != newState) {
-			fireValueChangedEvent();
+			stateChanged(oldState, newState);
 		}
 	}
 
@@ -130,26 +131,26 @@ public class VaultState extends ObservableValueBase<VaultState.Value> implements
 		}
 	}
 
-	private void signal() {
+	private void stateChanged(Value oldState, Value newState) {
 		lock.lock();
 		try {
 			valueChanged.signalAll();
 		} finally {
 			lock.unlock();
 		}
+		for (Listener listener : listeners) {
+			try {
+				listener.stateChanged(oldState, newState);
+			} catch (RuntimeException e) {
+				LOG.warn("Vault state listener failed while transitioning from {} to {}.", oldState, newState, e);
+			}
+		}
 	}
 
-	@Override
-	protected void fireValueChangedEvent() {
-		signal();
-		if (Boolean.getBoolean("vaultkind.nativeBackend")) {
-			super.fireValueChangedEvent();
-			return;
-		}
-		if (Platform.isFxApplicationThread()) {
-			super.fireValueChangedEvent();
-		} else {
-			Platform.runLater(super::fireValueChangedEvent);
-		}
+	@FunctionalInterface
+	public interface Listener {
+
+		void stateChanged(Value oldState, Value newState);
+
 	}
 }

@@ -45,6 +45,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.value.ObservableObjectValue;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -65,6 +66,7 @@ public class Vault {
 	private final AtomicReference<CryptoFileSystem> cryptoFileSystem;
 	private final AtomicReference<QuickAccessService.QuickAccessEntry> quickAccessEntry;
 	private final VaultState state;
+	private final LegacyVaultStateObservable observableState;
 	private final ObjectProperty<Exception> lastKnownException;
 	private final VaultConfigCache configCache;
 	private final VaultStats stats;
@@ -90,6 +92,7 @@ public class Vault {
 		  VaultConfigCache configCache, //
 		  AtomicReference<CryptoFileSystem> cryptoFileSystem, //
 		  VaultState state, //
+		  LegacyVaultStateObservable observableState, //
 		  @Named("lastKnownException") ObjectProperty<Exception> lastKnownException, //
 		  VaultStats stats, //
 		  Mounter mounter, Settings settings, //
@@ -99,17 +102,18 @@ public class Vault {
 		this.configCache = configCache;
 		this.cryptoFileSystem = cryptoFileSystem;
 		this.state = state;
+		this.observableState = observableState;
 		this.lastKnownException = lastKnownException;
 		this.stats = stats;
 		this.displayablePath = Bindings.createStringBinding(this::getDisplayablePath, vaultSettings.path);
-		this.locked = Bindings.createBooleanBinding(this::isLocked, state);
-		this.processing = Bindings.createBooleanBinding(this::isProcessing, state);
-		this.unlocked = Bindings.createBooleanBinding(this::isUnlocked, state);
-		this.missing = Bindings.createBooleanBinding(this::isMissing, state);
-		this.missingVaultConfig = Bindings.createBooleanBinding(this::isMissingVaultConfig, state);
-		this.needsMigration = Bindings.createBooleanBinding(this::isNeedsMigration, state);
-		this.unknownError = Bindings.createBooleanBinding(this::isUnknownError, state);
-		this.mountPoint = Bindings.createObjectBinding(this::getMountPoint, state);
+		this.locked = Bindings.createBooleanBinding(this::isLocked, observableState);
+		this.processing = Bindings.createBooleanBinding(this::isProcessing, observableState);
+		this.unlocked = Bindings.createBooleanBinding(this::isUnlocked, observableState);
+		this.missing = Bindings.createBooleanBinding(this::isMissing, observableState);
+		this.missingVaultConfig = Bindings.createBooleanBinding(this::isMissingVaultConfig, observableState);
+		this.needsMigration = Bindings.createBooleanBinding(this::isNeedsMigration, observableState);
+		this.unknownError = Bindings.createBooleanBinding(this::isUnknownError, observableState);
+		this.mountPoint = Bindings.createObjectBinding(this::getMountPoint, observableState);
 		this.mounter = mounter;
 		this.settings = settings;
 		this.fileSystemEventAggregator = fileSystemEventAggregator;
@@ -124,7 +128,7 @@ public class Vault {
 
 	private CryptoFileSystem createCryptoFileSystem(MasterkeyLoader keyLoader) throws IOException, MasterkeyLoadingFailedException {
 		Set<FileSystemFlags> flags = EnumSet.noneOf(FileSystemFlags.class);
-		var createReadOnly = vaultSettings.usesReadOnlyMode.get();
+		var createReadOnly = vaultSettings.usesReadOnlyMode();
 		try {
 			FileSystemCapabilityChecker.assertWriteAccess(getPath());
 		} catch (FileSystemCapabilityChecker.MissingCapabilityException e) {
@@ -134,26 +138,26 @@ public class Vault {
 		}
 		if (createReadOnly) {
 			flags.add(FileSystemFlags.READONLY);
-		} else if (vaultSettings.maxCleartextFilenameLength.get() == -1) {
+		} else if (vaultSettings.maxCleartextFilenameLength() == -1) {
 			LOG.debug("Determining cleartext filename length limitations...");
 			int shorteningThreshold = configCache.get().allegedShorteningThreshold();
 			int ciphertextLimit = FileSystemCapabilityChecker.determineSupportedCiphertextFileNameLength(getPath());
 			if (ciphertextLimit < shorteningThreshold) {
 				int cleartextLimit = FileSystemCapabilityChecker.determineSupportedCleartextFileNameLength(getPath());
-				vaultSettings.maxCleartextFilenameLength.set(cleartextLimit);
+				vaultSettings.setMaxCleartextFilenameLength(cleartextLimit);
 			} else {
-				vaultSettings.maxCleartextFilenameLength.setValue(UNLIMITED_FILENAME_LENGTH);
+				vaultSettings.setMaxCleartextFilenameLength(UNLIMITED_FILENAME_LENGTH);
 			}
 		}
 
-		if (vaultSettings.maxCleartextFilenameLength.get() < UNLIMITED_FILENAME_LENGTH) {
-			LOG.warn("Limiting cleartext filename length on this device to {}.", vaultSettings.maxCleartextFilenameLength.get());
+		if (vaultSettings.maxCleartextFilenameLength() < UNLIMITED_FILENAME_LENGTH) {
+			LOG.warn("Limiting cleartext filename length on this device to {}.", vaultSettings.maxCleartextFilenameLength());
 		}
 
 		var fsPropsBuilder = CryptoFileSystemProperties.cryptoFileSystemProperties() //
 				.withKeyLoader(keyLoader) //
 				.withFlags(flags) //
-				.withMaxCleartextNameLength(vaultSettings.maxCleartextFilenameLength.get()) //
+				.withMaxCleartextNameLength(vaultSettings.maxCleartextFilenameLength()) //
 				.withVaultConfigFilename(Constants.VAULTCONFIG_FILENAME) //
 				.withFilesystemEventConsumer(this::consumeVaultEvent);
 		if (keyLoader instanceof FilesystemOwnerSupplier oo) {
@@ -277,12 +281,12 @@ public class Vault {
 	// Observable Properties
 	// *******************************************************************************
 
-	public VaultState stateProperty() {
-		return state;
+	public ObservableObjectValue<VaultState.Value> stateProperty() {
+		return observableState;
 	}
 
 	public VaultState.Value getState() {
-		return state.getValue();
+		return state.get();
 	}
 
 	public boolean transitionState(VaultState.Value fromState, VaultState.Value toState) {
@@ -291,6 +295,10 @@ public class Vault {
 
 	public void setState(VaultState.Value newState) {
 		state.set(newState);
+	}
+
+	public boolean awaitState(VaultState.Value desiredState, long time, java.util.concurrent.TimeUnit unit) throws InterruptedException {
+		return state.awaitState(desiredState, time, unit);
 	}
 
 	public ObjectProperty<Exception> lastKnownExceptionProperty() {
@@ -366,19 +374,19 @@ public class Vault {
 	}
 
 	public String getDisplayName() {
-		return vaultSettings.displayName.get();
+		return vaultSettings.displayName();
 	}
 
 	public void setDisplayName(String displayName) {
-		vaultSettings.displayName.set(displayName);
+		vaultSettings.setDisplayName(displayName);
 	}
 
 	public boolean isAutoLockWhenIdle() {
-		return vaultSettings.autoLockWhenIdle.get();
+		return vaultSettings.autoLockWhenIdle();
 	}
 
 	public int getAutoLockIdleSeconds() {
-		return vaultSettings.autoLockIdleSeconds.get();
+		return vaultSettings.autoLockIdleSeconds();
 	}
 
 	public ObjectBinding<Mountpoint> mountPointProperty() {
@@ -395,7 +403,7 @@ public class Vault {
 	}
 
 	public String getDisplayablePath() {
-		Path p = vaultSettings.path.get();
+		Path p = vaultSettings.path();
 		if (p.startsWith(HOME_DIR)) {
 			Path relativePath = HOME_DIR.relativize(p);
 			String homePrefix = SystemUtils.IS_OS_WINDOWS ? "~\\" : "~/";
@@ -424,7 +432,7 @@ public class Vault {
 
 
 	public Observable[] observables() {
-		return new Observable[]{state};
+		return new Observable[]{observableState};
 	}
 
 	public VaultSettings getVaultSettings() {
@@ -432,7 +440,7 @@ public class Vault {
 	}
 
 	public Path getPath() {
-		return vaultSettings.path.get();
+		return vaultSettings.path();
 	}
 
 	/**
@@ -443,7 +451,7 @@ public class Vault {
 	 * @throws IllegalStateException if the vault is not unlocked
 	 */
 	public Path getCiphertextPath(Path cleartextPath) throws IOException {
-		if (!state.getValue().equals(VaultState.Value.UNLOCKED)) {
+		if (!state.get().equals(VaultState.Value.UNLOCKED)) {
 			throw new IllegalStateException("Vault is not unlocked");
 		}
 		var fs = cryptoFileSystem.get();
@@ -466,7 +474,7 @@ public class Vault {
 	 * Gets the cleartext name from a given path to an encrypted vault file
 	 */
 	public String getCleartextName(Path ciphertextPath) throws IOException {
-		if (!state.getValue().equals(VaultState.Value.UNLOCKED)) {
+		if (!state.get().equals(VaultState.Value.UNLOCKED)) {
 			throw new IllegalStateException("Vault is not unlocked");
 		}
 		var fs = cryptoFileSystem.get();
@@ -478,7 +486,7 @@ public class Vault {
 	}
 
 	public String getId() {
-		return vaultSettings.id;
+		return vaultSettings.id();
 	}
 
 	// ******************************************************************************

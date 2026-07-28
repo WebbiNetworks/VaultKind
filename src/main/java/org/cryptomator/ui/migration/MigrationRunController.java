@@ -111,7 +111,7 @@ public class MigrationRunController implements FxController {
 	public void migrate() {
 		LOG.info("Migrating vault {}", vault.getPath());
 		CharSequence password = passwordField.getCharacters();
-		vault.stateProperty().transition(VaultState.Value.NEEDS_MIGRATION, VaultState.Value.PROCESSING);
+		vault.transitionState(VaultState.Value.NEEDS_MIGRATION, VaultState.Value.PROCESSING);
 		passwordField.setDisable(true);
 		ScheduledFuture<?> progressSyncTask = scheduler.scheduleAtFixedRate(() -> {
 			Platform.runLater(() -> {
@@ -125,10 +125,10 @@ public class MigrationRunController implements FxController {
 		}).onSuccess(needsAnotherMigration -> {
 			if (needsAnotherMigration) {
 				LOG.info("Migration of '{}' succeeded, but another migration is required.", vault.getDisplayName());
-				vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.NEEDS_MIGRATION);
+				vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.NEEDS_MIGRATION);
 			} else {
 				LOG.info("Migration of '{}' succeeded.", vault.getDisplayName());
-				vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
+				vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
 				passwordField.wipe();
 				window.setScene(successScene.get());
 			}
@@ -137,20 +137,20 @@ public class MigrationRunController implements FxController {
 			passwordField.setDisable(false);
 			passwordField.selectAll();
 			passwordField.requestFocus();
-			vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.NEEDS_MIGRATION);
+			vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.NEEDS_MIGRATION);
 		}).onError(FileSystemCapabilityChecker.MissingCapabilityException.class, e -> {
 			LOG.error("Underlying file system not supported.", e);
-			vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.NEEDS_MIGRATION);
+			vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.NEEDS_MIGRATION);
 			missingCapability.set(e.getMissingCapability());
 			window.setScene(capabilityErrorScene.get());
 		}).onError(FileNameTooLongException.class, e -> {
 			LOG.error("Migration failed because the underlying file system does not support long filenames.", e);
-			vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.NEEDS_MIGRATION);
+			vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.NEEDS_MIGRATION);
 			appWindows.showErrorWindow(e, window, startScene.get());
 			window.setScene(impossibleScene.get());
 		}).onError(Exception.class, e -> { // including RuntimeExceptions
 			LOG.error("Migration failed for technical reasons.", e);
-			vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.NEEDS_MIGRATION);
+			vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.NEEDS_MIGRATION);
 			appWindows.showErrorWindow(e, window, startScene.get());
 		}).andFinally(() -> {
 			passwordField.setDisable(false);

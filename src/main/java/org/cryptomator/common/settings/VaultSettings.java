@@ -11,18 +11,12 @@ import com.google.common.io.BaseEncoding;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import javafx.beans.Observable;
-import javafx.beans.binding.Bindings;
 import javafx.beans.binding.StringExpression;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.Random;
 
@@ -42,6 +36,8 @@ public class VaultSettings {
 	static final int DEFAULT_PORT = 42427;
 
 	private static final Random RNG = new Random();
+	private final VaultSettingsData data;
+	private final LegacyVaultSettingsProperties legacyProperties;
 
 	public final String id;
 	public final ObjectProperty<Path> path;
@@ -61,31 +57,24 @@ public class VaultSettings {
 	public final StringProperty lastKnownKeyLoader;
 
 	VaultSettings(VaultSettingsJson json) {
-		this.id = json.id;
-		this.path = new SimpleObjectProperty<>(this, "path", json.path == null ? null : Paths.get(json.path));
-		this.displayName = new SimpleStringProperty(this, "displayName", json.displayName);
-		this.unlockAfterStartup = new SimpleBooleanProperty(this, "unlockAfterStartup", json.unlockAfterStartup);
-		this.revealAfterMount = new SimpleBooleanProperty(this, "revealAfterMount", json.revealAfterMount);
-		this.usesReadOnlyMode = new SimpleBooleanProperty(this, "usesReadOnlyMode", json.usesReadOnlyMode);
-		this.mountFlags = new SimpleStringProperty(this, "mountFlags", json.mountFlags);
-		this.maxCleartextFilenameLength = new SimpleIntegerProperty(this, "maxCleartextFilenameLength", json.maxCleartextFilenameLength);
-		this.actionAfterUnlock = new SimpleObjectProperty<>(this, "actionAfterUnlock", json.actionAfterUnlock);
-		this.autoLockWhenIdle = new SimpleBooleanProperty(this, "autoLockWhenIdle", json.autoLockWhenIdle);
-		this.autoLockIdleSeconds = new SimpleIntegerProperty(this, "autoLockIdleSeconds", json.autoLockIdleSeconds);
-		this.mountPoint = new SimpleObjectProperty<>(this, "mountPoint", json.mountPoint == null ? null : Path.of(json.mountPoint));
-		this.mountService = new SimpleStringProperty(this, "mountService", json.mountService);
-		this.port = new SimpleIntegerProperty(this, "port", json.port);
-		this.lastKnownKeyLoader = new SimpleStringProperty(this, "lastKnownKeyLoader", json.lastKnownKeyLoader);
-		// mount name is no longer an explicit setting, see https://github.com/cryptomator/cryptomator/pull/1318
-		this.mountName = StringExpression.stringExpression(Bindings.createStringBinding(() -> {
-			final String name;
-			if (displayName.isEmpty().get()) {
-				name = path.get().getFileName().toString();
-			} else {
-				name = displayName.get();
-			}
-			return normalizeDisplayName(name);
-		}, displayName, path));
+		this.data = new VaultSettingsData(json);
+		this.legacyProperties = new LegacyVaultSettingsProperties(this, data);
+		this.id = data.id();
+		this.path = legacyProperties.path;
+		this.displayName = legacyProperties.displayName;
+		this.unlockAfterStartup = legacyProperties.unlockAfterStartup;
+		this.revealAfterMount = legacyProperties.revealAfterMount;
+		this.usesReadOnlyMode = legacyProperties.usesReadOnlyMode;
+		this.mountFlags = legacyProperties.mountFlags;
+		this.maxCleartextFilenameLength = legacyProperties.maxCleartextFilenameLength;
+		this.actionAfterUnlock = legacyProperties.actionAfterUnlock;
+		this.autoLockWhenIdle = legacyProperties.autoLockWhenIdle;
+		this.autoLockIdleSeconds = legacyProperties.autoLockIdleSeconds;
+		this.mountPoint = legacyProperties.mountPoint;
+		this.mountName = legacyProperties.mountName;
+		this.mountService = legacyProperties.mountService;
+		this.port = legacyProperties.port;
+		this.lastKnownKeyLoader = legacyProperties.lastKnownKeyLoader;
 
 		migrateLegacySettings(json);
 	}
@@ -101,13 +90,134 @@ public class VaultSettings {
 	}
 
 	Observable[] observables() {
-		return new Observable[]{actionAfterUnlock, autoLockIdleSeconds, autoLockWhenIdle, displayName, maxCleartextFilenameLength, mountFlags, mountPoint, path, revealAfterMount, unlockAfterStartup, usesReadOnlyMode, port, mountService, lastKnownKeyLoader};
+		return legacyProperties.observables();
 	}
 
 	public static VaultSettings withRandomId() {
 		var defaults = new VaultSettingsJson();
 		defaults.id = generateId();
 		return new VaultSettings(defaults);
+	}
+
+	public String id() {
+		return id;
+	}
+
+	public Path path() {
+		return data.path();
+	}
+
+	public void setPath(Path value) {
+		data.setPath(value);
+	}
+
+	public String displayName() {
+		return data.displayName();
+	}
+
+	public void setDisplayName(String value) {
+		data.setDisplayName(value);
+	}
+
+	public boolean usesReadOnlyMode() {
+		return data.usesReadOnlyMode();
+	}
+
+	public void setUsesReadOnlyMode(boolean value) {
+		data.setUsesReadOnlyMode(value);
+	}
+
+	public String mountFlags() {
+		return data.mountFlags();
+	}
+
+	public void setMountFlags(String value) {
+		data.setMountFlags(value);
+	}
+
+	public int maxCleartextFilenameLength() {
+		return data.maxCleartextFilenameLength();
+	}
+
+	public void setMaxCleartextFilenameLength(int value) {
+		data.setMaxCleartextFilenameLength(value);
+	}
+
+	public boolean unlockAfterStartup() {
+		return data.unlockAfterStartup();
+	}
+
+	public void setUnlockAfterStartup(boolean value) {
+		data.setUnlockAfterStartup(value);
+	}
+
+	public boolean revealAfterMount() {
+		return data.revealAfterMount();
+	}
+
+	public void setRevealAfterMount(boolean value) {
+		data.setRevealAfterMount(value);
+	}
+
+	public WhenUnlocked actionAfterUnlock() {
+		return data.actionAfterUnlock();
+	}
+
+	public void setActionAfterUnlock(WhenUnlocked value) {
+		data.setActionAfterUnlock(value);
+	}
+
+	public boolean autoLockWhenIdle() {
+		return data.autoLockWhenIdle();
+	}
+
+	public void setAutoLockWhenIdle(boolean value) {
+		data.setAutoLockWhenIdle(value);
+	}
+
+	public int autoLockIdleSeconds() {
+		return data.autoLockIdleSeconds();
+	}
+
+	public void setAutoLockIdleSeconds(int value) {
+		data.setAutoLockIdleSeconds(value);
+	}
+
+	public Path mountPoint() {
+		return data.mountPoint();
+	}
+
+	public void setMountPoint(Path value) {
+		data.setMountPoint(value);
+	}
+
+	public String mountName() {
+		var name = data.displayName() == null || data.displayName().isEmpty() ? data.path().getFileName().toString() : data.displayName();
+		return normalizeDisplayName(name);
+	}
+
+	public String mountService() {
+		return data.mountService();
+	}
+
+	public void setMountService(String value) {
+		data.setMountService(value);
+	}
+
+	public int port() {
+		return data.port();
+	}
+
+	public void setPort(int value) {
+		data.setPort(value);
+	}
+
+	public String lastKnownKeyLoader() {
+		return data.lastKnownKeyLoader();
+	}
+
+	public void setLastKnownKeyLoader(String value) {
+		data.setLastKnownKeyLoader(value);
 	}
 
 	private static String generateId() {
@@ -119,20 +229,20 @@ public class VaultSettings {
 	VaultSettingsJson serialized() {
 		var json = new VaultSettingsJson();
 		json.id = id;
-		json.path = path.map(Path::toString).getValue();
-		json.displayName = displayName.get();
-		json.unlockAfterStartup = unlockAfterStartup.get();
-		json.revealAfterMount = revealAfterMount.get();
-		json.usesReadOnlyMode = usesReadOnlyMode.get();
-		json.mountFlags = mountFlags.get();
-		json.maxCleartextFilenameLength = maxCleartextFilenameLength.get();
-		json.actionAfterUnlock = actionAfterUnlock.get();
-		json.autoLockWhenIdle = autoLockWhenIdle.get();
-		json.autoLockIdleSeconds = autoLockIdleSeconds.get();
-		json.mountPoint = mountPoint.map(Path::toString).getValue();
-		json.mountService = mountService.get();
-		json.port = port.get();
-		json.lastKnownKeyLoader = lastKnownKeyLoader.get();
+		json.path = data.path() == null ? null : data.path().toString();
+		json.displayName = data.displayName();
+		json.unlockAfterStartup = data.unlockAfterStartup();
+		json.revealAfterMount = data.revealAfterMount();
+		json.usesReadOnlyMode = data.usesReadOnlyMode();
+		json.mountFlags = data.mountFlags();
+		json.maxCleartextFilenameLength = data.maxCleartextFilenameLength();
+		json.actionAfterUnlock = data.actionAfterUnlock();
+		json.autoLockWhenIdle = data.autoLockWhenIdle();
+		json.autoLockIdleSeconds = data.autoLockIdleSeconds();
+		json.mountPoint = data.mountPoint() == null ? null : data.mountPoint().toString();
+		json.mountService = data.mountService();
+		json.port = data.port();
+		json.lastKnownKeyLoader = data.lastKnownKeyLoader();
 		return json;
 	}
 

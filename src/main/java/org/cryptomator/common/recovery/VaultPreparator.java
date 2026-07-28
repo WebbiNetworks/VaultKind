@@ -28,11 +28,11 @@ public final class VaultPreparator {
 									 List<MountService> mountServices, //
 									 ResourceBundle resourceBundle) {
 		VaultSettings vaultSettings = VaultSettings.withRandomId();
-		vaultSettings.path.set(selectedDirectory);
+		vaultSettings.setPath(selectedDirectory);
 		if (selectedDirectory.getFileName() != null) {
-			vaultSettings.displayName.set(selectedDirectory.getFileName().toString());
+			vaultSettings.setDisplayName(selectedDirectory.getFileName().toString());
 		} else {
-			vaultSettings.displayName.set(resourceBundle.getString("defaults.vault.vaultName"));
+			vaultSettings.setDisplayName(resourceBundle.getString("defaults.vault.vaultName"));
 		}
 
 		var wrapper = new VaultConfigCache(vaultSettings);
@@ -40,13 +40,13 @@ public final class VaultPreparator {
 		try {
 			VaultListManager.determineVaultState(vault.getPath());
 		} catch (IOException e) {
-			LOG.warn("Failed to determine vault state for {}", vaultSettings.path.get(), e);
+			LOG.warn("Failed to determine vault state for {}", vaultSettings.path(), e);
 		}
 
 		//due to https://github.com/cryptomator/cryptomator/issues/2880#issuecomment-1680313498
 		var nameOfWinfspLocalMounter = "org.cryptomator.frontend.fuse.mount.WinFspMountProvider";
-		if (SystemUtils.IS_OS_WINDOWS && vaultSettings.path.get().toString().contains("Dropbox") && mountServices.stream().anyMatch(s -> s.getClass().getName().equals(nameOfWinfspLocalMounter))) {
-			vaultSettings.mountService.setValue(nameOfWinfspLocalMounter);
+		if (SystemUtils.IS_OS_WINDOWS && vaultSettings.path().toString().contains("Dropbox") && mountServices.stream().anyMatch(s -> s.getClass().getName().equals(nameOfWinfspLocalMounter))) {
+			vaultSettings.setMountService(nameOfWinfspLocalMounter);
 		}
 
 		return vault;

@@ -144,7 +144,7 @@ public class UnlockWorkflow extends Task<Void> {
 			case IGNORE -> Platform.runLater(window::close);
 		}
 
-		vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.UNLOCKED);
+		vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.UNLOCKED);
 	}
 
 	@Override
@@ -157,7 +157,7 @@ public class UnlockWorkflow extends Task<Void> {
 			case ReadOnlyFileSystemException _ -> handleReadOnlyFileSystem();
 			default -> handleGenericError(throwable);
 		}
-		vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
+		vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
 	}
 
 	private void handleReadOnlyFileSystem() {
@@ -172,7 +172,7 @@ public class UnlockWorkflow extends Task<Void> {
 	private void retry() {
 		try {
 			vault.getVaultSettings().usesReadOnlyMode.set(true);
-			var isLocked = vault.stateProperty().awaitState(VaultState.Value.LOCKED, 5, TimeUnit.SECONDS);
+			var isLocked = vault.awaitState(VaultState.Value.LOCKED, 5, TimeUnit.SECONDS);
 			if (!isLocked) {
 				LOG.error("Vault did not changed to LOCKED state within 5 seconds. Aborting unlock retry.");
 			} else {
@@ -187,7 +187,7 @@ public class UnlockWorkflow extends Task<Void> {
 	@Override
 	protected void cancelled() {
 		LOG.debug("Unlock of '{}' canceled.", vault.getDisplayName());
-		vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
+		vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
 	}
 
 }

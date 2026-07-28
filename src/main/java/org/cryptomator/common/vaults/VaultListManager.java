@@ -160,19 +160,19 @@ public class VaultListManager implements VaultRegistry {
 
 	private VaultSettings newVaultSettings(Path path) {
 		VaultSettings vaultSettings = VaultSettings.withRandomId();
-		vaultSettings.path.set(path);
+		vaultSettings.setPath(path);
 		if (path.getFileName() != null) {
-			vaultSettings.displayName.set(path.getFileName().toString());
+			vaultSettings.setDisplayName(path.getFileName().toString());
 		} else {
-			vaultSettings.displayName.set(defaultVaultName);
+			vaultSettings.setDisplayName(defaultVaultName);
 		}
 
 		//due to https://github.com/cryptomator/cryptomator/issues/2880#issuecomment-1680313498
 		var nameOfWinfspLocalMounter = "org.cryptomator.frontend.fuse.mount.WinFspMountProvider";
 		if (SystemUtils.IS_OS_WINDOWS //
-				&& vaultSettings.path.get().toString().contains("Dropbox") //
+				&& vaultSettings.path().toString().contains("Dropbox") //
 				&& mountServices.stream().anyMatch(s -> s.getClass().getName().equals(nameOfWinfspLocalMounter))) {
-			vaultSettings.mountService.setValue(nameOfWinfspLocalMounter);
+			vaultSettings.setMountService(nameOfWinfspLocalMounter);
 		}
 
 		return vaultSettings;
@@ -202,29 +202,29 @@ public class VaultListManager implements VaultRegistry {
 	private Vault create(VaultSettings vaultSettings) {
 		var wrapper = new VaultConfigCache(vaultSettings);
 		try {
-			var vaultState = determineVaultState(vaultSettings.path.get());
+			var vaultState = determineVaultState(vaultSettings.path());
 			initializeLastKnownKeyLoaderIfPossible(vaultSettings, vaultState, wrapper);
 
 			return vaultComponentFactory.create(vaultSettings, wrapper, vaultState, null).vault();
 		} catch (IOException e) {
-			LOG.warn("Failed to determine vault state for {}", vaultSettings.path.get(), e);
+			LOG.warn("Failed to determine vault state for {}", vaultSettings.path(), e);
 			return vaultComponentFactory.create(vaultSettings, wrapper, ERROR, e).vault();
 		}
 	}
 
 	private void initializeLastKnownKeyLoaderIfPossible(VaultSettings vaultSettings, VaultState.Value vaultState, VaultConfigCache wrapper) throws IOException {
-		if (vaultSettings.lastKnownKeyLoader.get() != null) {
+		if (vaultSettings.lastKnownKeyLoader() != null) {
 			return;
 		}
 
 		switch (vaultState) {
 			case LOCKED -> {
 				wrapper.reloadConfig();
-				vaultSettings.lastKnownKeyLoader.set(wrapper.get().getKeyId().getScheme());
+				vaultSettings.setLastKnownKeyLoader(wrapper.get().getKeyId().getScheme());
 			}
 			case NEEDS_MIGRATION -> {
 				//for legacy reasons: pre v8 vault do not have a config, but they are in the NEEDS_MIGRATION state
-				vaultSettings.lastKnownKeyLoader.set(MasterkeyFileLoadingStrategy.SCHEME);
+				vaultSettings.setLastKnownKeyLoader(MasterkeyFileLoadingStrategy.SCHEME);
 			}
 			case VAULT_CONFIG_MISSING -> {
 				//Nothing to do here, since there is no config to read
@@ -233,12 +233,12 @@ public class VaultListManager implements VaultRegistry {
 				// no config available or not safe to load
 			}
 			default -> {
-				if (Files.exists(vaultSettings.path.get().resolve(VAULTCONFIG_FILENAME))) {
+				if (Files.exists(vaultSettings.path().resolve(VAULTCONFIG_FILENAME))) {
 					try {
 						wrapper.reloadConfig();
-						vaultSettings.lastKnownKeyLoader.set(wrapper.get().getKeyId().getScheme());
+						vaultSettings.setLastKnownKeyLoader(wrapper.get().getKeyId().getScheme());
 					} catch (IOException e) {
-						LOG.debug("Unable to load config for {}", vaultSettings.path.get(), e);
+						LOG.debug("Unable to load config for {}", vaultSettings.path(), e);
 					}
 				}
 			}

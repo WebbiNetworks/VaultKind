@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javafx.application.Platform;
-import javafx.beans.Observable;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.LongProperty;
 import javafx.beans.property.ObjectProperty;
@@ -56,7 +55,7 @@ public class VaultStats {
 		state.addListener(this::vaultStateChanged);
 	}
 
-	private void vaultStateChanged(@SuppressWarnings("unused") Observable observable) {
+	private void vaultStateChanged(VaultState.Value oldState, VaultState.Value newState) {
 		if (VaultState.Value.UNLOCKED == state.get()) {
 			assert fs.get() != null;
 			LOG.debug("start recording stats");

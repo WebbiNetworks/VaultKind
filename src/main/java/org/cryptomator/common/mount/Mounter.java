@@ -77,24 +77,24 @@ public class Mounter {
 				switch (capability) {
 					case FILE_SYSTEM_NAME -> builder.setFileSystemName("cryptoFs");
 					case LOOPBACK_PORT -> {
-						if (vaultSettings.mountService.getValue() == null) {
+						if (vaultSettings.mountService() == null) {
 							builder.setLoopbackPort(settings.port.get());
 						} else {
-							builder.setLoopbackPort(vaultSettings.port.get());
+							builder.setLoopbackPort(vaultSettings.port());
 						}
 					}
 					case LOOPBACK_HOST_NAME -> env.getLoopbackAlias().ifPresent(builder::setLoopbackHostName);
-					case READ_ONLY -> builder.setReadOnly(vaultSettings.usesReadOnlyMode.get());
+					case READ_ONLY -> builder.setReadOnly(vaultSettings.usesReadOnlyMode());
 					case MOUNT_FLAGS -> {
-						var mountFlags = vaultSettings.mountFlags.get();
+						var mountFlags = vaultSettings.mountFlags();
 						if (mountFlags == null || mountFlags.isBlank()) {
 							builder.setMountFlags(service.getDefaultMountFlags());
 						} else {
 							builder.setMountFlags(mountFlags);
 						}
 					}
-					case VOLUME_ID -> builder.setVolumeId(vaultSettings.id);
-					case VOLUME_NAME -> builder.setVolumeName(vaultSettings.mountName.get());
+					case VOLUME_ID -> builder.setVolumeId(vaultSettings.id());
+					case VOLUME_NAME -> builder.setVolumeName(vaultSettings.mountName());
 				}
 			}
 
@@ -103,7 +103,7 @@ public class Mounter {
 
 		private Runnable prepareMountPoint() throws IOException {
 			Runnable cleanup = () -> {};
-			var userChosenMountPoint = vaultSettings.mountPoint.get();
+			var userChosenMountPoint = vaultSettings.mountPoint();
 			var canMountToDriveLetter = service.hasCapability(MOUNT_AS_DRIVE_LETTER);
 			var canMountToParent = service.hasCapability(MOUNT_WITHIN_EXISTING_PARENT);
 			var canMountToDir = service.hasCapability(MOUNT_TO_EXISTING_DIR);
@@ -120,7 +120,7 @@ public class Mounter {
 					builder.setMountpoint(defaultMountPointBase);
 				} else if (canMountToDir) {
 					var defaultMountPointBase = env.getMountPointsDir().orElseThrow();
-					var mountPoint = defaultMountPointBase.resolve(vaultSettings.mountName.get());
+					var mountPoint = defaultMountPointBase.resolve(vaultSettings.mountName());
 					Files.createDirectories(mountPoint);
 					builder.setMountpoint(mountPoint);
 				}
@@ -158,7 +158,7 @@ public class Mounter {
 	}
 
 	public MountHandle mount(VaultSettings vaultSettings, Path cryptoFsRoot) throws IOException, MountFailedException {
-		var mountService = mountProviders.stream().filter(s -> s.getClass().getName().equals(vaultSettings.mountService.getValue())).findFirst().orElse(defaultMountService.getValue());
+		var mountService = mountProviders.stream().filter(s -> s.getClass().getName().equals(vaultSettings.mountService())).findFirst().orElse(defaultMountService.getValue());
 
 		if (isConflictingMountService(mountService)) {
 			var msg = mountService.getClass() + " unavailable due to conflict with either of " + CONFLICTING_MOUNT_SERVICES.get(mountService.getClass().getName());
@@ -168,7 +168,7 @@ public class Mounter {
 		usedMountServices.add(mountService);
 
 		var builder = mountService.forFileSystem(cryptoFsRoot);
-		LOG.debug("Using mount service {} for mounting vault {}", mountService.getClass().getName(), vaultSettings.displayName);
+		LOG.debug("Using mount service {} for mounting vault {}", mountService.getClass().getName(), vaultSettings.displayName());
 		var internal = new SettledMounter(mountService, builder, vaultSettings); // FIXME: no need for an inner class
 		var cleanup = internal.prepare();
 		return new MountHandle(builder.mount(), mountService.hasCapability(UNMOUNT_FORCED), cleanup);

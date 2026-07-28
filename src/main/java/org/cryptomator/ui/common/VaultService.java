@@ -188,22 +188,22 @@ public class VaultService {
 
 		@Override
 		protected void scheduled() {
-			vault.stateProperty().transition(VaultState.Value.UNLOCKED, VaultState.Value.PROCESSING);
+			vault.transitionState(VaultState.Value.UNLOCKED, VaultState.Value.PROCESSING);
 		}
 
 		@Override
 		protected void succeeded() {
-			vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
+			vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
 		}
 
 		@Override
 		protected void failed() {
-			vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.UNLOCKED);
+			vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.UNLOCKED);
 		}
 
 		@Override
 		protected void cancelled() {
-			vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.UNLOCKED);
+			vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.UNLOCKED);
 		}
 
 	}

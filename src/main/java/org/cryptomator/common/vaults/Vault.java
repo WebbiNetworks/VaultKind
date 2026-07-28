@@ -8,6 +8,7 @@
  *******************************************************************************/
 package org.cryptomator.common.vaults;
 
+import dagger.Lazy;
 import org.apache.commons.lang3.SystemUtils;
 import org.cryptomator.common.Constants;
 import org.cryptomator.common.FilesystemOwnerSupplier;
@@ -35,7 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
@@ -66,19 +66,14 @@ public class Vault {
 	private final AtomicReference<CryptoFileSystem> cryptoFileSystem;
 	private final AtomicReference<QuickAccessService.QuickAccessEntry> quickAccessEntry;
 	private final VaultState state;
-	private final LegacyVaultStateObservable observableState;
-	private final ObjectProperty<Exception> lastKnownException;
+	private final Lazy<LegacyVaultStateObservable> observableState;
+	private final VaultExceptionState exceptionState;
+	private final Lazy<LegacyVaultExceptionProperty> legacyException;
 	private final VaultConfigCache configCache;
 	private final VaultStats stats;
+	private final Lazy<LegacyVaultStatsObservable> legacyStats;
 	private final StringBinding displayablePath;
-	private final BooleanBinding locked;
-	private final BooleanBinding processing;
-	private final BooleanBinding unlocked;
-	private final BooleanBinding missing;
-	private final BooleanBinding needsMigration;
-	private final BooleanBinding unknownError;
-	private final BooleanBinding missingVaultConfig;
-	private final ObjectBinding<Mountpoint> mountPoint;
+	private LegacyVaultObservables legacyObservables;
 	private final Mounter mounter;
 	private final Settings settings;
 	private final FileSystemEventAggregator fileSystemEventAggregator;
@@ -92,9 +87,11 @@ public class Vault {
 		  VaultConfigCache configCache, //
 		  AtomicReference<CryptoFileSystem> cryptoFileSystem, //
 		  VaultState state, //
-		  LegacyVaultStateObservable observableState, //
-		  @Named("lastKnownException") ObjectProperty<Exception> lastKnownException, //
+		  Lazy<LegacyVaultStateObservable> observableState, //
+		  VaultExceptionState exceptionState, //
+		  Lazy<LegacyVaultExceptionProperty> legacyException, //
 		  VaultStats stats, //
+		  Lazy<LegacyVaultStatsObservable> legacyStats, //
 		  Mounter mounter, Settings settings, //
 		  FileSystemEventAggregator fileSystemEventAggregator, //
 		  NotificationManager notificationManager) {
@@ -103,17 +100,11 @@ public class Vault {
 		this.cryptoFileSystem = cryptoFileSystem;
 		this.state = state;
 		this.observableState = observableState;
-		this.lastKnownException = lastKnownException;
+		this.exceptionState = exceptionState;
+		this.legacyException = legacyException;
 		this.stats = stats;
+		this.legacyStats = legacyStats;
 		this.displayablePath = Bindings.createStringBinding(this::getDisplayablePath, vaultSettings.path);
-		this.locked = Bindings.createBooleanBinding(this::isLocked, observableState);
-		this.processing = Bindings.createBooleanBinding(this::isProcessing, observableState);
-		this.unlocked = Bindings.createBooleanBinding(this::isUnlocked, observableState);
-		this.missing = Bindings.createBooleanBinding(this::isMissing, observableState);
-		this.missingVaultConfig = Bindings.createBooleanBinding(this::isMissingVaultConfig, observableState);
-		this.needsMigration = Bindings.createBooleanBinding(this::isNeedsMigration, observableState);
-		this.unknownError = Bindings.createBooleanBinding(this::isUnknownError, observableState);
-		this.mountPoint = Bindings.createObjectBinding(this::getMountPoint, observableState);
 		this.mounter = mounter;
 		this.settings = settings;
 		this.fileSystemEventAggregator = fileSystemEventAggregator;
@@ -282,7 +273,7 @@ public class Vault {
 	// *******************************************************************************
 
 	public ObservableObjectValue<VaultState.Value> stateProperty() {
-		return observableState;
+		return observableState.get();
 	}
 
 	public VaultState.Value getState() {
@@ -302,19 +293,19 @@ public class Vault {
 	}
 
 	public ObjectProperty<Exception> lastKnownExceptionProperty() {
-		return lastKnownException;
+		return legacyException.get().property();
 	}
 
 	public Exception getLastKnownException() {
-		return lastKnownException.get();
+		return exceptionState.get();
 	}
 
 	public void setLastKnownException(Exception e) {
-		lastKnownException.setValue(e);
+		exceptionState.set(e);
 	}
 
 	public BooleanBinding lockedProperty() {
-		return locked;
+		return legacyObservables().locked();
 	}
 
 	public boolean isLocked() {
@@ -322,7 +313,7 @@ public class Vault {
 	}
 
 	public BooleanBinding processingProperty() {
-		return processing;
+		return legacyObservables().processing();
 	}
 
 	public boolean isProcessing() {
@@ -330,7 +321,7 @@ public class Vault {
 	}
 
 	public BooleanBinding unlockedProperty() {
-		return unlocked;
+		return legacyObservables().unlocked();
 	}
 
 	public boolean isUnlocked() {
@@ -338,7 +329,7 @@ public class Vault {
 	}
 
 	public BooleanBinding missingProperty() {
-		return missing;
+		return legacyObservables().missing();
 	}
 
 	public boolean isMissing() {
@@ -346,7 +337,7 @@ public class Vault {
 	}
 
 	public BooleanBinding needsMigrationProperty() {
-		return needsMigration;
+		return legacyObservables().needsMigration();
 	}
 
 	public boolean isNeedsMigration() {
@@ -354,7 +345,7 @@ public class Vault {
 	}
 
 	public BooleanBinding unknownErrorProperty() {
-		return unknownError;
+		return legacyObservables().unknownError();
 	}
 
 	public boolean isUnknownError() {
@@ -362,7 +353,7 @@ public class Vault {
 	}
 
 	public BooleanBinding missingVaultConfigProperty() {
-		return missingVaultConfig;
+		return legacyObservables().missingVaultConfig();
 	}
 
 	public boolean isMissingVaultConfig() {
@@ -390,7 +381,7 @@ public class Vault {
 	}
 
 	public ObjectBinding<Mountpoint> mountPointProperty() {
-		return mountPoint;
+		return legacyObservables().mountPoint();
 	}
 
 	public Mountpoint getMountPoint() {
@@ -430,9 +421,20 @@ public class Vault {
 		return stats;
 	}
 
+	public LegacyVaultStatsObservable getLegacyStats() {
+		return legacyStats.get();
+	}
+
 
 	public Observable[] observables() {
-		return new Observable[]{observableState};
+		return new Observable[]{observableState.get()};
+	}
+
+	private synchronized LegacyVaultObservables legacyObservables() {
+		if (legacyObservables == null) {
+			legacyObservables = new LegacyVaultObservables(observableState.get(), this::getMountPoint);
+		}
+		return legacyObservables;
 	}
 
 	public VaultSettings getVaultSettings() {

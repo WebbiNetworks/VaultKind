@@ -128,7 +128,36 @@ $classesSource = Join-Path $repositoryRoot "target\classes"
 if (-not (Test-Path -LiteralPath (Join-Path $classesSource "logback-native.xml"))) {
     throw "The engine classes are incomplete; logback-native.xml is missing."
 }
-Copy-Item -Path (Join-Path $classesSource "*") -Destination $classesTarget -Recurse -Force
+
+# The native frontend never loads the inherited JavaFX FXML, CSS, fonts, or
+# images. Keep every compiled engine class for now because Dagger, service
+# loading, and reflection make class-level trimming a separate audited step.
+Copy-Item -LiteralPath (Join-Path $classesSource "org") -Destination $classesTarget -Recurse -Force
+
+$requiredRootResources = @("logback-native.xml", "module-info.class", "THIRD-PARTY.txt")
+foreach ($resourceName in $requiredRootResources) {
+    $resourcePath = Join-Path $classesSource $resourceName
+    if (-not (Test-Path -LiteralPath $resourcePath -PathType Leaf)) {
+        throw "The engine classes are incomplete; $resourceName is missing."
+    }
+    Copy-Item -LiteralPath $resourcePath -Destination $classesTarget -Force
+}
+
+$i18nTarget = Join-Path $classesTarget "i18n"
+New-Item -ItemType Directory -Path $i18nTarget | Out-Null
+foreach ($resourceName in @("strings.properties", "4096words_en.txt")) {
+    $resourcePath = Join-Path $classesSource "i18n\$resourceName"
+    if (-not (Test-Path -LiteralPath $resourcePath -PathType Leaf)) {
+        throw "The engine classes are incomplete; i18n/$resourceName is missing."
+    }
+    Copy-Item -LiteralPath $resourcePath -Destination $i18nTarget -Force
+}
+
+foreach ($legacyUiDirectory in @("fxml", "css", "img")) {
+    if (Test-Path -LiteralPath (Join-Path $classesTarget $legacyUiDirectory)) {
+        throw "The native engine stage unexpectedly contains legacy UI resources: $legacyUiDirectory"
+    }
+}
 
 $seenLibraries = @{}
 foreach ($entry in $releaseClasspathEntries) {

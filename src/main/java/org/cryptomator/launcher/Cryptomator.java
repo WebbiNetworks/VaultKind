@@ -26,6 +26,7 @@ import javafx.stage.Stage;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 
@@ -47,16 +48,14 @@ public class Cryptomator {
 	private static final Logger LOG;
 
 	private final DebugMode debugMode;
-	private final SupportedLanguages supportedLanguages;
 	private final Environment env;
 	private final Lazy<IpcMessageHandler> ipcMessageHandler;
 	private final ShutdownHook shutdownHook;
 	private final SecureRandom csprng;
 
 	@Inject
-	Cryptomator(DebugMode debugMode, SupportedLanguages supportedLanguages, Environment env, Lazy<IpcMessageHandler> ipcMessageHandler, ShutdownHook shutdownHook, SecureRandom csprng) {
+	Cryptomator(DebugMode debugMode, Environment env, Lazy<IpcMessageHandler> ipcMessageHandler, ShutdownHook shutdownHook, SecureRandom csprng) {
 		this.debugMode = debugMode;
-		this.supportedLanguages = supportedLanguages;
 		this.env = env;
 		this.ipcMessageHandler = ipcMessageHandler;
 		this.shutdownHook = shutdownHook;
@@ -64,12 +63,7 @@ public class Cryptomator {
 	}
 
 	public static void main(String[] args) {
-		if (Arrays.asList(args).contains("--native-backend")) {
-			System.setProperty("vaultkind.nativeBackend", "true");
-			int exitCode = DaggerNativeBackendComponent.create().application().run();
-			LOG.info("Native backend exit {}", exitCode);
-			System.exit(exitCode);
-		}
+		Locale.setDefault(Locale.ENGLISH);
 		var printVersion = Optional.ofNullable(args) //
 				.stream() //Streams either one element (the args-array) or zero elements
 				.flatMap(Arrays::stream) //
@@ -101,7 +95,6 @@ public class Cryptomator {
 		env.log();
 		LOG.debug("Dagger graph initialized after {}ms", System.currentTimeMillis() - STARTUP_TIME);
 		LOG.info("Starting VaultKind {} on {} {} ({})", env.getAppVersion(), SystemUtils.OS_NAME, SystemUtils.OS_VERSION, SystemUtils.OS_ARCH);
-		supportedLanguages.applyPreferred();
 		changeDefaultSSLContext();
 		/*
 		 * Attempts to create an IPC connection to a running Cryptomator instance and sends it the given args.

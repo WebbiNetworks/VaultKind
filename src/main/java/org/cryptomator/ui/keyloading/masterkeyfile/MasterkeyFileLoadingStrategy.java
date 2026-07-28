@@ -35,7 +35,7 @@ import java.util.concurrent.ExecutionException;
 @KeyLoading
 public class MasterkeyFileLoadingStrategy implements KeyLoadingStrategy {
 
-	public static final String SCHEME = "masterkeyfile";
+	public static final String SCHEME = Constants.MASTERKEY_SCHEME;
 
 	private final Vault vault;
 	private final MasterkeyFileAccess masterkeyFileAccess;

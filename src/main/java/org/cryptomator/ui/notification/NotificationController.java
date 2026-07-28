@@ -1,7 +1,6 @@
 package org.cryptomator.ui.notification;
 
 import org.cryptomator.common.Constants;
-import org.cryptomator.common.settings.Settings;
 import org.cryptomator.cryptofs.event.FileIsInUseEvent;
 import org.cryptomator.event.VaultEvent;
 import org.cryptomator.ui.common.FxController;
@@ -54,10 +53,9 @@ public class NotificationController implements FxController {
 	private final DateTimeFormatter localizedTimeFormatter;
 
 	@Inject
-	public NotificationController(@NotificationWindow Stage window, FxNotificationManager notificationManager, ExecutorService executorService, ResourceBundle resourceBundle, Settings settings) {
+	public NotificationController(@NotificationWindow Stage window, FxNotificationManager notificationManager, ExecutorService executorService, ResourceBundle resourceBundle) {
 		this.window = window;
-		var preferredLanguage = settings.language.get();
-		this.localizedTimeFormatter = LOCAL_TIME_FORMATTER_TEMPLATE.withLocale(preferredLanguage == null ? Locale.getDefault() : Locale.forLanguageTag(preferredLanguage));
+		this.localizedTimeFormatter = LOCAL_TIME_FORMATTER_TEMPLATE.withLocale(Locale.ENGLISH);
 		this.events = new SimpleListProperty<>(notificationManager.getEventsRequiringNotification());
 		this.resourceBundle = resourceBundle;
 		this.selectionIndex = new SimpleIntegerProperty(-1);

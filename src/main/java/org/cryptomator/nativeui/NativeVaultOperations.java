@@ -311,7 +311,7 @@ public class NativeVaultOperations {
 
 			try {
 				vault.unlock(keyId -> {
-					if (!"masterkeyfile".equalsIgnoreCase(keyId.getScheme())) {
+					if (!Constants.MASTERKEY_SCHEME.equalsIgnoreCase(keyId.getScheme())) {
 						throw new MasterkeyLoadingFailedException("Unsupported key source for native password unlock");
 					}
 					var masterkeyPath = vault.getPath().resolve(Constants.MASTERKEY_FILENAME);

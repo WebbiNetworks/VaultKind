@@ -1,6 +1,6 @@
 # VaultKind 1.0 Release Readiness
 
-VaultKind 1.0.0 is a Windows-only, English-only release. Development builds are not release candidates and must not be distributed as the only way to access important data.
+VaultKind is a Windows-only, permanently English-only product. Development builds are not release candidates and must not be distributed as the only way to access important data.
 
 ## Deterministic release layout
 
@@ -14,9 +14,9 @@ Run `scripts/build-native-release.ps1` from a reviewed checkout to stage:
 
 The native host first looks for `Engine/runtime/bin/javaw.exe`, `Engine/classes`, and `Engine/lib` beside the application. Source-tree and installed-JDK discovery remain development fallbacks and are not acceptable release dependencies.
 
-Run `powershell -ExecutionPolicy Bypass -File scripts\test-bundled-engine.ps1 -BinaryRoot <staged-layout>` to start the staged Java runtime with an isolated profile, verify the native protocol identity, and request graceful shutdown. This avoids reusing a compatible development engine that may already own the normal local socket.
+Run `powershell -ExecutionPolicy Bypass -File scripts\test-bundled-engine.ps1 -BinaryRoot <staged-layout>` to start the staged Java runtime with an isolated profile. The probe verifies malformed-client isolation, protocol identity, an empty vault list, automatic/current mount-provider discovery, `vault_not_found` handling for all 11 vault-ID commands, unsupported-protocol and unknown-operation errors, and graceful shutdown. It does not create, connect, unlock, mount, or modify a vault or change the selected provider. This avoids reusing a compatible development engine that may already own the normal local socket.
 
-The staging pass removes non-English .NET/WinUI satellite-resource directories. The Java engine also carries only the reviewed default English resource bundle; translation configuration and inherited localized bundles are excluded from the version 1.0 source and release.
+The staging pass removes non-English .NET/WinUI satellite-resource directories. The Java engine carries only the reviewed English catalog and recovery-word list. Translation configuration, inherited localized bundles, language preferences/selectors, locale selection, and right-to-left layout machinery are absent from the product source and release.
 
 The release classpath is resolved with Maven's runtime scope and the build fails if test-only libraries such as JUnit, Mockito, Byte Buddy, Hamcrest, Jimfs, or JavaFX Swing appear. The July 27 cleanup reduced the staged engine from 72 to 55 libraries and removed approximately 11.55 MB of test dependencies. Together with the English-only resource cleanup, the unpacked x64 stage decreased from about 283 MB to 269.69 MB while retaining a successful `backend.hello` and graceful-shutdown smoke test.
 
@@ -93,7 +93,7 @@ The current 62 checks lock down critical Doctor classification, the exact vault-
 
 ## Explicitly excluded from 1.0
 
-- Runtime language selection or partial localization.
+- Any multilingual, translation, or runtime language-selection feature.
 - A VaultKind updater without a dedicated signed release channel.
 - Automatic Vault Doctor repairs.
 - macOS, Linux, web, or mobile packages.

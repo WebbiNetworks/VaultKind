@@ -16,7 +16,6 @@ import org.cryptomator.cryptofs.CryptoFileSystemProvider;
 import org.cryptomator.cryptofs.DirStructure;
 import org.cryptomator.cryptofs.migration.Migrators;
 import org.cryptomator.integrations.mount.MountService;
-import org.cryptomator.ui.keyloading.masterkeyfile.MasterkeyFileLoadingStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +34,7 @@ import java.util.Optional;
 import java.util.ResourceBundle;
 
 import static org.cryptomator.common.Constants.MASTERKEY_FILENAME;
+import static org.cryptomator.common.Constants.MASTERKEY_SCHEME;
 import static org.cryptomator.common.Constants.VAULTCONFIG_FILENAME;
 import static org.cryptomator.common.vaults.VaultState.Value.ALL_MISSING;
 import static org.cryptomator.common.vaults.VaultState.Value.ERROR;
@@ -224,7 +224,7 @@ public class VaultListManager implements VaultRegistry {
 			}
 			case NEEDS_MIGRATION -> {
 				//for legacy reasons: pre v8 vault do not have a config, but they are in the NEEDS_MIGRATION state
-				vaultSettings.setLastKnownKeyLoader(MasterkeyFileLoadingStrategy.SCHEME);
+				vaultSettings.setLastKnownKeyLoader(MASTERKEY_SCHEME);
 			}
 			case VAULT_CONFIG_MISSING -> {
 				//Nothing to do here, since there is no config to read

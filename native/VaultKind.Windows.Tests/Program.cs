@@ -165,7 +165,7 @@ foreach ((string name, int actual, int expected) in vaultStateCountCases)
 }
 
 const string previousPreferenceJson = """
-    {"RememberWindowPlacement":false,"RecordActivityHistory":false,"AppearanceMode":"light","UseLargerText":true,"LanguageCode":"de","SignatureSoundsEnabled":false}
+    {"RememberWindowPlacement":false,"RecordActivityHistory":false,"AppearanceMode":"light","UseLargerText":true,"RetiredSetting":"ignored","SignatureSoundsEnabled":false}
     """;
 int preferencePersistenceChecks = 0;
 string preferenceTestDirectory = Path.Combine(Path.GetTempPath(), $"VaultKind-PreferenceTests-{Guid.NewGuid():N}");
@@ -200,7 +200,7 @@ try
         || !migratedPreferences.UseLargerText
         || migratedPreferences.SignatureSoundsEnabled)
     {
-        Console.Error.WriteLine("FAIL: preferences containing the retired LanguageCode field did not migrate safely.");
+        Console.Error.WriteLine("FAIL: preferences containing an unknown retired field did not migrate safely.");
         failures++;
     }
 
@@ -501,6 +501,8 @@ static async Task<int> ProbeBundledEngineAsync(string socketPath)
 {
     try
     {
+        await AssertMalformedRequestRejectedAsync(socketPath);
+
         using var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await socket.ConnectAsync(new UnixDomainSocketEndPoint(socketPath), timeout.Token);
@@ -515,13 +517,56 @@ static async Task<int> ProbeBundledEngineAsync(string socketPath)
             throw new InvalidDataException("Unexpected backend.hello response.");
         }
 
+        using JsonDocument vaultList = await InvokeAsync(stream, "vault.list", timeout.Token);
+        JsonElement vaultListRoot = vaultList.RootElement;
+        if (!vaultListRoot.GetProperty("ok").GetBoolean()
+            || vaultListRoot.GetProperty("vaults").GetArrayLength() != 0)
+        {
+            throw new InvalidDataException("The isolated engine did not return an empty vault list.");
+        }
+
+        using JsonDocument mountSettings = await InvokeAsync(stream, "settings.mount.list", timeout.Token);
+        JsonElement mountSettingsRoot = mountSettings.RootElement;
+        if (!mountSettingsRoot.GetProperty("ok").GetBoolean()
+            || mountSettingsRoot.GetProperty("selectedMountService").GetString() != "automatic"
+            || !mountSettingsRoot.GetProperty("mountServices").EnumerateArray().Any(service => service.GetProperty("id").GetString() == "automatic"))
+        {
+            throw new InvalidDataException("The isolated engine returned invalid mount-provider settings.");
+        }
+
+        (string Operation, string? Password, string? RecoveryKey, string? NewPassword)[] vaultOperations =
+        [
+            ("vault.unlock", "dummy-password", null, null),
+            ("vault.lock", null, null, null),
+            ("vault.reveal", null, null, null),
+            ("vault.remove", null, null, null),
+            ("vault.rename", null, null, null),
+            ("vault.stats", null, null, null),
+            ("vault.locate_encrypted", null, null, null),
+            ("vault.decrypt_filename", null, null, null),
+            ("vault.reset_password", null, "dummy-recovery-key", "dummy-new-password"),
+            ("vault.change_password", "dummy-password", null, "dummy-new-password"),
+            ("vault.show_recovery_key", "dummy-password", null, null)
+        ];
+        foreach ((string operation, string? password, string? recoveryKey, string? newPassword) in vaultOperations)
+        {
+            using JsonDocument missingVault = await InvokeAsync(stream, operation, timeout.Token, vaultId: "missing-vault", password: password, recoveryKey: recoveryKey, newPassword: newPassword);
+            AssertProtocolError(missingVault.RootElement, "vault_not_found", operation);
+        }
+
+        using JsonDocument wrongProtocol = await InvokeAsync(stream, "backend.hello", timeout.Token, protocol: 2);
+        AssertProtocolError(wrongProtocol.RootElement, "unsupported_protocol", "unsupported protocol");
+
+        using JsonDocument unknownOperation = await InvokeAsync(stream, "vault.delete", timeout.Token);
+        AssertProtocolError(unknownOperation.RootElement, "unknown_operation", "unknown operation");
+
         using JsonDocument shutdown = await InvokeAsync(stream, "backend.shutdown", timeout.Token);
         if (!shutdown.RootElement.GetProperty("ok").GetBoolean())
         {
             throw new InvalidDataException("The bundled engine rejected backend.shutdown.");
         }
 
-        Console.WriteLine("Backend: VaultKind Java Engine");
+        Console.WriteLine($"Backend: VaultKind Java Engine; verified malformed-request isolation, empty vault list, {vaultOperations.Length} missing-vault commands, mount providers, protocol errors, and shutdown.");
         return 0;
     }
     catch (Exception exception)
@@ -531,10 +576,40 @@ static async Task<int> ProbeBundledEngineAsync(string socketPath)
     }
 }
 
-static async Task<JsonDocument> InvokeAsync(NetworkStream stream, string operation, CancellationToken cancellationToken)
+static async Task AssertMalformedRequestRejectedAsync(string socketPath)
+{
+    using var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
+    using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+    await socket.ConnectAsync(new UnixDomainSocketEndPoint(socketPath), timeout.Token);
+    await using var stream = new NetworkStream(socket, ownsSocket: false);
+    byte[] malformedPayload = "{"u8.ToArray();
+    byte[] header = new byte[sizeof(int)];
+    BinaryPrimitives.WriteInt32BigEndian(header, malformedPayload.Length);
+    await stream.WriteAsync(header, timeout.Token);
+    await stream.WriteAsync(malformedPayload, timeout.Token);
+    await stream.FlushAsync(timeout.Token);
+
+    byte[] response = new byte[1];
+    int bytesRead = await stream.ReadAsync(response, timeout.Token);
+    if (bytesRead != 0)
+    {
+        throw new InvalidDataException("The bundled engine returned data for malformed JSON.");
+    }
+}
+
+static void AssertProtocolError(JsonElement response, string expectedError, string scenario)
+{
+    if (response.GetProperty("ok").GetBoolean()
+        || response.GetProperty("error").GetString() != expectedError)
+    {
+        throw new InvalidDataException($"Unexpected response for {scenario}; expected {expectedError}.");
+    }
+}
+
+static async Task<JsonDocument> InvokeAsync(NetworkStream stream, string operation, CancellationToken cancellationToken, int protocol = 1, string? vaultId = null, string? password = null, string? recoveryKey = null, string? newPassword = null)
 {
     string requestId = Guid.NewGuid().ToString("N");
-    byte[] payload = JsonSerializer.SerializeToUtf8Bytes(new { protocol = 1, requestId, operation });
+    byte[] payload = JsonSerializer.SerializeToUtf8Bytes(new { protocol, requestId, operation, vaultId, password, recoveryKey, newPassword });
     byte[] header = new byte[sizeof(int)];
     BinaryPrimitives.WriteInt32BigEndian(header, payload.Length);
     await stream.WriteAsync(header, cancellationToken);

@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
-import javafx.beans.value.ObservableValue;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,23 +40,20 @@ public class Mounter {
 	private final Environment env;
 	private final Settings settings;
 	private final WindowsDriveLetters driveLetters;
-	private final List<MountService> mountProviders;
 	private final Set<MountService> usedMountServices;
-	private final ObservableValue<MountService> defaultMountService;
+	private final MountServiceSelector mountServiceSelector;
 
 	@Inject
 	public Mounter(Environment env, //
 				   Settings settings, //
 				   WindowsDriveLetters driveLetters, //
-				   List<MountService> mountProviders, //
 				   @Named("usedMountServices") Set<MountService> usedMountServices, //
-				   ObservableValue<MountService> defaultMountService) {
+				   MountServiceSelector mountServiceSelector) {
 		this.env = env;
 		this.settings = settings;
 		this.driveLetters = driveLetters;
-		this.mountProviders = mountProviders;
 		this.usedMountServices = usedMountServices;
-		this.defaultMountService = defaultMountService;
+		this.mountServiceSelector = mountServiceSelector;
 	}
 
 	private class SettledMounter {
@@ -158,7 +154,7 @@ public class Mounter {
 	}
 
 	public MountHandle mount(VaultSettings vaultSettings, Path cryptoFsRoot) throws IOException, MountFailedException {
-		var mountService = mountProviders.stream().filter(s -> s.getClass().getName().equals(vaultSettings.mountService())).findFirst().orElse(defaultMountService.getValue());
+		var mountService = mountServiceSelector.forVault(vaultSettings);
 
 		if (isConflictingMountService(mountService)) {
 			var msg = mountService.getClass() + " unavailable due to conflict with either of " + CONFLICTING_MOUNT_SERVICES.get(mountService.getClass().getName());

@@ -64,7 +64,8 @@ public class NativeUiBridge {
 				channel.bind(UnixDomainSocketAddress.of(SOCKET_PATH));
 				LOG.info("Native Windows UI bridge listening locally");
 				while (running.get()) {
-					try (var client = channel.accept();
+					var client = channel.accept();
+					try (client;
 						 var in = new DataInputStream(Channels.newInputStream(client));
 						 var out = new DataOutputStream(Channels.newOutputStream(client))) {
 						while (client.isConnected()) {
@@ -73,6 +74,10 @@ public class NativeUiBridge {
 							} catch (EOFException e) {
 								break;
 							}
+						}
+					} catch (IOException e) {
+						if (running.get()) {
+							LOG.debug("Native Windows UI bridge rejected a client request", e);
 						}
 					}
 				}

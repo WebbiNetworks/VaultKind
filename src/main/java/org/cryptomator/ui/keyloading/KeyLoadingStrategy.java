@@ -3,8 +3,8 @@ package org.cryptomator.ui.keyloading;
 import org.cryptomator.cryptolib.api.Masterkey;
 import org.cryptomator.cryptolib.api.MasterkeyLoader;
 import org.cryptomator.cryptolib.api.MasterkeyLoadingFailedException;
+import org.cryptomator.common.Constants;
 import org.cryptomator.ui.keyloading.hub.HubKeyLoadingStrategy;
-import org.cryptomator.ui.keyloading.masterkeyfile.MasterkeyFileLoadingStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +47,7 @@ public interface KeyLoadingStrategy extends MasterkeyLoader {
 	 * Determines whether the provided key loader scheme corresponds to a Masterkey File Vault.
 	 * <p>
 	 * This method checks if the {@code keyLoader} parameter starts with the known Masterkey File Vault scheme
-	 * {@link MasterkeyFileLoadingStrategy#SCHEME}.
+	 * {@link Constants#MASTERKEY_SCHEME}.
 	 * This allows identifying not only exact matches but also variants or extended schemes based on the Masterkey scheme.
 	 * </p>
 	 *
@@ -55,7 +55,7 @@ public interface KeyLoadingStrategy extends MasterkeyLoader {
 	 * @return {@code true} if the given key loader scheme starts with the Masterkey File Vault scheme; {@code false} otherwise.
 	 */
 	static boolean isMasterkeyFileVault(String keyLoader) {
-		return keyLoader.startsWith(MasterkeyFileLoadingStrategy.SCHEME);
+		return keyLoader.startsWith(Constants.MASTERKEY_SCHEME);
 	}
 
 	/**

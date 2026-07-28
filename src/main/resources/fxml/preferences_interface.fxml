@@ -3,9 +3,7 @@
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.Label?>
-<?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
@@ -15,9 +13,6 @@
 			fitToWidth="true"
 			hbarPolicy="NEVER"
 			styleClass="preferences-page-scroll">
-	<fx:define>
-		<ToggleGroup fx:id="nodeOrientation"/>
-	</fx:define>
 	<content>
 		<VBox spacing="24" styleClass="preferences-page">
 			<VBox spacing="6">
@@ -31,20 +26,9 @@
 					<Region HBox.hgrow="ALWAYS"/>
 					<ChoiceBox fx:id="themeChoiceBox" prefWidth="220"/>
 				</HBox>
-				<HBox spacing="12" alignment="CENTER_LEFT" styleClass="settings-row">
-					<Label text="%preferences.interface.language" labelFor="$preferredLanguageChoiceBox"/>
-					<Region HBox.hgrow="ALWAYS"/>
-					<ChoiceBox fx:id="preferredLanguageChoiceBox" prefWidth="220"/>
-				</HBox>
 			</VBox>
 			<VBox spacing="4" styleClass="settings-card">
 				<Label text="%preferences.interface.group.behavior" styleClass="settings-section-title"/>
-				<HBox spacing="12" alignment="CENTER_LEFT" styleClass="settings-row">
-					<Label text="%preferences.interface.interfaceOrientation"/>
-					<Region HBox.hgrow="ALWAYS"/>
-					<RadioButton fx:id="nodeOrientationLtr" text="%preferences.interface.interfaceOrientation.ltr" toggleGroup="${nodeOrientation}"/>
-					<RadioButton fx:id="nodeOrientationRtl" text="%preferences.interface.interfaceOrientation.rtl" toggleGroup="${nodeOrientation}"/>
-				</HBox>
 				<CheckBox fx:id="showTrayIconCheckbox" text="%preferences.interface.showTrayIcon" visible="${controller.trayMenuSupported}" managed="${controller.trayMenuSupported}" styleClass="settings-row"/>
 				<CheckBox fx:id="compactModeCheckbox" text="%preferences.interface.compactMode" styleClass="settings-row"/>
 			</VBox>

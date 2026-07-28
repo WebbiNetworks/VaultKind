@@ -1,7 +1,7 @@
 package org.cryptomator.ui.stats;
 
 import org.cryptomator.common.vaults.Vault;
-import org.cryptomator.common.vaults.VaultStats;
+import org.cryptomator.common.vaults.LegacyVaultStatsObservable;
 import org.cryptomator.ui.common.FxController;
 import org.cryptomator.ui.common.WeakBindings;
 
@@ -32,7 +32,7 @@ public class VaultStatisticsController implements FxController {
 	private static final double IO_SAMPLING_INTERVAL = 1;
 
 	private final VaultStatisticsComponent component; // keep a strong reference to the component (see component's javadoc)
-	private final VaultStats stats;
+	private final LegacyVaultStatsObservable stats;
 	private final Series<Number, Number> readData;
 	private final Series<Number, Number> writeData;
 	private final Series<Number, Number> accessData;
@@ -66,7 +66,7 @@ public class VaultStatisticsController implements FxController {
 	@Inject
 	public VaultStatisticsController(VaultStatisticsComponent component, @VaultStatisticsWindow Stage window, @VaultStatisticsWindow Vault vault) {
 		this.component = component;
-		this.stats = vault.getStats();
+		this.stats = vault.getLegacyStats();
 		this.readData = new Series<>();
 		this.writeData = new Series<>();
 		this.accessData = new Series<>();
@@ -79,10 +79,10 @@ public class VaultStatisticsController implements FxController {
 		this.totalBytesWritten = WeakBindings.bindLong(stats.totalBytesWrittenProperty());
 		this.totalBytesDecrypted = WeakBindings.bindLong(stats.totalBytesDecryptedProperty());
 		this.totalBytesEncrypted = WeakBindings.bindLong(stats.totalBytesEncryptedProperty());
-		this.filesRead = WeakBindings.bindLong(stats.filesRead());
-		this.filesWritten = WeakBindings.bindLong(stats.filesWritten());
-		this.filesAccessed = WeakBindings.bindLong(stats.filesAccessed());
-		this.totalFilesAccessed = WeakBindings.bindLong(stats.totalFilesAccessed());
+		this.filesRead = WeakBindings.bindLong(stats.filesReadProperty());
+		this.filesWritten = WeakBindings.bindLong(stats.filesWrittenProperty());
+		this.filesAccessed = WeakBindings.bindLong(stats.filesAccessedProperty());
+		this.totalFilesAccessed = WeakBindings.bindLong(stats.totalFilesAccessedProperty());
 		this.bpsEncrypted = WeakBindings.bindLong(stats.bytesPerSecondEncryptedProperty());
 		this.bpsDecrypted = WeakBindings.bindLong(stats.bytesPerSecondDecryptedProperty());
 
@@ -132,7 +132,7 @@ public class VaultStatisticsController implements FxController {
 			final long currentStep = step++;
 			final long decBytes = stats.bytesPerSecondReadProperty().get();
 			final long encBytes = stats.bytesPerSecondWrittenProperty().get();
-			final long accFiles = stats.filesAccessed().get();
+			final long accFiles = stats.filesAccessedProperty().get();
 
 			maxBuf[(int) currentStep % IO_SAMPLING_STEPS] = Math.max(decBytes, encBytes);
 			long allTimeMax = Arrays.stream(maxBuf).max().orElse(0L);

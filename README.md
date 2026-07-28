@@ -13,7 +13,7 @@ VaultKind is derived from [Cryptomator](https://github.com/cryptomator/cryptomat
 - Dark, Light, and System themes included for everyone
 - Clear first-run onboarding and approachable security language
 - Accessible contrast, scalable layouts, and keyboard-friendly interaction
-- English-only interface for version 1.0.0; localization is intentionally deferred until translations can receive complete security review
+- Permanently English-only interface with no translation or language-selection roadmap
 - Compatibility with Cryptomator vaults
 - Security-sensitive code kept close to upstream to make review and updates safer
 - No VaultKind updater until a dedicated, signed release channel exists

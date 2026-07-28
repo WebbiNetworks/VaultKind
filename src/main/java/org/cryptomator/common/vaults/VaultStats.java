@@ -6,242 +6,139 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javafx.application.Platform;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.LongProperty;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleLongProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.concurrent.ScheduledService;
-import javafx.concurrent.Task;
-import javafx.util.Duration;
 import java.time.Instant;
-import java.util.Optional;
-import java.util.concurrent.ExecutorService;
+import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+/** UI-neutral sampling and snapshot service for one unlocked vault. */
 @PerVault
 public class VaultStats {
 
 	private static final Logger LOG = LoggerFactory.getLogger(VaultStats.class);
 
+	@FunctionalInterface
+	public interface Listener {
+		void changed(Snapshot snapshot);
+	}
+
 	private final AtomicReference<CryptoFileSystem> fs;
-	private final VaultState state;
-	private final ScheduledService<Optional<CryptoFileSystemStats>> updateService;
-	private final LongProperty bytesPerSecondRead = new SimpleLongProperty();
-	private final LongProperty bytesPerSecondWritten = new SimpleLongProperty();
-	private final LongProperty bytesPerSecondEncrypted = new SimpleLongProperty();
-	private final LongProperty bytesPerSecondDecrypted = new SimpleLongProperty();
-	private final DoubleProperty cacheHitRate = new SimpleDoubleProperty();
-	private final LongProperty totalBytesRead = new SimpleLongProperty();
-	private final LongProperty totalBytesWritten = new SimpleLongProperty();
-	private final LongProperty totalBytesEncrypted = new SimpleLongProperty();
-	private final LongProperty totalBytesDecrypted = new SimpleLongProperty();
-	private final LongProperty filesRead = new SimpleLongProperty();
-	private final LongProperty filesWritten = new SimpleLongProperty();
-	private final LongProperty filesAccessed = new SimpleLongProperty();
-	private final LongProperty totalFilesAccessed = new SimpleLongProperty();
-	private final ObjectProperty<Instant> lastActivity = new SimpleObjectProperty<>();
+	private final ScheduledExecutorService scheduler;
+	private final AtomicReference<Snapshot> current = new AtomicReference<>(Snapshot.empty());
+	private final AtomicReference<ScheduledFuture<?>> updater = new AtomicReference<>();
+	private final CopyOnWriteArrayList<Listener> listeners = new CopyOnWriteArrayList<>();
 
 	@Inject
-	VaultStats(AtomicReference<CryptoFileSystem> fs, VaultState state, ExecutorService executor) {
+	VaultStats(AtomicReference<CryptoFileSystem> fs, VaultState state, ScheduledExecutorService scheduler) {
 		this.fs = fs;
-		this.state = state;
-		this.updateService = new UpdateStatsService();
-		updateService.setExecutor(executor);
-		updateService.setPeriod(Duration.seconds(1));
-
+		this.scheduler = scheduler;
 		state.addListener(this::vaultStateChanged);
 	}
 
 	private void vaultStateChanged(VaultState.Value oldState, VaultState.Value newState) {
-		if (VaultState.Value.UNLOCKED == state.get()) {
-			assert fs.get() != null;
-			LOG.debug("start recording stats");
-			Platform.runLater(() -> {
-				lastActivity.set(Instant.now());
-				updateService.restart();
-			});
+		if (newState == VaultState.Value.UNLOCKED) {
+			start();
 		} else {
+			stop();
+		}
+	}
+
+	private void start() {
+		LOG.debug("start recording stats");
+		stop();
+		current.updateAndGet(snapshot -> snapshot.withLastActivity(Instant.now()));
+		updateSafely();
+		updater.set(scheduler.scheduleAtFixedRate(this::updateSafely, 1, 1, TimeUnit.SECONDS));
+	}
+
+	private void stop() {
+		var previous = updater.getAndSet(null);
+		if (previous != null) {
 			LOG.debug("stop recording stats");
-			Platform.runLater(() -> updateService.cancel());
+			previous.cancel(false);
 		}
 	}
 
-	private void updateStats(Optional<CryptoFileSystemStats> stats) {
-		assert Platform.isFxApplicationThread();
-		bytesPerSecondRead.set(stats.map(CryptoFileSystemStats::pollBytesRead).orElse(0L));
-		bytesPerSecondWritten.set(stats.map(CryptoFileSystemStats::pollBytesWritten).orElse(0L));
-		cacheHitRate.set(stats.map(this::getCacheHitRate).orElse(0.0));
-		bytesPerSecondDecrypted.set(stats.map(CryptoFileSystemStats::pollBytesDecrypted).orElse(0L));
-		bytesPerSecondEncrypted.set(stats.map(CryptoFileSystemStats::pollBytesEncrypted).orElse(0L));
-		totalBytesRead.set(stats.map(CryptoFileSystemStats::pollTotalBytesRead).orElse(0L));
-		totalBytesWritten.set(stats.map(CryptoFileSystemStats::pollTotalBytesWritten).orElse(0L));
-		totalBytesEncrypted.set(stats.map(CryptoFileSystemStats::pollTotalBytesEncrypted).orElse(0L));
-		totalBytesDecrypted.set(stats.map(CryptoFileSystemStats::pollTotalBytesDecrypted).orElse(0L));
-		var oldAccessCount = filesRead.get() + filesWritten.get();
-		filesRead.set(stats.map(CryptoFileSystemStats::pollAmountOfAccessesRead).orElse(0L));
-		filesWritten.set(stats.map(CryptoFileSystemStats::pollAmountOfAccessesWritten).orElse(0L));
-		filesAccessed.set(stats.map(CryptoFileSystemStats::pollAmountOfAccesses).orElse(0L));
-		totalFilesAccessed.set(stats.map(CryptoFileSystemStats::pollTotalAmountOfAccesses).orElse(0L));
-		var newAccessCount = filesRead.get() + filesWritten.get();
-
-		// check for any I/O activity
-		if (newAccessCount > oldAccessCount) {
-			lastActivity.set(Instant.now());
+	private void updateSafely() {
+		try {
+			updateSnapshot();
+		} catch (RuntimeException e) {
+			LOG.error("Error while updating vault statistics.", e);
 		}
 	}
 
-	private double getCacheHitRate(CryptoFileSystemStats stats) {
-		long accesses = stats.pollChunkCacheAccesses();
-		long hits = stats.pollChunkCacheHits();
-		if (accesses == 0) {
-			return 0.0;
-		} else {
-			return hits / (double) accesses;
-		}
-	}
-
-	/**
-	 * Takes one transport-safe snapshot for the native Windows frontend without
-	 * requiring the JavaFX application thread. The per-interval counters are
-	 * consumed once, just as they are by the JavaFX statistics screen.
-	 */
-	public NativeSnapshot nativeSnapshot() {
+	synchronized Snapshot updateSnapshot() {
 		var fileSystem = fs.get();
-		if (fileSystem == null) {
-			return NativeSnapshot.empty();
-		}
-		var stats = fileSystem.getStats();
+		var next = fileSystem == null ? Snapshot.empty() : sample(fileSystem.getStats(), current.get().lastActivity());
+		current.set(next);
+		listeners.forEach(listener -> listener.changed(next));
+		return next;
+	}
+
+	private Snapshot sample(CryptoFileSystemStats stats, Instant previousActivity) {
 		long cacheAccesses = stats.pollChunkCacheAccesses();
 		long cacheHits = stats.pollChunkCacheHits();
-		double currentCacheHitRate = cacheAccesses == 0 ? 0.0 : cacheHits / (double) cacheAccesses;
-		return new NativeSnapshot(
+		long filesRead = stats.pollAmountOfAccessesRead();
+		long filesWritten = stats.pollAmountOfAccessesWritten();
+		var lastActivity = filesRead + filesWritten > 0 ? Instant.now() : previousActivity;
+		return new Snapshot(
 				stats.pollBytesRead(),
 				stats.pollBytesWritten(),
-				stats.pollBytesDecrypted(),
 				stats.pollBytesEncrypted(),
-				currentCacheHitRate,
+				stats.pollBytesDecrypted(),
+				cacheAccesses == 0 ? 0.0 : cacheHits / (double) cacheAccesses,
 				stats.pollTotalBytesRead(),
 				stats.pollTotalBytesWritten(),
-				stats.pollTotalBytesDecrypted(),
 				stats.pollTotalBytesEncrypted(),
-				stats.pollTotalAmountOfAccesses());
+				stats.pollTotalBytesDecrypted(),
+				filesRead,
+				filesWritten,
+				stats.pollAmountOfAccesses(),
+				stats.pollTotalAmountOfAccesses(),
+				lastActivity);
 	}
 
-	public record NativeSnapshot(long bytesPerSecondRead, long bytesPerSecondWritten, long bytesPerSecondDecrypted, long bytesPerSecondEncrypted, double cacheHitRate, long totalBytesRead, long totalBytesWritten, long totalBytesDecrypted, long totalBytesEncrypted, long totalFilesAccessed) {
-		private static NativeSnapshot empty() {
-			return new NativeSnapshot(0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0);
-		}
+	public void addListener(Listener listener) {
+		listeners.add(Objects.requireNonNull(listener));
 	}
 
-	private class UpdateStatsService extends ScheduledService<Optional<CryptoFileSystemStats>> {
-
-		private UpdateStatsService() {
-			setOnFailed(event -> LOG.error("Error in UpdateStateService.", getException()));
-		}
-
-		@Override
-		protected Task<Optional<CryptoFileSystemStats>> createTask() {
-			return new Task<>() {
-				@Override
-				protected Optional<CryptoFileSystemStats> call() {
-					return Optional.ofNullable(fs.get()).map(CryptoFileSystem::getStats);
-				}
-			};
-		}
-
-		@Override
-		protected void succeeded() {
-			assert getValue() != null;
-			updateStats(getValue());
-			super.succeeded();
-		}
+	public Snapshot snapshot() {
+		return current.get();
 	}
 
-	/* Observables */
-
-	public LongProperty bytesPerSecondReadProperty() {
-		return bytesPerSecondRead;
-	}
-
-	public long getBytesPerSecondRead() {
-		return bytesPerSecondRead.get();
-	}
-
-	public LongProperty bytesPerSecondWrittenProperty() {
-		return bytesPerSecondWritten;
-	}
-
-	public long getBytesPerSecondWritten() {
-		return bytesPerSecondWritten.get();
-	}
-
-	public LongProperty bytesPerSecondEncryptedProperty() {
-		return bytesPerSecondEncrypted;
-	}
-
-	public long getBytesPerSecondEncrypted() {
-		return bytesPerSecondEncrypted.get();
-	}
-
-	public LongProperty bytesPerSecondDecryptedProperty() {
-		return bytesPerSecondDecrypted;
-	}
-
-	public long getBytesPerSecondDecrypted() {
-		return bytesPerSecondDecrypted.get();
-	}
-
-	public DoubleProperty cacheHitRateProperty() { return cacheHitRate; }
-
-	public double getCacheHitRate() {
-		return cacheHitRate.get();
-	}
-
-	public LongProperty totalBytesReadProperty() {return totalBytesRead;}
-
-	public long getTotalBytesRead() { return totalBytesRead.get();}
-
-	public LongProperty totalBytesWrittenProperty() {return totalBytesWritten;}
-
-	public long getTotalBytesWritten() { return totalBytesWritten.get();}
-
-	public LongProperty totalBytesEncryptedProperty() {return totalBytesEncrypted;}
-
-	public long getTotalBytesEncrypted() { return totalBytesEncrypted.get();}
-
-	public LongProperty totalBytesDecryptedProperty() {return totalBytesDecrypted;}
-
-	public long getTotalBytesDecrypted() { return totalBytesDecrypted.get();}
-
-	public LongProperty filesRead() { return filesRead;}
-
-	public long getFilesRead() { return filesRead.get();}
-
-	public LongProperty filesWritten() {return filesWritten;}
-
-	public long getFilesWritten() {return filesWritten.get();}
-
-	public LongProperty filesAccessed() {
-		return filesAccessed;}
-
-	public long getFilesAccessed() {return filesAccessed.get();}
-
-	public LongProperty totalFilesAccessed(){
-		return totalFilesAccessed;
-	}
-
-	public long getTotalFilesAccessed(){
-		return totalFilesAccessed.get();
-	}
-
-	public ObjectProperty<Instant> lastActivityProperty() {
-		return lastActivity;
+	/** Returns the latest transport-safe sample for the native Windows frontend. */
+	public NativeSnapshot nativeSnapshot() {
+		var snapshot = current.get();
+		return new NativeSnapshot(
+				snapshot.bytesPerSecondRead(),
+				snapshot.bytesPerSecondWritten(),
+				snapshot.bytesPerSecondDecrypted(),
+				snapshot.bytesPerSecondEncrypted(),
+				snapshot.cacheHitRate(),
+				snapshot.totalBytesRead(),
+				snapshot.totalBytesWritten(),
+				snapshot.totalBytesDecrypted(),
+				snapshot.totalBytesEncrypted(),
+				snapshot.totalFilesAccessed());
 	}
 
 	public Instant getLastActivity() {
-		return lastActivity.get();
+		return current.get().lastActivity();
+	}
+
+	public record Snapshot(long bytesPerSecondRead, long bytesPerSecondWritten, long bytesPerSecondEncrypted, long bytesPerSecondDecrypted, double cacheHitRate, long totalBytesRead, long totalBytesWritten, long totalBytesEncrypted, long totalBytesDecrypted, long filesRead, long filesWritten, long filesAccessed, long totalFilesAccessed, Instant lastActivity) {
+		private static Snapshot empty() {
+			return new Snapshot(0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0, 0, 0, 0, null);
+		}
+
+		private Snapshot withLastActivity(Instant value) {
+			return new Snapshot(bytesPerSecondRead, bytesPerSecondWritten, bytesPerSecondEncrypted, bytesPerSecondDecrypted, cacheHitRate, totalBytesRead, totalBytesWritten, totalBytesEncrypted, totalBytesDecrypted, filesRead, filesWritten, filesAccessed, totalFilesAccessed, value);
+		}
+	}
+
+	public record NativeSnapshot(long bytesPerSecondRead, long bytesPerSecondWritten, long bytesPerSecondDecrypted, long bytesPerSecondEncrypted, double cacheHitRate, long totalBytesRead, long totalBytesWritten, long totalBytesDecrypted, long totalBytesEncrypted, long totalFilesAccessed) {
 	}
 }

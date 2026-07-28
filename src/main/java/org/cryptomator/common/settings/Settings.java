@@ -10,8 +10,6 @@ package org.cryptomator.common.settings;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.cryptomator.common.Environment;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javafx.beans.Observable;
 import javafx.beans.property.BooleanProperty;
@@ -25,15 +23,12 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
-import javafx.geometry.NodeOrientation;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
 public class Settings {
-
-	private static final Logger LOG = LoggerFactory.getLogger(Settings.class);
 
 	static final boolean DEFAULT_CHECK_FOR_UPDATES = false;
 	static final boolean DEFAULT_START_HIDDEN = false;
@@ -51,7 +46,6 @@ public class Settings {
 	static final String DEFAULT_QUICKACCESS_SERVICE = SystemUtils.IS_OS_WINDOWS ? "org.cryptomator.windows.quickaccess.ExplorerQuickAccessService" : //
 			SystemUtils.IS_OS_LINUX ? "org.cryptomator.linux.quickaccess.NautilusBookmarks" : null;
 
-	static final String DEFAULT_USER_INTERFACE_ORIENTATION = NodeOrientation.LEFT_TO_RIGHT.name();
 	public static final Instant DEFAULT_TIMESTAMP = Instant.parse("2000-01-01T00:00:00Z");
 
 	private final SettingsProvider provider;
@@ -66,7 +60,6 @@ public class Settings {
 	public final StringProperty keychainProvider;
 	public final BooleanProperty useQuickAccess;
 	public final StringProperty quickAccessService;
-	public final ObjectProperty<NodeOrientation> userInterfaceOrientation;
 	public final StringProperty licenseKey;
 	public final BooleanProperty showTrayIcon;
 	public final BooleanProperty compactMode;
@@ -74,7 +67,6 @@ public class Settings {
 	public final IntegerProperty windowYPosition;
 	public final IntegerProperty windowWidth;
 	public final IntegerProperty windowHeight;
-	public final StringProperty language;
 	public final StringProperty mountService;
 	public final BooleanProperty checkForUpdates;
 	public final ObjectProperty<Instant> lastUpdateCheckReminder;
@@ -107,7 +99,6 @@ public class Settings {
 		this.debugMode = new SimpleBooleanProperty(this, "debugMode", json.debugMode);
 		this.theme = new SimpleObjectProperty<>(this, "theme", json.theme);
 		this.keychainProvider = new SimpleStringProperty(this, "keychainProvider", json.keychainProvider);
-		this.userInterfaceOrientation = new SimpleObjectProperty<>(this, "userInterfaceOrientation", parseEnum(json.uiOrientation, NodeOrientation.class, NodeOrientation.LEFT_TO_RIGHT));
 		this.licenseKey = new SimpleStringProperty(this, "licenseKey", json.licenseKey);
 		this.showTrayIcon = new SimpleBooleanProperty(this, "showTrayIcon", json.showTrayIcon);
 		this.compactMode = new SimpleBooleanProperty(this, "compactMode", json.compactMode);
@@ -115,7 +106,6 @@ public class Settings {
 		this.windowYPosition = new SimpleIntegerProperty(this, "windowYPosition", json.windowYPosition);
 		this.windowWidth = new SimpleIntegerProperty(this, "windowWidth", json.windowWidth);
 		this.windowHeight = new SimpleIntegerProperty(this, "windowHeight", json.windowHeight);
-		this.language = new SimpleStringProperty(this, "language", json.language);
 		this.mountService = new SimpleStringProperty(this, "mountService", json.mountService);
 		this.quickAccessService = new SimpleStringProperty(this, "quickAccessService", json.quickAccessService);
 		this.checkForUpdates = new SimpleBooleanProperty(this, "checkForUpdates", json.checkForUpdatesEnabled);
@@ -140,7 +130,6 @@ public class Settings {
 		debugMode.addListener(this::somethingChanged);
 		theme.addListener(this::somethingChanged);
 		keychainProvider.addListener(this::somethingChanged);
-		userInterfaceOrientation.addListener(this::somethingChanged);
 		licenseKey.addListener(this::somethingChanged);
 		showTrayIcon.addListener(this::somethingChanged);
 		compactMode.addListener(this::somethingChanged);
@@ -148,7 +137,6 @@ public class Settings {
 		windowYPosition.addListener(this::somethingChanged);
 		windowWidth.addListener(this::somethingChanged);
 		windowHeight.addListener(this::somethingChanged);
-		language.addListener(this::somethingChanged);
 		mountService.addListener(this::somethingChanged);
 		quickAccessService.addListener(this::somethingChanged);
 		checkForUpdates.addListener(this::somethingChanged);
@@ -200,7 +188,6 @@ public class Settings {
 		json.debugMode = debugMode.get();
 		json.theme = theme.get();
 		json.keychainProvider = keychainProvider.get();
-		json.uiOrientation = userInterfaceOrientation.get().name();
 		json.licenseKey = licenseKey.get();
 		json.showTrayIcon = showTrayIcon.get();
 		json.compactMode = compactMode.get();
@@ -208,7 +195,6 @@ public class Settings {
 		json.windowYPosition = windowYPosition.get();
 		json.windowWidth = windowWidth.get();
 		json.windowHeight = windowHeight.get();
-		json.language = language.get();
 		json.mountService = mountService.get();
 		json.quickAccessService = quickAccessService.get();
 		json.checkForUpdatesEnabled = checkForUpdates.get();
@@ -219,15 +205,6 @@ public class Settings {
 		json.trustedHosts = Set.copyOf(trustedHosts);
 		json.learningCenterCompletedTopics = Set.copyOf(learningCenterCompletedTopics);
 		return json;
-	}
-
-	private <E extends Enum<E>> E parseEnum(String value, Class<E> clazz, E defaultValue) {
-		try {
-			return Enum.valueOf(clazz, value.toUpperCase());
-		} catch (IllegalArgumentException e) {
-			LOG.warn("No value {}.{}. Defaulting to {}.", clazz.getSimpleName(), value, defaultValue);
-			return defaultValue;
-		}
 	}
 
 	private void somethingChanged(@SuppressWarnings("unused") Observable observable) {

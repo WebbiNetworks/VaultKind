@@ -37,9 +37,6 @@ class SettingsJson {
 	@JsonProperty("keychainProvider")
 	String keychainProvider = Settings.DEFAULT_KEYCHAIN_PROVIDER;
 
-	@JsonProperty("language")
-	String language;
-
 	@JsonProperty("licenseKey")
 	String licenseKey;
 
@@ -60,9 +57,6 @@ class SettingsJson {
 
 	@JsonProperty("startHidden")
 	boolean startHidden = Settings.DEFAULT_START_HIDDEN;
-
-	@JsonProperty("uiOrientation")
-	String uiOrientation = Settings.DEFAULT_USER_INTERFACE_ORIENTATION;
 
 	@JsonProperty("useKeychain")
 	boolean useKeychain = Settings.DEFAULT_USE_KEYCHAIN;

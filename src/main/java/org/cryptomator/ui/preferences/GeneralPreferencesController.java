@@ -24,7 +24,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ToggleGroup;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import java.util.List;
@@ -57,7 +56,6 @@ public class GeneralPreferencesController implements FxController {
 	public CheckBox debugModeCheckbox;
 	public CheckBox autoStartCheckbox;
 	public Button resetTrustedHostsButton;
-	public ToggleGroup nodeOrientation;
 
 	private CompletionStage<Void> keychainMigrations = CompletableFuture.completedFuture(null);
 

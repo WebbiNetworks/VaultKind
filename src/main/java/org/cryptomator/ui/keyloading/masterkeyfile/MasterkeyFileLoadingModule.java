@@ -5,6 +5,7 @@ import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntoMap;
 import dagger.multibindings.StringKey;
+import org.cryptomator.common.Constants;
 import org.cryptomator.common.keychain.KeychainManager;
 import org.cryptomator.common.vaults.Vault;
 import org.cryptomator.integrations.keychain.KeychainAccessException;
@@ -39,7 +40,7 @@ public interface MasterkeyFileLoadingModule {
 	@Binds
 	@IntoMap
 	@KeyLoadingScoped
-	@StringKey(MasterkeyFileLoadingStrategy.SCHEME)
+	@StringKey(Constants.MASTERKEY_SCHEME)
 	abstract KeyLoadingStrategy bindMasterkeyFileLoadingStrategy(MasterkeyFileLoadingStrategy strategy);
 
 }

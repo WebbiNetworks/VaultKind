@@ -84,8 +84,7 @@ internal sealed class JavaVaultEngineHost : IDisposable
         startInfo.ArgumentList.Add("-Dcryptomator.disableUpdateCheck=true");
         startInfo.ArgumentList.Add("-cp");
         startInfo.ArgumentList.Add(bundledEngine?.BuildClasspath() ?? BuildDevelopmentClasspath(repositoryRoot!));
-        startInfo.ArgumentList.Add("org.cryptomator.launcher.Cryptomator");
-        startInfo.ArgumentList.Add("--native-backend");
+        startInfo.ArgumentList.Add("org.cryptomator.launcher.NativeBackendMain");
 
         ownedProcess = Process.Start(startInfo);
         StartupTiming.Mark(ownedProcess is null ? "Engine process failed to start" : "Engine process created");

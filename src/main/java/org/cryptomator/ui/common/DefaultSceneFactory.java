@@ -1,12 +1,12 @@
 package org.cryptomator.ui.common;
 
 import org.apache.commons.lang3.SystemUtils;
-import org.cryptomator.common.settings.Settings;
 import org.cryptomator.ui.fxapp.FxApplicationScoped;
 
 import javax.inject.Inject;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.geometry.NodeOrientation;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -20,11 +20,8 @@ public class DefaultSceneFactory implements Function<Parent, Scene> {
 	protected static final KeyCodeCombination ALT_F4 = new KeyCodeCombination(KeyCode.F4, KeyCombination.ALT_DOWN);
 	protected static final KeyCodeCombination SHORTCUT_W = new KeyCodeCombination(KeyCode.W, KeyCombination.SHORTCUT_DOWN);
 
-	protected final Settings settings;
-
 	@Inject
-	public DefaultSceneFactory(Settings settings) {
-		this.settings = settings;
+	public DefaultSceneFactory() {
 	}
 
 	@Override
@@ -36,7 +33,7 @@ public class DefaultSceneFactory implements Function<Parent, Scene> {
 	}
 
 	protected void configureRoot(Parent root) {
-		root.nodeOrientationProperty().bind(settings.userInterfaceOrientation);
+		root.setNodeOrientation(NodeOrientation.LEFT_TO_RIGHT);
 		MicroInteractionSupport.install(root);
 	}
 

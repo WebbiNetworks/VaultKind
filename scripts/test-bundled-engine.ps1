@@ -50,8 +50,7 @@ try {
         "-Dcryptomator.disableUpdateCheck=true",
         "-cp",
         "$classesDirectory;$librariesDirectory\*",
-        "org.cryptomator.launcher.Cryptomator",
-        "--native-backend"
+        "org.cryptomator.launcher.NativeBackendMain"
     )
     $startInfo.Arguments = ($engineArguments | ForEach-Object { '"' + $_.Replace('"', '\"') + '"' }) -join " "
 

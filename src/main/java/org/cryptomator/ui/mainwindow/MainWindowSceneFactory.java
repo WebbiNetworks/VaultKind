@@ -2,7 +2,6 @@ package org.cryptomator.ui.mainwindow;
 
 import dagger.Lazy;
 import org.apache.commons.lang3.SystemUtils;
-import org.cryptomator.common.settings.Settings;
 import org.cryptomator.ui.common.DefaultSceneFactory;
 
 import javax.inject.Inject;
@@ -22,8 +21,8 @@ public class MainWindowSceneFactory extends DefaultSceneFactory {
 	private final Lazy<VaultListController> vaultListController;
 
 	@Inject
-	public MainWindowSceneFactory(Settings settings, @MainWindow Stage window, Lazy<VaultListController> vaultListController) {
-		super(settings);
+	public MainWindowSceneFactory(@MainWindow Stage window, Lazy<VaultListController> vaultListController) {
+		super();
 		this.window = window;
 		this.vaultListController = vaultListController;
 	}

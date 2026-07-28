@@ -44,13 +44,13 @@ VaultKind should provide useful, task-focused detail without becoming a manual t
 - Do not weaken the Windows experience merely to preserve visual or behavioral parity with another platform.
 - Test releases against supported Windows versions and document Windows-specific requirements plainly.
 
-### English-only version 1.0.0
+### English-only product
 
-VaultKind 1.0.0 uses one reviewed English interface. It does not include a display-language selector, runtime translation machinery, or partially translated safety guidance.
+VaultKind uses one reviewed English interface. It does not include a display-language selector, runtime translation machinery, right-to-left layout preference, or partially translated safety guidance.
 
-Security, recovery, deletion, integrity, and error messages must preserve exact meaning. An incomplete or ambiguous translation can change the user's understanding of risk, so localization is deferred until every user-facing string can be translated consistently, reviewed by qualified speakers, and tested as a complete experience. English-only is a deliberate release boundary, not a permanent rejection of other languages.
+Security, recovery, deletion, integrity, and error messages must preserve exact meaning. An incomplete or ambiguous translation can change the user's understanding of risk, so VaultKind does not plan multilingual support. English-only is a permanent product boundary unless this philosophy is deliberately replaced.
 
-Localization may return in a later release only through an explicit product decision with translation ownership, security review, accessibility testing, and complete coverage. Until then, new interface text is authored and reviewed in English.
+New interface text is authored and reviewed in English. Centralized English string catalogs may remain for wording consistency, but translation bundles, language preferences, selectors, and localization services must not be added.
 
 VaultKind inherits cross-platform code and automation from its upstream foundation. That inherited material may remain while the fork is young, especially where removing it could destabilize security-sensitive code. Its presence does not imply product support. Removal should be deliberate, tested, and separated from cryptographic changes.
 

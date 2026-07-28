@@ -18,6 +18,7 @@
     <Compile Include="..\VaultKind.Windows\Services\KeyboardControlsDocument.cs" Link="Services\KeyboardControlsDocument.cs" />
     <Compile Include="..\VaultKind.Windows\Services\LearningProgressStore.cs" Link="Services\LearningProgressStore.cs" />
     <Compile Include="..\VaultKind.Windows\Services\SignatureSoundPolicy.cs" Link="Services\SignatureSoundPolicy.cs" />
+    <Compile Include="..\VaultKind.Windows\Services\StartupTiming.cs" Link="Services\StartupTiming.cs" />
     <Compile Include="..\VaultKind.Windows\Services\WindowPlacementPersistence.cs" Link="Services\WindowPlacementPersistence.cs" />
   </ItemGroup>
 </Project>

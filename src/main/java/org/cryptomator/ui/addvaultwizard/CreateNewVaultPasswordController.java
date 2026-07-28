@@ -1,6 +1,7 @@
 package org.cryptomator.ui.addvaultwizard;
 
 import dagger.Lazy;
+import org.cryptomator.common.recovery.RecoveryKeyFactory;
 import org.cryptomator.common.vaults.Vault;
 import org.cryptomator.common.vaults.VaultListManager;
 import org.cryptomator.cryptofs.CryptoFileSystemProperties;
@@ -16,7 +17,6 @@ import org.cryptomator.ui.common.FxmlFile;
 import org.cryptomator.ui.common.FxmlScene;
 import org.cryptomator.ui.common.Tasks;
 import org.cryptomator.ui.fxapp.FxApplicationWindows;
-import org.cryptomator.ui.recoverykey.RecoveryKeyFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

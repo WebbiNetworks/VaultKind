@@ -5,6 +5,7 @@ import org.cryptomator.common.recovery.CryptoFsInitializer;
 import org.cryptomator.common.recovery.MasterkeyService;
 import org.cryptomator.common.recovery.RecoveryActionType;
 import org.cryptomator.common.recovery.RecoveryDirectory;
+import org.cryptomator.common.recovery.RecoveryKeyFactory;
 import org.cryptomator.common.vaults.Vault;
 import org.cryptomator.common.vaults.VaultListManager;
 import org.cryptomator.cryptolib.api.CryptoException;

@@ -2,6 +2,8 @@ package org.cryptomator.launcher;
 
 import dagger.Module;
 import dagger.Provides;
+import javafx.application.Platform;
+import org.cryptomator.common.vaults.VaultMutationDispatcher;
 import org.cryptomator.integrations.autostart.AutoStartProvider;
 import org.cryptomator.integrations.tray.TrayIntegrationProvider;
 import org.cryptomator.ui.fxapp.FxApplicationComponent;
@@ -15,6 +17,18 @@ import java.util.concurrent.BlockingQueue;
 
 @Module(subcomponents = {FxApplicationComponent.class})
 class CryptomatorModule {
+
+	@Provides
+	@Singleton
+	static VaultMutationDispatcher provideVaultMutationDispatcher() {
+		return mutation -> {
+			if (Platform.isFxApplicationThread()) {
+				mutation.run();
+			} else {
+				Platform.runLater(mutation);
+			}
+		};
+	}
 
 	@Provides
 	@Singleton

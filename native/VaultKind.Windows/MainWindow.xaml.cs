@@ -22,7 +22,9 @@ public sealed partial class MainWindow : Window
 
     public MainWindow()
     {
+        StartupTiming.Mark("MainWindow constructor entered");
         InitializeComponent();
+        StartupTiming.Mark("MainWindow XAML initialized");
 
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
@@ -35,8 +37,11 @@ public sealed partial class MainWindow : Window
         Activated += EnsureContentKeyboardFocus;
 
         // Navigate the root frame to the main page on startup.
+        StartupTiming.Mark("MainPage navigation starting");
         RootFrame.Navigate(typeof(MainPage));
+        StartupTiming.Mark("MainPage navigation completed");
         ApplyAppearance(string.Equals(AppPreferencesStore.Load().AppearanceMode, "light", StringComparison.OrdinalIgnoreCase));
+        StartupTiming.Mark("MainWindow constructor completed");
     }
 
     internal void ApplyAppearance(bool useLightMode)

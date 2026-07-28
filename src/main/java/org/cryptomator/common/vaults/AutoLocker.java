@@ -6,10 +6,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javafx.application.Platform;
-import javafx.collections.ObservableList;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -19,12 +18,14 @@ public class AutoLocker {
 	private static final Logger LOG = LoggerFactory.getLogger(AutoLocker.class);
 
 	private final ScheduledExecutorService scheduler;
-	private final ObservableList<Vault> vaultList;
+	private final List<Vault> vaultList;
+	private final VaultMutationDispatcher mutationDispatcher;
 
 	@Inject
-	public AutoLocker(ScheduledExecutorService scheduler, ObservableList<Vault> vaultList) {
+	public AutoLocker(ScheduledExecutorService scheduler, List<Vault> vaultList, VaultMutationDispatcher mutationDispatcher) {
 		this.scheduler = scheduler;
 		this.vaultList = vaultList;
+		this.mutationDispatcher = mutationDispatcher;
 	}
 
 	public void init() {
@@ -41,7 +42,7 @@ public class AutoLocker {
 	private void autolock(Vault vault) {
 		try {
 			vault.lock(false);
-			Platform.runLater(() -> vault.stateProperty().set(VaultState.Value.LOCKED));
+			mutationDispatcher.dispatch(() -> vault.setState(VaultState.Value.LOCKED));
 			LOG.info("Autolocked {} after idle timeout", vault.getDisplayName());
 		} catch (UnmountFailedException | IOException e) {
 			LOG.error("Autolocking failed.", e);
@@ -50,8 +51,8 @@ public class AutoLocker {
 
 	private boolean exceedsIdleTime(Vault vault) {
 		assert vault.isUnlocked();
-		if (vault.getVaultSettings().autoLockWhenIdle.get()) {
-			int maxIdleSeconds = vault.getVaultSettings().autoLockIdleSeconds.get();
+		if (vault.isAutoLockWhenIdle()) {
+			int maxIdleSeconds = vault.getAutoLockIdleSeconds();
 			var deadline = vault.getStats().getLastActivity().plusSeconds(maxIdleSeconds);
 			return deadline.isBefore(Instant.now());
 		} else {

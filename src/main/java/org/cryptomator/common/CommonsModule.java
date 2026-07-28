@@ -5,14 +5,18 @@
  *******************************************************************************/
 package org.cryptomator.common;
 
+import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 import org.cryptomator.common.keychain.KeychainModule;
 import org.cryptomator.common.mount.MountModule;
+import org.cryptomator.common.settings.EngineSettings;
+import org.cryptomator.common.settings.LegacySettingsAdapter;
 import org.cryptomator.common.settings.Settings;
 import org.cryptomator.common.settings.SettingsProvider;
 import org.cryptomator.common.vaults.VaultComponent;
-import org.cryptomator.common.vaults.VaultListModule;
+import org.cryptomator.common.vaults.VaultListManager;
+import org.cryptomator.common.vaults.VaultRegistry;
 import org.cryptomator.cryptolib.common.MasterkeyFileAccess;
 import org.cryptomator.integrations.revealpath.RevealPathService;
 import org.slf4j.Logger;
@@ -28,8 +32,14 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Module(subcomponents = {VaultComponent.class}, includes = {VaultListModule.class, KeychainModule.class, MountModule.class})
+@Module(subcomponents = {VaultComponent.class}, includes = {KeychainModule.class, MountModule.class})
 public abstract class CommonsModule {
+
+	@Binds
+	abstract VaultRegistry bindVaultRegistry(VaultListManager vaultListManager);
+
+	@Binds
+	abstract EngineSettings bindEngineSettings(LegacySettingsAdapter settingsAdapter);
 
 	private static final Logger LOG = LoggerFactory.getLogger(CommonsModule.class);
 	private static final int NUM_SCHEDULER_THREADS = 2;

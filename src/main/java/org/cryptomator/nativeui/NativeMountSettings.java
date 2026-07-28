@@ -1,6 +1,6 @@
 package org.cryptomator.nativeui;
 
-import org.cryptomator.common.settings.Settings;
+import org.cryptomator.common.settings.EngineSettings;
 import org.cryptomator.integrations.mount.MountCapability;
 import org.cryptomator.integrations.mount.MountService;
 
@@ -11,11 +11,11 @@ import java.util.List;
 public class NativeMountSettings {
 
 	public static final String AUTOMATIC_ID = "automatic";
-	private final Settings settings;
+	private final EngineSettings settings;
 	private final List<MountService> mountServices;
 
 	@Inject
-	public NativeMountSettings(Settings settings, List<MountService> mountServices) {
+	public NativeMountSettings(EngineSettings settings, List<MountService> mountServices) {
 		this.settings = settings;
 		this.mountServices = mountServices;
 	}
@@ -24,19 +24,19 @@ public class NativeMountSettings {
 		var providers = new ArrayList<NativeMountService>();
 		providers.add(new NativeMountService(AUTOMATIC_ID, "Automatic (recommended)", true, true, true, true, true));
 		providers.addAll(mountServices.stream().map(this::describe).toList());
-		var selected = settings.mountService.get();
+		var selected = settings.selectedMountService();
 		return new NativeMountSettingsResult(true, null, selected == null ? AUTOMATIC_ID : selected, List.copyOf(providers));
 	}
 
 	public NativeMountSettingsResult select(String serviceId) {
 		if (serviceId == null || AUTOMATIC_ID.equals(serviceId)) {
-			settings.mountService.set(null);
+			settings.selectMountService(null);
 			return get();
 		}
 		if (mountServices.stream().noneMatch(service -> service.getClass().getName().equals(serviceId))) {
 			return new NativeMountSettingsResult(false, "unknown_mount_service", null, List.of());
 		}
-		settings.mountService.set(serviceId);
+		settings.selectMountService(serviceId);
 		return get();
 	}
 

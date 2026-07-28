@@ -10,7 +10,7 @@ package org.cryptomator.common.vaults;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.cryptomator.common.recovery.BackupRestorer;
-import org.cryptomator.common.settings.Settings;
+import org.cryptomator.common.settings.EngineSettings;
 import org.cryptomator.common.settings.VaultSettings;
 import org.cryptomator.cryptofs.CryptoFileSystemProvider;
 import org.cryptomator.cryptofs.DirStructure;
@@ -22,8 +22,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javafx.application.Platform;
-import javafx.collections.ObservableList;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.AccessDeniedException;
@@ -49,31 +47,37 @@ import static org.cryptomator.common.vaults.VaultState.Value.VAULT_CONFIG_MISSIN
 import static org.cryptomator.cryptofs.common.Constants.DATA_DIR_NAME;
 
 @Singleton
-public class VaultListManager {
+public class VaultListManager implements VaultRegistry {
 
 	private static final Logger LOG = LoggerFactory.getLogger(VaultListManager.class);
 
 	private final AutoLocker autoLocker;
 	private final List<MountService> mountServices;
 	private final VaultComponent.Factory vaultComponentFactory;
-	private final ObservableList<Vault> vaultList;
+	private final List<Vault> vaultList;
+	private final VaultMutationDispatcher mutationDispatcher;
+	private final VaultListPersistence vaultListPersistence;
 	private final String defaultVaultName;
 
 	@Inject
-	public VaultListManager(ObservableList<Vault> vaultList, //
+	public VaultListManager(List<Vault> vaultList, //
 							AutoLocker autoLocker, //
 							List<MountService> mountServices, //
 							VaultComponent.Factory vaultComponentFactory, //
+							VaultMutationDispatcher mutationDispatcher, //
+							VaultListPersistence vaultListPersistence, //
 							ResourceBundle resourceBundle, //
-							Settings settings) {
+							EngineSettings settings) {
 		this.vaultList = vaultList;
 		this.autoLocker = autoLocker;
 		this.mountServices = mountServices;
 		this.vaultComponentFactory = vaultComponentFactory;
+		this.mutationDispatcher = mutationDispatcher;
+		this.vaultListPersistence = vaultListPersistence;
 		this.defaultVaultName = resourceBundle.getString("defaults.vault.vaultName");
 
-		addAll(settings.directories);
-		vaultList.addListener(new VaultListChangeListener(settings.directories));
+		addAll(settings.configuredVaults());
+		vaultListPersistence.initialize();
 		autoLocker.init();
 	}
 
@@ -84,10 +88,8 @@ public class VaultListManager {
 	}
 
 	/**
-	 * Safe to call from any thread: the IO work runs on the calling thread. Desktop UI
-	 * callers marshal the {@code ObservableList} mutation to the JavaFX application
-	 * thread, while the native headless backend updates it synchronously because no
-	 * JavaFX toolkit is running there.
+	 * Safe to call from any thread: the IO work runs on the calling thread and the
+	 * configured dispatcher owns any thread-affinity requirement for list mutation.
 	 */
 	public Vault add(Path pathToVault) throws IOException {
 		Path normalizedPathToVault = pathToVault.normalize().toAbsolutePath();
@@ -95,13 +97,31 @@ public class VaultListManager {
 
 		return get(normalizedPathToVault).orElseGet(() -> {
 			Vault newVault = create(newVaultSettings(normalizedPathToVault));
-			if (Boolean.getBoolean("vaultkind.nativeBackend") || Platform.isFxApplicationThread()) {
-				addVault(newVault);
-			} else {
-				Platform.runLater(() -> addVault(newVault));
-			}
+			mutationDispatcher.dispatch(() -> addVault(newVault));
 			return newVault;
 		});
+	}
+
+	@Override
+	public List<Vault> snapshot() {
+		return List.copyOf(vaultList);
+	}
+
+	@Override
+	public Optional<Vault> findById(String vaultId) {
+		if (vaultId == null || vaultId.isBlank()) {
+			return Optional.empty();
+		}
+		return vaultList.stream().filter(vault -> vaultId.equals(vault.getId())).findFirst();
+	}
+
+	@Override
+	public boolean remove(Vault vault) {
+		if (vaultList.remove(vault)) {
+			vaultListPersistence.vaultRemoved(vault);
+			return true;
+		}
+		return false;
 	}
 
 	public static void assertIsVaultDirectory(Path pathToVault) throws IOException {
@@ -175,6 +195,7 @@ public class VaultListManager {
 		Path path = vault.getPath().normalize().toAbsolutePath();
 		if (!isAlreadyAdded(path)) {
 			vaultList.add(vault);
+			vaultListPersistence.vaultAdded(vault);
 		}
 	}
 
@@ -225,8 +246,7 @@ public class VaultListManager {
 	}
 
 	public static VaultState.Value redetermineVaultState(Vault vault) {
-		VaultState state = vault.stateProperty();
-		VaultState.Value previous = state.getValue();
+		VaultState.Value previous = vault.getState();
 
 		if (previous.equals(UNLOCKED) || previous.equals(PROCESSING)) {
 			return previous;
@@ -239,12 +259,12 @@ public class VaultListManager {
 				vault.getVaultConfigCache().reloadConfig();
 			}
 
-			state.set(determined);
+			vault.setState(determined);
 			return determined;
 		} catch (IOException e) {
 			LOG.warn("Failed to (re)determine vault state for {}", vault.getPath(), e);
 			vault.setLastKnownException(e);
-			state.set(ERROR);
+			vault.setState(ERROR);
 			return ERROR;
 		}
 	}

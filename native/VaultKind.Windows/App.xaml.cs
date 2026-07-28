@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Microsoft.UI.Xaml.Shapes;
+using Microsoft.UI.Windowing;
 using VaultKind_Windows.Services;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -24,6 +25,8 @@ public partial class App : Application
 {
     private Window? _window;
     private readonly JavaVaultEngineHost engineHost = new();
+    private bool shutdownStarted;
+    private bool shutdownCompleted;
 
     internal Window? MainWindow => _window;
     
@@ -33,10 +36,13 @@ public partial class App : Application
     /// </summary>
     public App()
     {
+        StartupTiming.Mark("App constructor entered");
         RequestedTheme = string.Equals(AppPreferencesStore.Load().AppearanceMode, "light", StringComparison.OrdinalIgnoreCase)
             ? ApplicationTheme.Light
             : ApplicationTheme.Dark;
+        StartupTiming.Mark("Application preferences loaded");
         InitializeComponent();
+        StartupTiming.Mark("Application XAML initialized");
     }
 
     /// <summary>
@@ -45,9 +51,43 @@ public partial class App : Application
     /// <param name="args">Details about the launch request and process.</param>
     protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
+        StartupTiming.Mark("OnLaunched entered");
         engineHost.StartIfNeeded();
+        StartupTiming.Mark("Engine host start request returned");
         _window = new MainWindow();
-        _window.Closed += (_, _) => engineHost.Dispose();
+        StartupTiming.Mark("Main window constructed");
+        _window.AppWindow.Closing += OnMainWindowClosing;
+        _window.Closed += OnMainWindowClosed;
         _window.Activate();
+        StartupTiming.Mark("Main window activated");
+    }
+
+    private void OnMainWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
+    {
+        if (shutdownCompleted)
+        {
+            return;
+        }
+
+        args.Cancel = true;
+        if (shutdownStarted)
+        {
+            return;
+        }
+
+        shutdownStarted = true;
+        _ = CompleteShutdownAsync();
+    }
+
+    private async Task CompleteShutdownAsync()
+    {
+        await Task.Run(engineHost.Dispose);
+        shutdownCompleted = true;
+        _window?.Close();
+    }
+
+    private void OnMainWindowClosed(object sender, WindowEventArgs args)
+    {
+        _window = null;
     }
 }

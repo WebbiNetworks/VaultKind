@@ -93,6 +93,25 @@ foreach ((string? reported, string expected, bool matches) in engineProfileCases
     failures++;
 }
 
+(string Path, bool Expected)[] developmentClasspathCases =
+[
+    (Path.Combine("C:\\libs", "cryptolib-2.2.2.jar"), true),
+    (Path.Combine("C:\\libs", "junit-jupiter-6.1.0.jar"), false),
+    (Path.Combine("C:\\libs", "byte-buddy-agent-1.17.7.jar"), false),
+    (Path.Combine("C:\\libs", "javafx-swing-25.0.3-win.jar"), false)
+];
+foreach ((string path, bool expected) in developmentClasspathCases)
+{
+    bool actual = JavaVaultEngineHost.IsDevelopmentRuntimeLibrary(path);
+    if (actual == expected)
+    {
+        continue;
+    }
+
+    Console.Error.WriteLine($"FAIL: development classpath entry={path}, expected={expected}, actual={actual}");
+    failures++;
+}
+
 string expectedBackendProfile = Path.Combine("C:\\", "VaultKind", "development", "settings.json");
 string[] requiredCapabilities = ["vault.list", "vault.unlock", "vault.lock", "vault.reveal", "vault.remove", "vault.rename", "vault.stats", "vault.locate_encrypted", "vault.decrypt_filename", "vault.create", "vault.connect", "vault.reset_password", "vault.change_password", "vault.show_recovery_key", "settings.mount.list", "settings.mount.select", "backend.shutdown"];
 (int Protocol, string? RequestId, bool Ok, string? Backend, IReadOnlyList<string>? Capabilities, string? Profile, bool Expected)[] backendIdentityCases =
@@ -456,7 +475,7 @@ if (failures > 0)
     return 1;
 }
 
-Console.WriteLine($"Passed {doctorCases.Length + lockFailureCases.Length + keyboardNavigationCases.Length + engineProfileCases.Length + backendIdentityCases.Length + vaultStateCountCases.Length + keyboardDocumentCases.Length + activityPersistenceChecks + preferencePersistenceChecks + doctorSummaryPersistenceChecks + learningProgressPersistenceChecks + windowPlacementPersistenceChecks} native policy, persistence, keyboard navigation, documentation, backend identity, profile, preference, and workflow checks.");
+Console.WriteLine($"Passed {doctorCases.Length + lockFailureCases.Length + keyboardNavigationCases.Length + engineProfileCases.Length + developmentClasspathCases.Length + backendIdentityCases.Length + vaultStateCountCases.Length + keyboardDocumentCases.Length + activityPersistenceChecks + preferencePersistenceChecks + doctorSummaryPersistenceChecks + learningProgressPersistenceChecks + windowPlacementPersistenceChecks} native policy, persistence, keyboard navigation, documentation, backend identity, profile, preference, and workflow checks.");
 return 0;
 
 static void DeleteTestDirectory(string path)

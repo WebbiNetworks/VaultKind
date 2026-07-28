@@ -285,6 +285,14 @@ public class Vault {
 		return state.getValue();
 	}
 
+	public boolean transitionState(VaultState.Value fromState, VaultState.Value toState) {
+		return state.transition(fromState, toState);
+	}
+
+	public void setState(VaultState.Value newState) {
+		state.set(newState);
+	}
+
 	public ObjectProperty<Exception> lastKnownExceptionProperty() {
 		return lastKnownException;
 	}
@@ -359,6 +367,18 @@ public class Vault {
 
 	public String getDisplayName() {
 		return vaultSettings.displayName.get();
+	}
+
+	public void setDisplayName(String displayName) {
+		vaultSettings.displayName.set(displayName);
+	}
+
+	public boolean isAutoLockWhenIdle() {
+		return vaultSettings.autoLockWhenIdle.get();
+	}
+
+	public int getAutoLockIdleSeconds() {
+		return vaultSettings.autoLockIdleSeconds.get();
 	}
 
 	public ObjectBinding<Mountpoint> mountPointProperty() {

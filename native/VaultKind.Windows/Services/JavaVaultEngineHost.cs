@@ -12,11 +12,26 @@ namespace VaultKind_Windows.Services;
 /// </summary>
 internal sealed class JavaVaultEngineHost : IDisposable
 {
+    private const int IdentityProbeTimeoutMilliseconds = 500;
+    private const int GracefulShutdownTimeoutMilliseconds = 1500;
+    private static readonly string[] DevelopmentClasspathExclusions =
+    [
+        "apiguardian-api-",
+        "byte-buddy-",
+        "hamcrest-",
+        "javafx-swing-",
+        "jimfs-",
+        "junit-",
+        "mockito-",
+        "objenesis-",
+        "opentest4j-"
+    ];
     private static readonly string[] RequiredCapabilities = ["vault.list", "vault.unlock", "vault.lock", "vault.reveal", "vault.remove", "vault.rename", "vault.stats", "vault.locate_encrypted", "vault.decrypt_filename", "vault.create", "vault.connect", "vault.reset_password", "vault.change_password", "vault.show_recovery_key", "settings.mount.list", "settings.mount.select", "backend.shutdown"];
     private Process? ownedProcess;
 
     internal bool StartIfNeeded()
     {
+        StartupTiming.Mark("Engine host discovery started");
         BundledEngineLayout? bundledEngine = FindBundledEngine();
         string? repositoryRoot = bundledEngine is null ? FindRepositoryRoot() : null;
         string settingsPath = ResolveExpectedSettingsPath(bundledEngine, repositoryRoot);
@@ -24,24 +39,31 @@ internal sealed class JavaVaultEngineHost : IDisposable
 
         if (IsCompatibleBackendListening(settingsPath, out bool backendListening))
         {
+            StartupTiming.Mark("Compatible engine already listening");
             return true;
         }
+
+        StartupTiming.Mark(backendListening ? "Incompatible engine detected" : "No compatible engine detected");
 
         if (backendListening)
         {
             if (!TryRequestGracefulShutdown())
             {
+                StartupTiming.Mark("Incompatible engine shutdown request failed");
                 return false;
             }
             if (!WaitForBackendToStop())
             {
+                StartupTiming.Mark("Timed out waiting for incompatible engine shutdown");
                 return false;
             }
+            StartupTiming.Mark("Incompatible engine stopped");
         }
 
         string? javaExecutable = bundledEngine?.JavaExecutable ?? FindJavaExecutable(repositoryRoot);
         if (javaExecutable is null || (bundledEngine is null && repositoryRoot is null))
         {
+            StartupTiming.Mark("Engine runtime or layout unavailable");
             return false;
         }
 
@@ -66,6 +88,7 @@ internal sealed class JavaVaultEngineHost : IDisposable
         startInfo.ArgumentList.Add("--native-backend");
 
         ownedProcess = Process.Start(startInfo);
+        StartupTiming.Mark(ownedProcess is null ? "Engine process failed to start" : "Engine process created");
         return ownedProcess is not null;
     }
 
@@ -90,11 +113,13 @@ internal sealed class JavaVaultEngineHost : IDisposable
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
             using var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
             socket.ConnectAsync(new UnixDomainSocketEndPoint(SocketPath), timeout.Token).AsTask().GetAwaiter().GetResult();
+            socket.ReceiveTimeout = GracefulShutdownTimeoutMilliseconds;
+            socket.SendTimeout = GracefulShutdownTimeoutMilliseconds;
             using var stream = new NetworkStream(socket, ownsSocket: false);
 
             string helloId = Guid.NewGuid().ToString("N");
             WriteFrame(stream, new EngineRequest(1, helloId, "backend.hello"));
-            EngineResponse hello = ReadFrame(stream);
+            EngineResponse hello = ReadFrame(stream, GracefulShutdownTimeoutMilliseconds);
             if (!hello.Ok || hello.RequestId != helloId || hello.Backend != "VaultKind Java Engine")
             {
                 return false;
@@ -102,7 +127,7 @@ internal sealed class JavaVaultEngineHost : IDisposable
 
             string shutdownId = Guid.NewGuid().ToString("N");
             WriteFrame(stream, new EngineRequest(1, shutdownId, "backend.shutdown"));
-            EngineResponse shutdown = ReadFrame(stream);
+            EngineResponse shutdown = ReadFrame(stream, GracefulShutdownTimeoutMilliseconds);
             return shutdown.Ok && shutdown.RequestId == shutdownId;
         }
         catch (Exception)
@@ -121,10 +146,16 @@ internal sealed class JavaVaultEngineHost : IDisposable
         stream.Flush();
     }
 
-    private static EngineResponse ReadFrame(Stream stream)
+    private static EngineResponse ReadFrame(Stream stream, int timeoutMilliseconds)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(timeoutMilliseconds));
+        return ReadFrameAsync(stream, timeout.Token).GetAwaiter().GetResult();
+    }
+
+    private static async Task<EngineResponse> ReadFrameAsync(Stream stream, CancellationToken cancellationToken)
     {
         byte[] header = new byte[sizeof(int)];
-        stream.ReadExactly(header);
+        await stream.ReadExactlyAsync(header, cancellationToken);
         int length = BinaryPrimitives.ReadInt32BigEndian(header);
         if (length <= 0 || length > 64 * 1024)
         {
@@ -132,7 +163,7 @@ internal sealed class JavaVaultEngineHost : IDisposable
         }
 
         byte[] payload = new byte[length];
-        stream.ReadExactly(payload);
+        await stream.ReadExactlyAsync(payload, cancellationToken);
         return JsonSerializer.Deserialize<EngineResponse>(payload, JsonOptions) ?? throw new InvalidDataException("Empty engine response.");
     }
 
@@ -160,10 +191,12 @@ internal sealed class JavaVaultEngineHost : IDisposable
             using var timeout = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
             socket.ConnectAsync(new UnixDomainSocketEndPoint(SocketPath), timeout.Token).AsTask().GetAwaiter().GetResult();
             backendListening = socket.Connected;
+            socket.ReceiveTimeout = IdentityProbeTimeoutMilliseconds;
+            socket.SendTimeout = IdentityProbeTimeoutMilliseconds;
             using var stream = new NetworkStream(socket, ownsSocket: false);
             string helloId = Guid.NewGuid().ToString("N");
             WriteFrame(stream, new EngineRequest(1, helloId, "backend.hello"));
-            EngineResponse hello = ReadFrame(stream);
+            EngineResponse hello = ReadFrame(stream, IdentityProbeTimeoutMilliseconds);
             return IsExpectedBackendIdentity(hello.Protocol, hello.RequestId, hello.Ok, hello.Backend, hello.Capabilities, hello.Profile, helloId, expectedProfile);
         }
         catch (Exception)
@@ -292,8 +325,14 @@ internal sealed class JavaVaultEngineHost : IDisposable
 
     private static string BuildDevelopmentClasspath(string repositoryRoot)
     {
-        string mavenClasspathFile = Path.Combine(repositoryRoot, "target", "native-runtime-classpath.txt");
-        if (File.Exists(mavenClasspathFile))
+        string targetDirectory = Path.Combine(repositoryRoot, "target");
+        string[] classpathCandidates =
+        [
+            Path.Combine(targetDirectory, "native-release-classpath.txt"),
+            Path.Combine(targetDirectory, "native-runtime-classpath.txt")
+        ];
+        string? mavenClasspathFile = classpathCandidates.FirstOrDefault(File.Exists);
+        if (mavenClasspathFile is not null)
         {
             string dependencyClasspath = NormalizeMavenClasspath(File.ReadAllText(mavenClasspathFile).Trim());
             if (!string.IsNullOrWhiteSpace(dependencyClasspath))
@@ -338,8 +377,12 @@ internal sealed class JavaVaultEngineHost : IDisposable
                 return marker >= 0
                     ? Path.Combine(localRepository, entry[(marker + repositoryMarker.Length)..])
                     : entry;
-            }));
+            })
+            .Where(IsDevelopmentRuntimeLibrary));
     }
+
+    internal static bool IsDevelopmentRuntimeLibrary(string path) =>
+        !DevelopmentClasspathExclusions.Any(prefix => Path.GetFileName(path).StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
 
     private sealed record BundledEngineLayout(
         string EngineRoot,

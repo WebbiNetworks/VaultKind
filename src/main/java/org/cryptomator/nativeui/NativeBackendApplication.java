@@ -1,6 +1,6 @@
 package org.cryptomator.nativeui;
 
-import org.cryptomator.common.vaults.VaultListManager;
+import org.cryptomator.common.vaults.VaultRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,13 +11,13 @@ public class NativeBackendApplication {
 	private static final Logger LOG = LoggerFactory.getLogger(NativeBackendApplication.class);
 	private final NativeUiBridge bridge;
 	@SuppressWarnings("unused")
-	private final VaultListManager vaultListManager;
+	private final VaultRegistry vaultRegistry;
 	private final NativeBackendTerminator terminator;
 
 	@Inject
-	public NativeBackendApplication(NativeUiBridge bridge, VaultListManager vaultListManager, NativeBackendTerminator terminator) {
+	public NativeBackendApplication(NativeUiBridge bridge, VaultRegistry vaultRegistry, NativeBackendTerminator terminator) {
 		this.bridge = bridge;
-		this.vaultListManager = vaultListManager; // Construction loads the authoritative configured-vault list.
+		this.vaultRegistry = vaultRegistry; // Construction loads the authoritative configured-vault list.
 		this.terminator = terminator;
 	}
 

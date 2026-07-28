@@ -1,5 +1,7 @@
 package org.cryptomator.ui.recoverykey;
 
+import org.cryptomator.common.recovery.RecoveryKeyFactory;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Strings;
 import org.cryptomator.common.Nullable;

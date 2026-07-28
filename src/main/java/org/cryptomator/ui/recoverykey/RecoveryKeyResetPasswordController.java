@@ -1,5 +1,7 @@
 package org.cryptomator.ui.recoverykey;
 
+import org.cryptomator.common.recovery.RecoveryKeyFactory;
+
 import dagger.Lazy;
 import org.cryptomator.common.recovery.CryptoFsInitializer;
 import org.cryptomator.common.recovery.MasterkeyService;

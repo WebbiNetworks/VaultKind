@@ -1,5 +1,7 @@
 package org.cryptomator.ui.recoverykey;
 
+import org.cryptomator.common.recovery.RecoveryKeyFactory;
+
 import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;

@@ -2,6 +2,7 @@ package org.cryptomator.nativeui;
 
 import org.cryptomator.common.Constants;
 import org.cryptomator.common.vaults.Vault;
+import org.cryptomator.common.vaults.VaultRegistry;
 import org.cryptomator.common.vaults.VaultState;
 import org.cryptomator.cryptofs.common.BackupHelper;
 import org.cryptomator.cryptofs.VaultKeyInvalidException;
@@ -11,12 +12,11 @@ import org.cryptomator.cryptolib.api.MasterkeyLoadingFailedException;
 import org.cryptomator.cryptolib.common.MasterkeyFileAccess;
 import org.cryptomator.integrations.mount.MountFailedException;
 import org.cryptomator.integrations.mount.Mountpoint;
-import org.cryptomator.ui.recoverykey.RecoveryKeyFactory;
+import org.cryptomator.common.recovery.RecoveryKeyFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javafx.collections.ObservableList;
 import java.awt.Desktop;
 import java.io.IOException;
 import java.nio.CharBuffer;
@@ -31,12 +31,12 @@ public class NativeVaultOperations {
 
 	private static final Logger LOG = LoggerFactory.getLogger(NativeVaultOperations.class);
 	private static final int MAX_PASSWORD_CHARS = 4096;
-	private final ObservableList<Vault> vaults;
+	private final VaultRegistry vaults;
 	private final MasterkeyFileAccess masterkeyFileAccess;
 	private final RecoveryKeyFactory recoveryKeyFactory;
 
 	@Inject
-	public NativeVaultOperations(ObservableList<Vault> vaults, MasterkeyFileAccess masterkeyFileAccess, RecoveryKeyFactory recoveryKeyFactory) {
+	public NativeVaultOperations(VaultRegistry vaults, MasterkeyFileAccess masterkeyFileAccess, RecoveryKeyFactory recoveryKeyFactory) {
 		this.vaults = vaults;
 		this.masterkeyFileAccess = masterkeyFileAccess;
 		this.recoveryKeyFactory = recoveryKeyFactory;
@@ -152,7 +152,7 @@ public class NativeVaultOperations {
 		if (vault == null) {
 			return NativeCommandResult.error("vault_not_found");
 		}
-		if (vault.stateProperty().getValue() == VaultState.Value.PROCESSING) {
+		if (vault.getState() == VaultState.Value.PROCESSING) {
 			return NativeCommandResult.error("invalid_state");
 		}
 		String trimmedName = displayName == null ? "" : displayName.trim();
@@ -160,7 +160,7 @@ public class NativeVaultOperations {
 			return NativeCommandResult.error("invalid_name");
 		}
 
-		vault.getVaultSettings().displayName.set(trimmedName);
+		vault.setDisplayName(trimmedName);
 		return NativeCommandResult.success("renamed");
 	}
 
@@ -175,7 +175,7 @@ public class NativeVaultOperations {
 			if (vault == null) {
 				return NativeCommandResult.error("vault_not_found");
 			}
-			if (vault.stateProperty().getValue() == VaultState.Value.PROCESSING) {
+			if (vault.getState() == VaultState.Value.PROCESSING) {
 				return NativeCommandResult.error("invalid_state");
 			}
 			String recoveryKey = recoveryKeyFactory.createRecoveryKey(vault.getPath(), CharBuffer.wrap(password));
@@ -205,7 +205,7 @@ public class NativeVaultOperations {
 			if (vault.isUnlocked()) {
 				return NativeCommandResult.error("vault_unlocked");
 			}
-			if (vault.stateProperty().getValue() == VaultState.Value.PROCESSING) {
+			if (vault.getState() == VaultState.Value.PROCESSING) {
 				return NativeCommandResult.error("invalid_state");
 			}
 
@@ -247,7 +247,7 @@ public class NativeVaultOperations {
 			if (vault.isUnlocked()) {
 				return NativeCommandResult.error("vault_unlocked");
 			}
-			if (vault.stateProperty().getValue() == VaultState.Value.PROCESSING) {
+			if (vault.getState() == VaultState.Value.PROCESSING) {
 				return NativeCommandResult.error("invalid_state");
 			}
 
@@ -286,7 +286,7 @@ public class NativeVaultOperations {
 		if (vault.isUnlocked()) {
 			return NativeCommandResult.error("vault_unlocked");
 		}
-		if (vault.stateProperty().getValue() == VaultState.Value.PROCESSING) {
+		if (vault.getState() == VaultState.Value.PROCESSING) {
 			return NativeCommandResult.error("invalid_state");
 		}
 
@@ -301,11 +301,11 @@ public class NativeVaultOperations {
 		}
 
 		try {
-			var vault = vaults.stream().filter(candidate -> vaultId.equals(candidate.getId())).findFirst().orElse(null);
+			var vault = vaults.findById(vaultId).orElse(null);
 			if (vault == null) {
 				return NativeCommandResult.error("vault_not_found");
 			}
-			if (!vault.stateProperty().transition(VaultState.Value.LOCKED, VaultState.Value.PROCESSING)) {
+			if (!vault.transitionState(VaultState.Value.LOCKED, VaultState.Value.PROCESSING)) {
 				return NativeCommandResult.error(vault.isUnlocked() ? "already_unlocked" : "invalid_state");
 			}
 
@@ -326,21 +326,21 @@ public class NativeVaultOperations {
 					}
 					return masterkey;
 				});
-				vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.UNLOCKED);
+				vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.UNLOCKED);
 				return NativeCommandResult.success("unlocked");
 			} catch (InvalidPassphraseException e) {
-				vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
+				vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
 				return NativeCommandResult.error("wrong_password");
 			} catch (MountFailedException e) {
-				vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
+				vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
 				LOG.warn("Native unlock could not mount vault {}", vault.getDisplayName(), e);
 				return NativeCommandResult.error("mount_failed");
 			} catch (VaultKeyInvalidException e) {
-				vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
+				vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
 				LOG.warn("Native unlock could not verify the vault configuration for {}", vault.getDisplayName(), e);
 				return NativeCommandResult.error("vault_key_invalid");
 			} catch (IOException | RuntimeException e) {
-				vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
+				vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
 				LOG.warn("Native unlock failed for vault {}", vault.getDisplayName(), e);
 				return NativeCommandResult.error("unlock_failed");
 			}
@@ -350,18 +350,18 @@ public class NativeVaultOperations {
 	}
 
 	public NativeCommandResult lockAll() {
-		for (var vault : List.copyOf(vaults)) {
+		for (var vault : vaults.snapshot()) {
 			if (!vault.isUnlocked()) {
 				continue;
 			}
-			if (!vault.stateProperty().transition(VaultState.Value.UNLOCKED, VaultState.Value.PROCESSING)) {
+			if (!vault.transitionState(VaultState.Value.UNLOCKED, VaultState.Value.PROCESSING)) {
 				return NativeCommandResult.error("invalid_state");
 			}
 			try {
 				vault.lock(false);
-				vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
+				vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
 			} catch (Exception e) {
-				vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.UNLOCKED);
+				vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.UNLOCKED);
 				LOG.warn("Unable to lock vault {} during native shutdown", vault.getDisplayName(), e);
 				return NativeCommandResult.error("vault_in_use");
 			}
@@ -374,15 +374,15 @@ public class NativeVaultOperations {
 		if (vault == null) {
 			return NativeCommandResult.error("vault_not_found");
 		}
-		if (!vault.stateProperty().transition(VaultState.Value.UNLOCKED, VaultState.Value.PROCESSING)) {
+		if (!vault.transitionState(VaultState.Value.UNLOCKED, VaultState.Value.PROCESSING)) {
 			return NativeCommandResult.error(vault.isUnlocked() ? "invalid_state" : "already_locked");
 		}
 		try {
 			vault.lock(false);
-			vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
+			vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.LOCKED);
 			return NativeCommandResult.success("locked");
 		} catch (Exception e) {
-			vault.stateProperty().transition(VaultState.Value.PROCESSING, VaultState.Value.UNLOCKED);
+			vault.transitionState(VaultState.Value.PROCESSING, VaultState.Value.UNLOCKED);
 			LOG.warn("Native lock failed for vault {}", vault.getDisplayName(), e);
 			return NativeCommandResult.error("vault_in_use");
 		}
@@ -417,7 +417,7 @@ public class NativeVaultOperations {
 		if (vaultId == null || vaultId.isBlank()) {
 			return null;
 		}
-		return vaults.stream().filter(candidate -> vaultId.equals(candidate.getId())).findFirst().orElse(null);
+		return vaults.findById(vaultId).orElse(null);
 	}
 
 	private static void clear(char[] password) {

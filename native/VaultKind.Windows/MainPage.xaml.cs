@@ -166,7 +166,9 @@ public sealed partial class MainPage : Page
 
     public MainPage()
     {
+        StartupTiming.Mark("MainPage constructor entered");
         InitializeComponent();
+        StartupTiming.Mark("MainPage XAML initialized");
         InitializeLiveRegions();
         foreach ((Button button, string _, string _, FontIcon _) in LearningTopicButtons())
         {
@@ -198,6 +200,7 @@ public sealed partial class MainPage : Page
         initializingPreferences = false;
         Loaded += LoadBackendSnapshot;
         Loaded += EnsureInitialKeyboardTarget;
+        StartupTiming.Mark("MainPage constructor completed");
     }
 
     private void InitializeLiveRegions()
@@ -373,9 +376,11 @@ public sealed partial class MainPage : Page
 
     private async void LoadBackendSnapshot(object sender, RoutedEventArgs e)
     {
+        StartupTiming.Mark("Initial backend snapshot started");
         VaultBackendSnapshot snapshot = await backend.GetSnapshotAsync();
         for (int attempt = 0; attempt < 12 && snapshot.ConnectionState != BackendConnectionState.Ready; attempt++)
         {
+            StartupTiming.Mark($"Backend not ready after attempt {attempt + 1}");
             DashboardHealthDescription.Text = "Starting the VaultKind vault engine…";
             EngineStatusFooter.Text = "Connecting securely to the local vault engine.";
             await Task.Delay(500);
@@ -383,6 +388,10 @@ public sealed partial class MainPage : Page
         }
 
         ApplySnapshot(snapshot);
+        StartupTiming.Mark("Initial backend snapshot applied");
+        StartupTiming.WriteReport(snapshot.ConnectionState == BackendConnectionState.Ready
+            ? "Startup completed with engine ready"
+            : "Startup completed with engine unavailable");
     }
 
     private void ApplySnapshot(VaultBackendSnapshot snapshot)

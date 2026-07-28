@@ -36,6 +36,8 @@ The existing Java application remains in its original Maven project structure. W
 | `Services/WindowPlacementStore.cs` | Saves the last window placement locally and safely brings it back on-screen if the monitor layout later changes. |
 | `../VaultKind.Windows.Tests` | Package-free native policy and preference regression checks. |
 | `../../scripts/build-native-release.ps1` | Stages the self-contained frontend, bundled Java engine/runtime, notices, and optional signatures. |
+| `../../src/main/java/org/cryptomator/launcher/NativeBackendComponent.java` | Constructs only the Java services reachable from the native backend entry point. It does not expose the inherited JavaFX application component. |
+| `../../src/main/java/org/cryptomator/launcher/NativeBackendModule.java` | Supplies the small backend-specific root bindings that are still required while common vault services are separated from legacy GUI infrastructure. |
 
 The complete implemented keyboard behavior, deliberate focus targets, and remaining manual release checks are documented in [KEYBOARD_CONTROLS.md](KEYBOARD_CONTROLS.md). That file is the source of truth for keyboard claims; do not infer a global Back or Escape command that the native shell does not implement.
 
@@ -67,6 +69,8 @@ The version 1.0.0 native interface is intentionally English-only. No runtime tra
 ## Engine lifecycle in the source-tree preview
 
 Launching the native executable now starts the Java vault engine automatically when no compatible local engine with the expected settings profile already exists. The `backend.hello` handshake reports the engine profile, preventing a development build from accidentally reusing a portable, installed, or isolated-test engine and displaying that profile's vault list. The lifecycle host validates this identity before startup reuse, and the native client revalidates the exact protocol, request identifier, capabilities, backend name, and settings profile on every command connection. A mismatched engine is asked to lock its vaults and shut down safely before the correct engine starts. Closing the native app requests the same graceful shutdown for the engine process it owns; the engine refuses to exit if Windows still has a vault in use. A staged build uses fixed `Engine/runtime`, `Engine/classes`, and `Engine/lib` locations beside the app. Repository build output and an installed Java runtime remain development fallbacks only.
+
+The `--native-backend` launcher path now constructs a dedicated `NativeBackendComponent`. The legacy `CryptomatorComponent` and its JavaFX subcomponent are created only for the inherited GUI launcher path. This is the first enforceable cleanup boundary: backend startup no longer begins from a root component that also exposes the legacy application. Common vault construction still uses JavaFX observable collections, JavaFX thread marshalling, and recovery-key classes that live under the legacy UI package. Those remaining dependencies must be moved behind neutral engine interfaces before JavaFX libraries or inherited GUI sources can be removed.
 
 ## How it runs today
 

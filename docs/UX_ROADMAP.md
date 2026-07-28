@@ -10,8 +10,8 @@ VaultKind 1.0.0 is intentionally English-only. Localization is outside the 1.0 r
 
 - Production classpath generation now excludes test-scoped Java dependencies and rejects known test libraries if they reappear.
 - The Java engine source and staged release retain only the reviewed default English bundle; inherited translation files and Crowdin configuration have been removed.
-- Superseded Debug, validation, portable ZIP, and development-MSIX outputs are disposable generated artifacts. Preserve the active signed development build, the current validated stage, and any Store proof still under certification.
-- The inherited JavaFX GUI and macOS/Linux build workflows remain a larger architectural cleanup seam. Remove them only with a dedicated native-backend component and Windows-only CI replacement, not as disconnected file deletions.
+- Superseded Debug, validation, portable ZIP, and development-MSIX outputs are disposable generated artifacts. Preserve the active signed development build, the current validated stage, and the identity and validation records for the certified Store-path proof.
+- Native backend startup now uses a dedicated Dagger root component and no longer exposes the inherited JavaFX application graph. The next cleanup seam is to remove JavaFX observable-list/thread-marshalling and legacy recovery-package dependencies from that backend graph. Delete inherited GUI sources, JavaFX libraries, and macOS/Linux workflows only after those neutral engine boundaries and Windows-only CI replacements are verified.
 
 ## Keyboard accessibility — implemented foundation
 

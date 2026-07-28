@@ -103,6 +103,12 @@ The first operation is `backend.hello`. It proves the expected backend identity,
 
 The frontend and backend may log operation names, timing, protocol failures, and non-sensitive state transitions. They must not log passwords, recovery keys, keys, decrypted names, file contents, or complete sensitive paths.
 
+## Backend construction boundary
+
+The `--native-backend` launcher path uses a dedicated Dagger root component that exposes only `NativeBackendApplication`. It does not construct or expose the inherited JavaFX application component. The legacy root graph is initialized only when the legacy GUI path is selected.
+
+This boundary makes native-backend reachability explicit and provides a safe starting point for Windows-only cleanup. It does not yet make the engine JavaFX-free: common vault construction still uses JavaFX observable collections and limited thread marshalling, while native recovery operations still depend on recovery-key classes located in the legacy UI package. Those dependencies must be replaced or moved behind neutral engine abstractions before deleting JavaFX libraries, GUI source trees, resources, or cross-platform workflows.
+
 ## Migration sequence
 
 1. Native frontend used a disconnected `IVaultBackend` implementation.

@@ -22,7 +22,7 @@ The release classpath is resolved with Maven's runtime scope and the build fails
 
 ## Version 1.0 distribution boundary
 
-VaultKind will not depend on a recurring commercial code-signing subscription. The primary candidate for version 1.0 is a Microsoft Store MSIX: Microsoft accepts an unsigned Store upload, validates it, and signs the package after certification. An isolated WinUI 3 proof app, **VaultKind Store Path Test**, was submitted for certification on July 27, 2026. Do not adapt VaultKind to this path until that certification result proves the complete route.
+VaultKind will not depend on a recurring commercial code-signing subscription. The primary candidate for version 1.0 is a Microsoft Store MSIX: Microsoft accepts an unsigned Store upload, validates it, and signs the package after certification. The isolated WinUI 3 proof app, **VaultKind Store Path Test**, passed certification and entered the Microsoft Store on July 28, 2026. The Store-signed version 1.0.0.0 package installed successfully, moved through Windows' supported app-volume mechanism to `G:\WindowsApps`, and launched its expected WinUI window under the Microsoft-assigned package identity `Webbi.VaultKindStorePathTest_1014d67w6rsqa`. This proves the account, upload, certification, signing, acquisition, installation, app-volume relocation, and first-launch path. It does not yet prove VaultKind's larger package, bundled Java engine, virtual-drive integrations, update behavior, or uninstall behavior.
 
 The fallback is an unsigned portable Windows archive. Windows, SmartScreen, endpoint protection, or organization policy may warn about or block unsigned executables. Any portable download page and release notes must state that plainly and publish a SHA-256 checksum. VaultKind must never ask users to disable security controls globally; users whose policy blocks the app may be unable to run that build.
 
@@ -53,8 +53,9 @@ The script refuses to use `CN=VaultKind Development` for the production identity
 
 ## Remaining release gates
 
-- Wait for the **VaultKind Store Path Test** certification result and record the outcome.
-- If it passes, adapt VaultKind to its Microsoft-assigned Store identity and repeat package, certification, install, update, and uninstall testing with disposable vaults.
+- Publish a higher-version **VaultKind Store Path Test** package and prove Store update delivery, then verify uninstall and reinstall behavior.
+- Confirm how the Store package will use supported virtual-drive providers. Do not assume an MSIX can install a non-Microsoft driver or NT service from inside VaultKind.
+- Reserve and record VaultKind's Microsoft-assigned Store identity, then adapt the real package and repeat certification, install, update, relocation, and uninstall testing with disposable vaults.
 - If the Store route fails or is unsuitable, produce the unsigned portable ZIP and publish its SHA-256 checksum.
 - Verify first-run extraction, replacement/upgrade behavior, removal behavior, and retained user data.
 - Test extraction and first launch on clean supported Windows virtual machines with no JDK, Maven repository, source checkout, or Developer Mode.

@@ -46,7 +46,7 @@ dotnet build native\VaultKind.Windows\VaultKind.Windows.csproj -c Debug --no-res
 dotnet run --project native\VaultKind.Windows.Tests\VaultKind.Windows.Tests.csproj -c Release
 ```
 
-Release staging and distribution requirements are documented in [RELEASE_READINESS.md](docs/RELEASE_READINESS.md). A Microsoft Store MSIX path is now in certification testing; an unsigned portable Windows archive remains the fallback, with the associated Windows warning and policy limitations documented plainly.
+Release staging and distribution requirements are documented in [RELEASE_READINESS.md](docs/RELEASE_READINESS.md). An isolated WinUI 3 package has now passed Microsoft Store certification and completed Store-signed installation and first launch, proving the distribution path before VaultKind is adapted to it. An unsigned portable Windows archive remains the fallback, with the associated Windows warning and policy limitations documented plainly.
 
 ## Upstream and licensing
 

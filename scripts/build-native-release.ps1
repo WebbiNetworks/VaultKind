@@ -130,9 +130,193 @@ if (-not (Test-Path -LiteralPath (Join-Path $classesSource "logback-native.xml")
 }
 
 # The native frontend never loads the inherited JavaFX FXML, CSS, fonts, or
-# images. Keep every compiled engine class for now because Dagger, service
-# loading, and reflection make class-level trimming a separate audited step.
+# images. Copy the authored classes first, then remove only exact class files
+# that have passed the native reachability and runtime-retention audit.
 Copy-Item -LiteralPath (Join-Path $classesSource "org") -Destination $classesTarget -Recurse -Force
+
+function Remove-ReviewedClassPackage {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PackageName,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$ReviewedClassFiles
+    )
+
+    $packageSourceDirectory = Join-Path $classesSource ($PackageName.Replace('.', '\'))
+    $actualClassFiles = @(Get-ChildItem -LiteralPath $packageSourceDirectory -File -Filter "*.class" | ForEach-Object {
+        $_.FullName.Substring($classesSource.Length + 1)
+    })
+    $classDifference = @(Compare-Object -ReferenceObject $ReviewedClassFiles -DifferenceObject $actualClassFiles)
+    if ($classDifference.Count -ne 0) {
+        throw "The inherited $PackageName class set changed. Re-run the native reachability audit before updating the exact release exclusion."
+    }
+
+    foreach ($relativeClassFile in $ReviewedClassFiles) {
+        $stagedClassFile = Join-Path $classesTarget $relativeClassFile
+        if (-not (Test-Path -LiteralPath $stagedClassFile -PathType Leaf)) {
+            throw "The reviewed inherited class is missing from the stage: $relativeClassFile"
+        }
+        Remove-Item -LiteralPath $stagedClassFile -Force
+    }
+}
+
+$reviewedDialogClassFiles = @(
+    "org\cryptomator\ui\dialogs\Dialogs`$1.class",
+    "org\cryptomator\ui\dialogs\Dialogs.class",
+    "org\cryptomator\ui\dialogs\Dialogs_Factory.class",
+    "org\cryptomator\ui\dialogs\SimpleDialog`$Builder.class",
+    "org\cryptomator\ui\dialogs\SimpleDialog.class",
+    "org\cryptomator\ui\dialogs\SimpleDialogController.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.dialogs" -ReviewedClassFiles $reviewedDialogClassFiles
+
+$reviewedWrongFileAlertClassFiles = @(
+    "org\cryptomator\ui\wrongfilealert\WrongFileAlertComponent`$Builder.class",
+    "org\cryptomator\ui\wrongfilealert\WrongFileAlertComponent.class",
+    "org\cryptomator\ui\wrongfilealert\WrongFileAlertController.class",
+    "org\cryptomator\ui\wrongfilealert\WrongFileAlertController_Factory.class",
+    "org\cryptomator\ui\wrongfilealert\WrongFileAlertModule.class",
+    "org\cryptomator\ui\wrongfilealert\WrongFileAlertModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\wrongfilealert\WrongFileAlertModule_ProvideStageFactory.class",
+    "org\cryptomator\ui\wrongfilealert\WrongFileAlertModule_ProvideWrongFileAlertSceneFactory.class",
+    "org\cryptomator\ui\wrongfilealert\WrongFileAlertScoped.class",
+    "org\cryptomator\ui\wrongfilealert\WrongFileAlertWindow.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.wrongfilealert" -ReviewedClassFiles $reviewedWrongFileAlertClassFiles
+
+$reviewedUpdateReminderClassFiles = @(
+    "org\cryptomator\ui\updatereminder\UpdateReminderComponent`$Factory.class",
+    "org\cryptomator\ui\updatereminder\UpdateReminderComponent.class",
+    "org\cryptomator\ui\updatereminder\UpdateReminderController.class",
+    "org\cryptomator\ui\updatereminder\UpdateReminderController_Factory.class",
+    "org\cryptomator\ui\updatereminder\UpdateReminderModule.class",
+    "org\cryptomator\ui\updatereminder\UpdateReminderModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\updatereminder\UpdateReminderModule_ProvideStageFactory.class",
+    "org\cryptomator\ui\updatereminder\UpdateReminderModule_ProvideUpdateReminderSceneFactory.class",
+    "org\cryptomator\ui\updatereminder\UpdateReminderScoped.class",
+    "org\cryptomator\ui\updatereminder\UpdateReminderWindow.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.updatereminder" -ReviewedClassFiles $reviewedUpdateReminderClassFiles
+
+$reviewedShareVaultClassFiles = @(
+    "org\cryptomator\ui\sharevault\ShareVaultComponent`$Factory.class",
+    "org\cryptomator\ui\sharevault\ShareVaultComponent.class",
+    "org\cryptomator\ui\sharevault\ShareVaultController.class",
+    "org\cryptomator\ui\sharevault\ShareVaultController_Factory.class",
+    "org\cryptomator\ui\sharevault\ShareVaultModule.class",
+    "org\cryptomator\ui\sharevault\ShareVaultModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\sharevault\ShareVaultModule_ProvideShareVaultSceneFactory.class",
+    "org\cryptomator\ui\sharevault\ShareVaultModule_ProvideStageFactory.class",
+    "org\cryptomator\ui\sharevault\ShareVaultScoped.class",
+    "org\cryptomator\ui\sharevault\ShareVaultWindow.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.sharevault" -ReviewedClassFiles $reviewedShareVaultClassFiles
+
+$reviewedVaultStatisticsClassFiles = @(
+    "org\cryptomator\ui\stats\VaultStatisticsComponent`$Builder.class",
+    "org\cryptomator\ui\stats\VaultStatisticsComponent.class",
+    "org\cryptomator\ui\stats\VaultStatisticsController`$IoSamplingAnimationHandler.class",
+    "org\cryptomator\ui\stats\VaultStatisticsController.class",
+    "org\cryptomator\ui\stats\VaultStatisticsController_Factory.class",
+    "org\cryptomator\ui\stats\VaultStatisticsModule`$1.class",
+    "org\cryptomator\ui\stats\VaultStatisticsModule.class",
+    "org\cryptomator\ui\stats\VaultStatisticsModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\stats\VaultStatisticsModule_ProvideStageFactory.class",
+    "org\cryptomator\ui\stats\VaultStatisticsModule_ProvideVaultStatisticsSceneFactory.class",
+    "org\cryptomator\ui\stats\VaultStatisticsScoped.class",
+    "org\cryptomator\ui\stats\VaultStatisticsWindow.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.stats" -ReviewedClassFiles $reviewedVaultStatisticsClassFiles
+
+$reviewedDecryptNameClassFiles = @(
+    "org\cryptomator\ui\decryptname\CipherAndCleartext.class",
+    "org\cryptomator\ui\decryptname\DecryptFileNamesViewController.class",
+    "org\cryptomator\ui\decryptname\DecryptFileNamesViewController_Factory.class",
+    "org\cryptomator\ui\decryptname\DecryptNameComponent`$Factory.class",
+    "org\cryptomator\ui\decryptname\DecryptNameComponent.class",
+    "org\cryptomator\ui\decryptname\DecryptNameModule.class",
+    "org\cryptomator\ui\decryptname\DecryptNameModule_ProvideDecryptNamesViewSceneFactory.class",
+    "org\cryptomator\ui\decryptname\DecryptNameModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\decryptname\DecryptNameModule_ProvideStageFactory.class",
+    "org\cryptomator\ui\decryptname\DecryptNameScoped.class",
+    "org\cryptomator\ui\decryptname\DecryptNameWindow.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.decryptname" -ReviewedClassFiles $reviewedDecryptNameClassFiles
+
+$reviewedErrorWindowClassFiles = @(
+    "org\cryptomator\ui\error\ErrorComponent`$Factory.class",
+    "org\cryptomator\ui\error\ErrorComponent.class",
+    "org\cryptomator\ui\error\ErrorController.class",
+    "org\cryptomator\ui\error\ErrorController_Factory.class",
+    "org\cryptomator\ui\error\ErrorDiscussion`$Answer.class",
+    "org\cryptomator\ui\error\ErrorDiscussion.class",
+    "org\cryptomator\ui\error\ErrorModule.class",
+    "org\cryptomator\ui\error\ErrorModule_ProvideErrorCodeFactory.class",
+    "org\cryptomator\ui\error\ErrorModule_ProvideErrorSceneFactory.class",
+    "org\cryptomator\ui\error\ErrorModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\error\ErrorModule_ProvideStackTraceFactory.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.error" -ReviewedClassFiles $reviewedErrorWindowClassFiles
+
+$reviewedJavaFxControlClassFiles = @(
+    "org\cryptomator\ui\controls\AlphanumericTextField.class",
+    "org\cryptomator\ui\controls\DataLabel.class",
+    "org\cryptomator\ui\controls\DraggableListCell.class",
+    "org\cryptomator\ui\controls\FontAwesome5Icon.class",
+    "org\cryptomator\ui\controls\FontAwesome5IconView.class",
+    "org\cryptomator\ui\controls\FontAwesome5Spinner.class",
+    "org\cryptomator\ui\controls\FormattedLabel.class",
+    "org\cryptomator\ui\controls\FormattedString.class",
+    "org\cryptomator\ui\controls\InfoBar.class",
+    "org\cryptomator\ui\controls\NiceSecurePasswordField.class",
+    "org\cryptomator\ui\controls\NumericTextField.class",
+    "org\cryptomator\ui\controls\PasswordStrengthIndicator.class",
+    "org\cryptomator\ui\controls\SecurePasswordField`$1.class",
+    "org\cryptomator\ui\controls\SecurePasswordField.class",
+    "org\cryptomator\ui\controls\ThroughputLabel.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.controls" -ReviewedClassFiles $reviewedJavaFxControlClassFiles
+
+$reviewedQuitWindowClassFiles = @(
+    "org\cryptomator\ui\quit\QuitComponent`$Builder.class",
+    "org\cryptomator\ui\quit\QuitComponent.class",
+    "org\cryptomator\ui\quit\QuitController.class",
+    "org\cryptomator\ui\quit\QuitController_Factory.class",
+    "org\cryptomator\ui\quit\QuitForcedController.class",
+    "org\cryptomator\ui\quit\QuitForcedController_Factory.class",
+    "org\cryptomator\ui\quit\QuitModule.class",
+    "org\cryptomator\ui\quit\QuitModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\quit\QuitModule_ProvideQuitForcedSceneFactory.class",
+    "org\cryptomator\ui\quit\QuitModule_ProvideQuitResponseFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\quit\QuitModule_ProvideQuitResponseFactory.class",
+    "org\cryptomator\ui\quit\QuitModule_ProvideQuitSceneFactory.class",
+    "org\cryptomator\ui\quit\QuitModule_ProvideStageFactory.class",
+    "org\cryptomator\ui\quit\QuitScoped.class",
+    "org\cryptomator\ui\quit\QuitWindow.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.quit" -ReviewedClassFiles $reviewedQuitWindowClassFiles
+
+$reviewedLockWindowClassFiles = @(
+    "org\cryptomator\ui\lock\LockComponent`$Factory.class",
+    "org\cryptomator\ui\lock\LockComponent.class",
+    "org\cryptomator\ui\lock\LockFailedController.class",
+    "org\cryptomator\ui\lock\LockFailedController_Factory.class",
+    "org\cryptomator\ui\lock\LockForcedController.class",
+    "org\cryptomator\ui\lock\LockForcedController_Factory.class",
+    "org\cryptomator\ui\lock\LockModule.class",
+    "org\cryptomator\ui\lock\LockModule_ProvideForceLockSceneFactory.class",
+    "org\cryptomator\ui\lock\LockModule_ProvideForceRetryDecisionRefFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\lock\LockModule_ProvideForceRetryDecisionRefFactory.class",
+    "org\cryptomator\ui\lock\LockModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\lock\LockModule_ProvideLockFailedSceneFactory.class",
+    "org\cryptomator\ui\lock\LockModule_ProvideWindowFactory.class",
+    "org\cryptomator\ui\lock\LockScoped.class",
+    "org\cryptomator\ui\lock\LockWindow.class",
+    "org\cryptomator\ui\lock\LockWorkflow.class",
+    "org\cryptomator\ui\lock\LockWorkflow_Factory.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.lock" -ReviewedClassFiles $reviewedLockWindowClassFiles
 
 $requiredRootResources = @("logback-native.xml", "module-info.class", "THIRD-PARTY.txt")
 foreach ($resourceName in $requiredRootResources) {

@@ -504,7 +504,7 @@ static async Task<int> ProbeBundledEngineAsync(string socketPath)
         await AssertMalformedRequestRejectedAsync(socketPath);
 
         using var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(90));
         await socket.ConnectAsync(new UnixDomainSocketEndPoint(socketPath), timeout.Token);
         await using var stream = new NetworkStream(socket, ownsSocket: false);
 
@@ -532,6 +532,83 @@ static async Task<int> ProbeBundledEngineAsync(string socketPath)
             || !mountSettingsRoot.GetProperty("mountServices").EnumerateArray().Any(service => service.GetProperty("id").GetString() == "automatic"))
         {
             throw new InvalidDataException("The isolated engine returned invalid mount-provider settings.");
+        }
+
+        string bridgeDirectory = Path.GetDirectoryName(socketPath) ?? throw new InvalidDataException("The probe socket has no parent directory.");
+        string isolatedTestRoot = Path.GetFullPath(Path.Combine(bridgeDirectory, "..", ".."));
+        string systemTemporaryRoot = Path.GetFullPath(Path.GetTempPath());
+        string systemTemporaryPrefix = systemTemporaryRoot.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        if (!isolatedTestRoot.StartsWith(systemTemporaryPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidDataException("The disposable vault fixture must remain inside the Windows temporary directory.");
+        }
+        string fixtureParent = Path.Combine(isolatedTestRoot, "fixtures");
+        string fixtureVaultPath = Path.Combine(fixtureParent, "DisposableVault");
+        Directory.CreateDirectory(fixtureParent);
+        const string originalPassword = "Probe-Original-2026!";
+        const string changedPassword = "Probe-Changed-2026!";
+        const string recoveredPassword = "Probe-Recovered-2026!";
+
+        using JsonDocument createVault = await InvokeAsync(stream, "vault.create", timeout.Token, password: originalPassword, vaultPath: fixtureVaultPath, createRecoveryKey: true);
+        JsonElement createRoot = createVault.RootElement;
+        AssertProtocolSuccess(createRoot, "created", "disposable vault creation");
+        string vaultId = createRoot.GetProperty("vaultId").GetString() ?? throw new InvalidDataException("Disposable vault creation returned no vault ID.");
+        string fixtureRecoveryKey = createRoot.GetProperty("recoveryKey").GetString() ?? throw new InvalidDataException("Disposable vault creation returned no recovery key.");
+        if (!Directory.Exists(fixtureVaultPath) || string.IsNullOrWhiteSpace(vaultId) || string.IsNullOrWhiteSpace(fixtureRecoveryKey))
+        {
+            throw new InvalidDataException("Disposable vault creation did not produce its isolated fixture.");
+        }
+
+        using JsonDocument createdVaultList = await InvokeAsync(stream, "vault.list", timeout.Token);
+        JsonElement[] createdVaults = createdVaultList.RootElement.GetProperty("vaults").EnumerateArray().ToArray();
+        if (createdVaults.Length != 1 || createdVaults[0].GetProperty("id").GetString() != vaultId)
+        {
+            throw new InvalidDataException("The disposable vault was not registered in the isolated profile.");
+        }
+
+        using JsonDocument initialRecovery = await InvokeAsync(stream, "vault.show_recovery_key", timeout.Token, vaultId: vaultId, password: originalPassword);
+        AssertRecoveryKey(initialRecovery.RootElement, fixtureRecoveryKey, "initial recovery-key display");
+
+        using JsonDocument wrongRecoveryPassword = await InvokeAsync(stream, "vault.show_recovery_key", timeout.Token, vaultId: vaultId, password: "incorrect-password");
+        AssertProtocolError(wrongRecoveryPassword.RootElement, "wrong_password", "recovery-key display with the wrong password");
+
+        using JsonDocument changePassword = await InvokeAsync(stream, "vault.change_password", timeout.Token, vaultId: vaultId, password: originalPassword, newPassword: changedPassword);
+        AssertProtocolSuccess(changePassword.RootElement, "password_changed", "disposable password change");
+        using JsonDocument oldPasswordAfterChange = await InvokeAsync(stream, "vault.show_recovery_key", timeout.Token, vaultId: vaultId, password: originalPassword);
+        AssertProtocolError(oldPasswordAfterChange.RootElement, "wrong_password", "retired password after password change");
+        using JsonDocument changedRecovery = await InvokeAsync(stream, "vault.show_recovery_key", timeout.Token, vaultId: vaultId, password: changedPassword);
+        AssertRecoveryKey(changedRecovery.RootElement, fixtureRecoveryKey, "recovery-key display after password change");
+
+        using JsonDocument resetPassword = await InvokeAsync(stream, "vault.reset_password", timeout.Token, vaultId: vaultId, recoveryKey: fixtureRecoveryKey, newPassword: recoveredPassword);
+        AssertProtocolSuccess(resetPassword.RootElement, "password_reset", "disposable password recovery");
+        using JsonDocument changedPasswordAfterReset = await InvokeAsync(stream, "vault.show_recovery_key", timeout.Token, vaultId: vaultId, password: changedPassword);
+        AssertProtocolError(changedPasswordAfterReset.RootElement, "wrong_password", "retired password after recovery");
+        using JsonDocument recoveredRecovery = await InvokeAsync(stream, "vault.show_recovery_key", timeout.Token, vaultId: vaultId, password: recoveredPassword);
+        AssertRecoveryKey(recoveredRecovery.RootElement, fixtureRecoveryKey, "recovery-key display after password recovery");
+
+        const string renamedVault = "Disposable Probe Vault";
+        using JsonDocument renameVault = await InvokeAsync(stream, "vault.rename", timeout.Token, vaultId: vaultId, displayName: renamedVault);
+        AssertProtocolSuccess(renameVault.RootElement, "renamed", "disposable vault rename");
+        using JsonDocument renamedVaultList = await InvokeAsync(stream, "vault.list", timeout.Token);
+        JsonElement renamedEntry = renamedVaultList.RootElement.GetProperty("vaults").EnumerateArray().Single(entry => entry.GetProperty("id").GetString() == vaultId);
+        if (renamedEntry.GetProperty("name").GetString() != renamedVault)
+        {
+            throw new InvalidDataException("The disposable vault rename was not reflected in the isolated profile.");
+        }
+
+        using JsonDocument removeVault = await InvokeAsync(stream, "vault.remove", timeout.Token, vaultId: vaultId);
+        AssertProtocolSuccess(removeVault.RootElement, "removed", "disposable vault removal");
+        using JsonDocument connectVault = await InvokeAsync(stream, "vault.connect", timeout.Token, vaultPath: fixtureVaultPath);
+        AssertProtocolSuccess(connectVault.RootElement, "created", "disposable vault reconnection");
+        string reconnectedVaultId = connectVault.RootElement.GetProperty("vaultId").GetString() ?? throw new InvalidDataException("Disposable vault reconnection returned no vault ID.");
+        using JsonDocument removeReconnectedVault = await InvokeAsync(stream, "vault.remove", timeout.Token, vaultId: reconnectedVaultId);
+        AssertProtocolSuccess(removeReconnectedVault.RootElement, "removed", "reconnected disposable vault removal");
+
+        using JsonDocument finalVaultList = await InvokeAsync(stream, "vault.list", timeout.Token);
+        if (!finalVaultList.RootElement.GetProperty("ok").GetBoolean()
+            || finalVaultList.RootElement.GetProperty("vaults").GetArrayLength() != 0)
+        {
+            throw new InvalidDataException("The disposable fixture remained registered after probe cleanup.");
         }
 
         (string Operation, string? Password, string? RecoveryKey, string? NewPassword)[] vaultOperations =
@@ -566,7 +643,7 @@ static async Task<int> ProbeBundledEngineAsync(string socketPath)
             throw new InvalidDataException("The bundled engine rejected backend.shutdown.");
         }
 
-        Console.WriteLine($"Backend: VaultKind Java Engine; verified malformed-request isolation, empty vault list, {vaultOperations.Length} missing-vault commands, mount providers, protocol errors, and shutdown.");
+        Console.WriteLine($"Backend: VaultKind Java Engine; verified malformed-request isolation, disposable create/connect, recovery and password rotation, rename/remove, {vaultOperations.Length} missing-vault commands, mount providers, protocol errors, and shutdown.");
         return 0;
     }
     catch (Exception exception)
@@ -606,10 +683,28 @@ static void AssertProtocolError(JsonElement response, string expectedError, stri
     }
 }
 
-static async Task<JsonDocument> InvokeAsync(NetworkStream stream, string operation, CancellationToken cancellationToken, int protocol = 1, string? vaultId = null, string? password = null, string? recoveryKey = null, string? newPassword = null)
+static void AssertProtocolSuccess(JsonElement response, string expectedState, string scenario)
+{
+    if (!response.GetProperty("ok").GetBoolean()
+        || response.GetProperty("state").GetString() != expectedState)
+    {
+        throw new InvalidDataException($"Unexpected response for {scenario}; expected successful state {expectedState}.");
+    }
+}
+
+static void AssertRecoveryKey(JsonElement response, string expectedRecoveryKey, string scenario)
+{
+    AssertProtocolSuccess(response, "recovery_key_ready", scenario);
+    if (response.GetProperty("recoveryKey").GetString() != expectedRecoveryKey)
+    {
+        throw new InvalidDataException($"The recovery key changed during {scenario}.");
+    }
+}
+
+static async Task<JsonDocument> InvokeAsync(NetworkStream stream, string operation, CancellationToken cancellationToken, int protocol = 1, string? vaultId = null, string? password = null, string? recoveryKey = null, string? newPassword = null, string? displayName = null, string? vaultPath = null, bool createRecoveryKey = false, bool useShortNames = false)
 {
     string requestId = Guid.NewGuid().ToString("N");
-    byte[] payload = JsonSerializer.SerializeToUtf8Bytes(new { protocol, requestId, operation, vaultId, password, recoveryKey, newPassword });
+    byte[] payload = JsonSerializer.SerializeToUtf8Bytes(new { protocol, requestId, operation, vaultId, password, recoveryKey, newPassword, displayName, vaultPath, createRecoveryKey, useShortNames });
     byte[] header = new byte[sizeof(int)];
     BinaryPrimitives.WriteInt32BigEndian(header, payload.Length);
     await stream.WriteAsync(header, cancellationToken);

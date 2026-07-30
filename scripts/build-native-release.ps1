@@ -734,28 +734,8 @@ Remove-ReviewedClassSlice -PackageName "org.cryptomator.ui.health" -RemovedClass
 $reviewedMainWindowPresentationClassFiles = @(
     "org\cryptomator\ui\mainwindow\ActivityController.class",
     "org\cryptomator\ui\mainwindow\ActivityController_Factory.class",
-    "org\cryptomator\ui\mainwindow\VaultListCellController`$1.class",
-    "org\cryptomator\ui\mainwindow\VaultListCellController.class",
-    "org\cryptomator\ui\mainwindow\VaultListCellController_Factory.class",
-    "org\cryptomator\ui\mainwindow\VaultListCellFactory`$Cell.class",
-    "org\cryptomator\ui\mainwindow\VaultListCellFactory.class",
-    "org\cryptomator\ui\mainwindow\VaultListCellFactory_Factory.class"
-)
-$retainedMainWindowWorkflowClassFiles = @(
-    "org\cryptomator\ui\mainwindow\DiagnosticCase`$Category.class",
-    "org\cryptomator\ui\mainwindow\DiagnosticCase`$Confidence.class",
-    "org\cryptomator\ui\mainwindow\DiagnosticCase`$DiagnosticMatch.class",
-    "org\cryptomator\ui\mainwindow\DiagnosticCase.class",
-    "org\cryptomator\ui\mainwindow\DiagnosticCatalog.class",
-    "org\cryptomator\ui\mainwindow\HowItWorksController.class",
     "org\cryptomator\ui\mainwindow\HowItWorksController_Factory.class",
-    "org\cryptomator\ui\mainwindow\MainWindow.class",
-    "org\cryptomator\ui\mainwindow\MainWindowComponent`$Builder.class",
-    "org\cryptomator\ui\mainwindow\MainWindowComponent.class",
-    "org\cryptomator\ui\mainwindow\MainWindowController`$1.class",
-    "org\cryptomator\ui\mainwindow\MainWindowController.class",
     "org\cryptomator\ui\mainwindow\MainWindowController_Factory.class",
-    "org\cryptomator\ui\mainwindow\MainWindowModule.class",
     "org\cryptomator\ui\mainwindow\MainWindowModule_ProvideEmbeddedEventFxmlLoaderFactoryFactory.class",
     "org\cryptomator\ui\mainwindow\MainWindowModule_ProvideEmbeddedPreferencesWindowFactory.class",
     "org\cryptomator\ui\mainwindow\MainWindowModule_ProvideErrorStageFactory.class",
@@ -765,37 +745,59 @@ $retainedMainWindowWorkflowClassFiles = @(
     "org\cryptomator\ui\mainwindow\MainWindowModule_ProvideSelectedPreferencesTabFactory.class",
     "org\cryptomator\ui\mainwindow\MainWindowModule_ProvideSelectedVaultFactory`$InstanceHolder.class",
     "org\cryptomator\ui\mainwindow\MainWindowModule_ProvideSelectedVaultFactory.class",
-    "org\cryptomator\ui\mainwindow\MainWindowNavigation`$Destination.class",
-    "org\cryptomator\ui\mainwindow\MainWindowNavigation.class",
     "org\cryptomator\ui\mainwindow\MainWindowNavigation_Factory`$InstanceHolder.class",
     "org\cryptomator\ui\mainwindow\MainWindowNavigation_Factory.class",
-    "org\cryptomator\ui\mainwindow\MainWindowSceneFactory.class",
     "org\cryptomator\ui\mainwindow\MainWindowSceneFactory_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailController_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailLockedController_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailMissingVaultController_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailNeedsMigrationController_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailUnknownErrorController_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailUnlockedController_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultListContextMenuController_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultListController_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultListCellController`$1.class",
+    "org\cryptomator\ui\mainwindow\VaultListCellController.class",
+    "org\cryptomator\ui\mainwindow\VaultListCellController_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultListCellFactory`$Cell.class",
+    "org\cryptomator\ui\mainwindow\VaultListCellFactory.class",
+    "org\cryptomator\ui\mainwindow\VaultListCellFactory_Factory.class",
+    "org\cryptomator\ui\mainwindow\WelcomeController_Factory.class"
+)
+$retainedMainWindowWorkflowClassFiles = @(
+    "org\cryptomator\ui\mainwindow\DiagnosticCase`$Category.class",
+    "org\cryptomator\ui\mainwindow\DiagnosticCase`$Confidence.class",
+    "org\cryptomator\ui\mainwindow\DiagnosticCase`$DiagnosticMatch.class",
+    "org\cryptomator\ui\mainwindow\DiagnosticCase.class",
+    "org\cryptomator\ui\mainwindow\DiagnosticCatalog.class",
+    "org\cryptomator\ui\mainwindow\HowItWorksController.class",
+    "org\cryptomator\ui\mainwindow\MainWindow.class",
+    "org\cryptomator\ui\mainwindow\MainWindowComponent`$Builder.class",
+    "org\cryptomator\ui\mainwindow\MainWindowComponent.class",
+    "org\cryptomator\ui\mainwindow\MainWindowController`$1.class",
+    "org\cryptomator\ui\mainwindow\MainWindowController.class",
+    "org\cryptomator\ui\mainwindow\MainWindowModule.class",
+    "org\cryptomator\ui\mainwindow\MainWindowNavigation`$Destination.class",
+    "org\cryptomator\ui\mainwindow\MainWindowNavigation.class",
+    "org\cryptomator\ui\mainwindow\MainWindowSceneFactory.class",
     "org\cryptomator\ui\mainwindow\MainWindowScoped.class",
     "org\cryptomator\ui\mainwindow\VaultDetailController`$1.class",
     "org\cryptomator\ui\mainwindow\VaultDetailController.class",
-    "org\cryptomator\ui\mainwindow\VaultDetailController_Factory.class",
     "org\cryptomator\ui\mainwindow\VaultDetailLockedController.class",
-    "org\cryptomator\ui\mainwindow\VaultDetailLockedController_Factory.class",
     "org\cryptomator\ui\mainwindow\VaultDetailMissingVaultController.class",
-    "org\cryptomator\ui\mainwindow\VaultDetailMissingVaultController_Factory.class",
     "org\cryptomator\ui\mainwindow\VaultDetailNeedsMigrationController.class",
-    "org\cryptomator\ui\mainwindow\VaultDetailNeedsMigrationController_Factory.class",
     "org\cryptomator\ui\mainwindow\VaultDetailUnknownErrorController.class",
-    "org\cryptomator\ui\mainwindow\VaultDetailUnknownErrorController_Factory.class",
     "org\cryptomator\ui\mainwindow\VaultDetailUnlockedController.class",
-    "org\cryptomator\ui\mainwindow\VaultDetailUnlockedController_Factory.class",
     "org\cryptomator\ui\mainwindow\VaultListContextMenuController.class",
-    "org\cryptomator\ui\mainwindow\VaultListContextMenuController_Factory.class",
     "org\cryptomator\ui\mainwindow\VaultListController`$1.class",
     "org\cryptomator\ui\mainwindow\VaultListController.class",
-    "org\cryptomator\ui\mainwindow\VaultListController_Factory.class",
-    "org\cryptomator\ui\mainwindow\WelcomeController.class",
-    "org\cryptomator\ui\mainwindow\WelcomeController_Factory.class"
+    "org\cryptomator\ui\mainwindow\WelcomeController.class"
 )
 Remove-ReviewedClassSlice -PackageName "org.cryptomator.ui.mainwindow" -RemovedClassFiles $reviewedMainWindowPresentationClassFiles -RetainedClassFiles $retainedMainWindowWorkflowClassFiles
 
 $reviewedFxApplicationRootClassFiles = @(
+    "org\cryptomator\ui\fxapp\AppLaunchEventHandler_Factory.class",
+    "org\cryptomator\ui\fxapp\AutoUnlocker_Factory.class",
     "org\cryptomator\ui\fxapp\FxApplication.class",
     "org\cryptomator\ui\fxapp\FxApplication_Factory.class",
     "org\cryptomator\ui\fxapp\FxApplicationComponent`$Builder.class",
@@ -808,26 +810,24 @@ $reviewedFxApplicationRootClassFiles = @(
     "org\cryptomator\ui\fxapp\FxApplicationModule_ProvideTrayMenuComponentFactory.class",
     "org\cryptomator\ui\fxapp\FxApplicationStyle`$1.class",
     "org\cryptomator\ui\fxapp\FxApplicationStyle.class",
-    "org\cryptomator\ui\fxapp\FxApplicationStyle_Factory.class"
+    "org\cryptomator\ui\fxapp\FxApplicationStyle_Factory.class",
+    "org\cryptomator\ui\fxapp\FxApplicationTerminator_Factory.class",
+    "org\cryptomator\ui\fxapp\FxApplicationWindows_Factory.class",
+    "org\cryptomator\ui\fxapp\FxFSEventList_Factory.class",
+    "org\cryptomator\ui\fxapp\FxNotificationManager_Factory.class"
 )
 $retainedFxApplicationOperationalClassFiles = @(
     "org\cryptomator\ui\fxapp\AppLaunchEventHandler`$1.class",
     "org\cryptomator\ui\fxapp\AppLaunchEventHandler.class",
-    "org\cryptomator\ui\fxapp\AppLaunchEventHandler_Factory.class",
     "org\cryptomator\ui\fxapp\AutoUnlocker.class",
-    "org\cryptomator\ui\fxapp\AutoUnlocker_Factory.class",
     "org\cryptomator\ui\fxapp\ExitingQuitResponse.class",
     "org\cryptomator\ui\fxapp\FxApplicationScoped.class",
     "org\cryptomator\ui\fxapp\FxApplicationTerminator`$NoopQuitResponse.class",
     "org\cryptomator\ui\fxapp\FxApplicationTerminator.class",
-    "org\cryptomator\ui\fxapp\FxApplicationTerminator_Factory.class",
     "org\cryptomator\ui\fxapp\FxApplicationWindows`$CachedLazy.class",
     "org\cryptomator\ui\fxapp\FxApplicationWindows.class",
-    "org\cryptomator\ui\fxapp\FxApplicationWindows_Factory.class",
     "org\cryptomator\ui\fxapp\FxFSEventList.class",
-    "org\cryptomator\ui\fxapp\FxFSEventList_Factory.class",
     "org\cryptomator\ui\fxapp\FxNotificationManager.class",
-    "org\cryptomator\ui\fxapp\FxNotificationManager_Factory.class",
     "org\cryptomator\ui\fxapp\JfxRevealPathService.class",
     "org\cryptomator\ui\fxapp\JfxUiAppearanceProvider`$1.class",
     "org\cryptomator\ui\fxapp\JfxUiAppearanceProvider.class",
@@ -993,10 +993,16 @@ $retainedNativeLauncherClassFiles = @(
 Remove-ReviewedClassSlice -PackageName "org.cryptomator.launcher" -RemovedClassFiles $reviewedLegacyLauncherClassFiles -RetainedClassFiles $retainedNativeLauncherClassFiles
 
 $reviewedCommonPresentationClassFiles = @(
+    "org\cryptomator\ui\common\DefaultSceneFactory_Factory`$InstanceHolder.class",
+    "org\cryptomator\ui\common\DefaultSceneFactory_Factory.class",
     "org\cryptomator\ui\common\FontLoader`$FontLoaderException.class",
     "org\cryptomator\ui\common\FontLoader.class",
+    "org\cryptomator\ui\common\StageFactory_Factory.class",
+    "org\cryptomator\ui\common\StageInitializer_Factory`$InstanceHolder.class",
+    "org\cryptomator\ui\common\StageInitializer_Factory.class",
     "org\cryptomator\ui\common\SystemBarUtil`$Placement.class",
-    "org\cryptomator\ui\common\SystemBarUtil.class"
+    "org\cryptomator\ui\common\SystemBarUtil.class",
+    "org\cryptomator\ui\common\VaultService_Factory.class"
 )
 $retainedCommonWorkflowClassFiles = @(
     "org\cryptomator\ui\common\Animations`$1.class",
@@ -1004,8 +1010,6 @@ $retainedCommonWorkflowClassFiles = @(
     "org\cryptomator\ui\common\AutoAnimator`$Builder.class",
     "org\cryptomator\ui\common\AutoAnimator.class",
     "org\cryptomator\ui\common\DefaultSceneFactory.class",
-    "org\cryptomator\ui\common\DefaultSceneFactory_Factory`$InstanceHolder.class",
-    "org\cryptomator\ui\common\DefaultSceneFactory_Factory.class",
     "org\cryptomator\ui\common\FxController.class",
     "org\cryptomator\ui\common\FxControllerKey.class",
     "org\cryptomator\ui\common\FxmlFile.class",
@@ -1013,10 +1017,7 @@ $retainedCommonWorkflowClassFiles = @(
     "org\cryptomator\ui\common\FxmlScene.class",
     "org\cryptomator\ui\common\MicroInteractionSupport.class",
     "org\cryptomator\ui\common\StageFactory.class",
-    "org\cryptomator\ui\common\StageFactory_Factory.class",
     "org\cryptomator\ui\common\StageInitializer.class",
-    "org\cryptomator\ui\common\StageInitializer_Factory`$InstanceHolder.class",
-    "org\cryptomator\ui\common\StageInitializer_Factory.class",
     "org\cryptomator\ui\common\Tasks`$ErrorHandler.class",
     "org\cryptomator\ui\common\Tasks`$RestartingService.class",
     "org\cryptomator\ui\common\Tasks`$TaskBuilder.class",
@@ -1028,7 +1029,6 @@ $retainedCommonWorkflowClassFiles = @(
     "org\cryptomator\ui\common\VaultService`$RevealVaultTask.class",
     "org\cryptomator\ui\common\VaultService`$WaitForTasksTask.class",
     "org\cryptomator\ui\common\VaultService.class",
-    "org\cryptomator\ui\common\VaultService_Factory.class",
     "org\cryptomator\ui\common\WeakBindings`$1.class",
     "org\cryptomator\ui\common\WeakBindings`$2.class",
     "org\cryptomator\ui\common\WeakBindings`$3.class",
@@ -1209,6 +1209,91 @@ $retainedSettingsClassFiles = @(
     "org\cryptomator\common\settings\WhenUnlocked.class"
 )
 Remove-ReviewedClassSlice -PackageName "org.cryptomator.common.settings" -RemovedClassFiles $reviewedUnusedSettingsFactoryClassFiles -RetainedClassFiles $retainedSettingsClassFiles
+
+$reviewedUnusedMountFactoryClassFiles = @(
+    "org\cryptomator\common\mount\Mounter_Factory.class",
+    "org\cryptomator\common\mount\MountModule_ProvideDefaultMountServiceFactory.class",
+    "org\cryptomator\common\mount\MountServiceSelector_Factory.class",
+    "org\cryptomator\common\mount\WindowsDriveLetters_Factory`$InstanceHolder.class",
+    "org\cryptomator\common\mount\WindowsDriveLetters_Factory.class"
+)
+$retainedMountClassFiles = @(
+    "org\cryptomator\common\mount\ConflictingMountServiceException.class",
+    "org\cryptomator\common\mount\HideawayNotDirectoryException.class",
+    "org\cryptomator\common\mount\IllegalMountPointException.class",
+    "org\cryptomator\common\mount\Mounter`$1.class",
+    "org\cryptomator\common\mount\Mounter`$MountHandle.class",
+    "org\cryptomator\common\mount\Mounter`$SettledMounter.class",
+    "org\cryptomator\common\mount\Mounter.class",
+    "org\cryptomator\common\mount\MountModule.class",
+    "org\cryptomator\common\mount\MountModule_ProvideSetOfUsedMountServicesFactory`$InstanceHolder.class",
+    "org\cryptomator\common\mount\MountModule_ProvideSetOfUsedMountServicesFactory.class",
+    "org\cryptomator\common\mount\MountModule_ProvideSupportedMountServicesFactory`$InstanceHolder.class",
+    "org\cryptomator\common\mount\MountModule_ProvideSupportedMountServicesFactory.class",
+    "org\cryptomator\common\mount\MountPointCleanupFailedException.class",
+    "org\cryptomator\common\mount\MountPointInUseException.class",
+    "org\cryptomator\common\mount\MountPointNotEmptyDirectoryException.class",
+    "org\cryptomator\common\mount\MountPointNotExistingException.class",
+    "org\cryptomator\common\mount\MountPointNotSupportedException.class",
+    "org\cryptomator\common\mount\MountServiceSelector.class",
+    "org\cryptomator\common\mount\MountWithinParentUtil`$MountPointState.class",
+    "org\cryptomator\common\mount\MountWithinParentUtil.class",
+    "org\cryptomator\common\mount\WindowsDriveLetters.class"
+)
+Remove-ReviewedClassSlice -PackageName "org.cryptomator.common.mount" -RemovedClassFiles $reviewedUnusedMountFactoryClassFiles -RetainedClassFiles $retainedMountClassFiles
+
+$reviewedUnusedVaultFactoryClassFiles = @(
+    "org\cryptomator\common\vaults\AutoLocker_Factory.class",
+    "org\cryptomator\common\vaults\LegacyVaultStateObservable_Factory.class",
+    "org\cryptomator\common\vaults\VaultListManager_Factory.class",
+    "org\cryptomator\common\vaults\VaultListModule_ProvideVaultListFactory.class",
+    "org\cryptomator\common\vaults\VaultListModule_ProvideVaultListPersistenceFactory.class",
+    "org\cryptomator\common\vaults\VaultListModule_ProvideVaultListViewFactory.class",
+    "org\cryptomator\common\vaults\VaultListSnapshotMapper_Factory`$InstanceHolder.class",
+    "org\cryptomator\common\vaults\VaultListSnapshotMapper_Factory.class",
+    "org\cryptomator\common\vaults\VaultState_Factory.class"
+)
+$retainedVaultClassFiles = @(
+    "org\cryptomator\common\vaults\AutoLocker.class",
+    "org\cryptomator\common\vaults\LegacyVaultExceptionProperty.class",
+    "org\cryptomator\common\vaults\LegacyVaultExceptionProperty_Factory.class",
+    "org\cryptomator\common\vaults\LegacyVaultObservables.class",
+    "org\cryptomator\common\vaults\LegacyVaultStateObservable.class",
+    "org\cryptomator\common\vaults\LegacyVaultStatsObservable.class",
+    "org\cryptomator\common\vaults\LegacyVaultStatsObservable_Factory.class",
+    "org\cryptomator\common\vaults\NotAVaultDirectoryException`$Reason.class",
+    "org\cryptomator\common\vaults\NotAVaultDirectoryException.class",
+    "org\cryptomator\common\vaults\PerVault.class",
+    "org\cryptomator\common\vaults\Vault.class",
+    "org\cryptomator\common\vaults\Vault_Factory.class",
+    "org\cryptomator\common\vaults\VaultComponent`$Factory.class",
+    "org\cryptomator\common\vaults\VaultComponent.class",
+    "org\cryptomator\common\vaults\VaultConfigCache.class",
+    "org\cryptomator\common\vaults\VaultExceptionState`$Listener.class",
+    "org\cryptomator\common\vaults\VaultExceptionState.class",
+    "org\cryptomator\common\vaults\VaultExceptionState_Factory.class",
+    "org\cryptomator\common\vaults\VaultListChangeListener.class",
+    "org\cryptomator\common\vaults\VaultListManager`$1.class",
+    "org\cryptomator\common\vaults\VaultListManager.class",
+    "org\cryptomator\common\vaults\VaultListModule`$1.class",
+    "org\cryptomator\common\vaults\VaultListModule.class",
+    "org\cryptomator\common\vaults\VaultListPersistence.class",
+    "org\cryptomator\common\vaults\VaultListSnapshotMapper.class",
+    "org\cryptomator\common\vaults\VaultModule.class",
+    "org\cryptomator\common\vaults\VaultModule_ProvideCryptoFileSystemReferenceFactory.class",
+    "org\cryptomator\common\vaults\VaultMutationDispatcher.class",
+    "org\cryptomator\common\vaults\VaultRegistry.class",
+    "org\cryptomator\common\vaults\VaultState`$Listener.class",
+    "org\cryptomator\common\vaults\VaultState`$Value.class",
+    "org\cryptomator\common\vaults\VaultState.class",
+    "org\cryptomator\common\vaults\VaultStats`$Listener.class",
+    "org\cryptomator\common\vaults\VaultStats`$NativeSnapshot.class",
+    "org\cryptomator\common\vaults\VaultStats`$Snapshot.class",
+    "org\cryptomator\common\vaults\VaultStats.class",
+    "org\cryptomator\common\vaults\VaultStats_Factory.class",
+    "org\cryptomator\common\vaults\VaultSummary.class"
+)
+Remove-ReviewedClassSlice -PackageName "org.cryptomator.common.vaults" -RemovedClassFiles $reviewedUnusedVaultFactoryClassFiles -RetainedClassFiles $retainedVaultClassFiles
 
 $requiredRootResources = @("logback-native.xml", "module-info.class", "THIRD-PARTY.txt")
 foreach ($resourceName in $requiredRootResources) {

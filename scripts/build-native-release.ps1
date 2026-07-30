@@ -669,17 +669,30 @@ $reviewedEventViewWindowClassFiles = @(
 Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.eventview" -ReviewedClassFiles $reviewedEventViewWindowClassFiles
 
 $reviewedHealthPresentationClassFiles = @(
+    "org\cryptomator\ui\health\CheckDetailController_Factory.class",
+    "org\cryptomator\ui\health\CheckExecutor_Factory.class",
     "org\cryptomator\ui\health\CheckListCellController.class",
     "org\cryptomator\ui\health\CheckListCellController_Factory`$InstanceHolder.class",
     "org\cryptomator\ui\health\CheckListCellController_Factory.class",
     "org\cryptomator\ui\health\CheckListCellFactory`$Cell.class",
     "org\cryptomator\ui\health\CheckListCellFactory.class",
     "org\cryptomator\ui\health\CheckListCellFactory_Factory.class",
+    "org\cryptomator\ui\health\CheckListController_Factory.class",
     "org\cryptomator\ui\health\CheckStateIconView`$1.class",
     "org\cryptomator\ui\health\CheckStateIconView.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideHealthCheckListSceneFactory.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideHealthStartSceneFactory.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideStageFactory.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideUnlockWindowFactory.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideWindowShowingChangeListenerFactory.class",
     "org\cryptomator\ui\health\ResultListCellFactory`$Cell.class",
     "org\cryptomator\ui\health\ResultListCellFactory.class",
-    "org\cryptomator\ui\health\ResultListCellFactory_Factory.class"
+    "org\cryptomator\ui\health\ResultListCellFactory_Factory.class",
+    "org\cryptomator\ui\health\ResultListCellController_Factory.class",
+    "org\cryptomator\ui\health\ReportWriter_Factory.class",
+    "org\cryptomator\ui\health\ResultFixApplier_Factory.class",
+    "org\cryptomator\ui\health\StartController_Factory.class"
 )
 $retainedHealthFunctionalClassFiles = @(
     "org\cryptomator\ui\health\Check`$CheckState.class",
@@ -688,48 +701,79 @@ $retainedHealthFunctionalClassFiles = @(
     "org\cryptomator\ui\health\CheckDetailController`$FixStateStringifier.class",
     "org\cryptomator\ui\health\CheckDetailController`$SeverityStringifier.class",
     "org\cryptomator\ui\health\CheckDetailController.class",
-    "org\cryptomator\ui\health\CheckDetailController_Factory.class",
     "org\cryptomator\ui\health\CheckExecutor`$CheckTask.class",
     "org\cryptomator\ui\health\CheckExecutor.class",
-    "org\cryptomator\ui\health\CheckExecutor_Factory.class",
     "org\cryptomator\ui\health\CheckListController.class",
-    "org\cryptomator\ui\health\CheckListController_Factory.class",
     "org\cryptomator\ui\health\HealthCheckComponent`$Builder.class",
     "org\cryptomator\ui\health\HealthCheckComponent.class",
     "org\cryptomator\ui\health\HealthCheckModule.class",
     "org\cryptomator\ui\health\HealthCheckModule_ProvideAvailableChecksFactory`$InstanceHolder.class",
     "org\cryptomator\ui\health\HealthCheckModule_ProvideAvailableChecksFactory.class",
-    "org\cryptomator\ui\health\HealthCheckModule_ProvideFxmlLoaderFactoryFactory.class",
-    "org\cryptomator\ui\health\HealthCheckModule_ProvideHealthCheckListSceneFactory.class",
-    "org\cryptomator\ui\health\HealthCheckModule_ProvideHealthStartSceneFactory.class",
     "org\cryptomator\ui\health\HealthCheckModule_ProvideKeyLoadingStrategyFactory.class",
     "org\cryptomator\ui\health\HealthCheckModule_ProvideMasterkeyRefFactory`$InstanceHolder.class",
     "org\cryptomator\ui\health\HealthCheckModule_ProvideMasterkeyRefFactory.class",
     "org\cryptomator\ui\health\HealthCheckModule_ProvideSelectedCheckFactory`$InstanceHolder.class",
     "org\cryptomator\ui\health\HealthCheckModule_ProvideSelectedCheckFactory.class",
-    "org\cryptomator\ui\health\HealthCheckModule_ProvideStageFactory.class",
-    "org\cryptomator\ui\health\HealthCheckModule_ProvideUnlockWindowFactory.class",
     "org\cryptomator\ui\health\HealthCheckModule_ProvideVaultConfigRefFactory`$InstanceHolder.class",
     "org\cryptomator\ui\health\HealthCheckModule_ProvideVaultConfigRefFactory.class",
-    "org\cryptomator\ui\health\HealthCheckModule_ProvideWindowShowingChangeListenerFactory.class",
     "org\cryptomator\ui\health\HealthCheckScoped.class",
     "org\cryptomator\ui\health\HealthCheckWindow.class",
     "org\cryptomator\ui\health\ReportWriter`$1.class",
     "org\cryptomator\ui\health\ReportWriter.class",
-    "org\cryptomator\ui\health\ReportWriter_Factory.class",
     "org\cryptomator\ui\health\Result`$FixState.class",
     "org\cryptomator\ui\health\Result.class",
     "org\cryptomator\ui\health\ResultFixApplier`$FixFailedException.class",
     "org\cryptomator\ui\health\ResultFixApplier.class",
-    "org\cryptomator\ui\health\ResultFixApplier_Factory.class",
     "org\cryptomator\ui\health\ResultListCellController`$1.class",
     "org\cryptomator\ui\health\ResultListCellController.class",
-    "org\cryptomator\ui\health\ResultListCellController_Factory.class",
     "org\cryptomator\ui\health\StartController`$LoadingFailedException.class",
-    "org\cryptomator\ui\health\StartController.class",
-    "org\cryptomator\ui\health\StartController_Factory.class"
+    "org\cryptomator\ui\health\StartController.class"
 )
 Remove-ReviewedClassSlice -PackageName "org.cryptomator.ui.health" -RemovedClassFiles $reviewedHealthPresentationClassFiles -RetainedClassFiles $retainedHealthFunctionalClassFiles
+
+$reviewedMasterkeyFilePresentationClassFiles = @(
+    "org\cryptomator\ui\keyloading\masterkeyfile\ChooseMasterkeyFileController_Factory.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\ChooseMasterkeyFileModule_ProvideChooseMasterkeySceneFactory.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\ChooseMasterkeyFileModule_ProvideResultFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\ChooseMasterkeyFileModule_ProvideResultFactory.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\PassphraseEntryController_Factory.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\PassphraseEntryModule_ProvideResultFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\PassphraseEntryModule_ProvideResultFactory.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\PassphraseEntryModule_ProvideUnlockSceneFactory.class"
+)
+$retainedMasterkeyFileFunctionalClassFiles = @(
+    "org\cryptomator\ui\keyloading\masterkeyfile\ChooseMasterkeyFileComponent`$Builder.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\ChooseMasterkeyFileComponent.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\ChooseMasterkeyFileController.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\ChooseMasterkeyFileModule.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\ChooseMasterkeyFileScoped.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\MasterkeyFileLoadingModule.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\MasterkeyFileLoadingModule_ProvideStoredPasswordFactory.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\MasterkeyFileLoadingStrategy.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\MasterkeyFileLoadingStrategy_Factory.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\PassphraseEntryComponent`$Builder.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\PassphraseEntryComponent.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\PassphraseEntryController.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\PassphraseEntryModule.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\PassphraseEntryResult.class",
+    "org\cryptomator\ui\keyloading\masterkeyfile\PassphraseEntryScoped.class"
+)
+Remove-ReviewedClassSlice -PackageName "org.cryptomator.ui.keyloading.masterkeyfile" -RemovedClassFiles $reviewedMasterkeyFilePresentationClassFiles -RetainedClassFiles $retainedMasterkeyFileFunctionalClassFiles
+
+$reviewedKeyLoadingPresentationClassFiles = @(
+    "org\cryptomator\ui\keyloading\KeyLoadingModule_ProvideFxmlLoaderFactoryFactory.class"
+)
+$retainedKeyLoadingFunctionalClassFiles = @(
+    "org\cryptomator\ui\keyloading\KeyLoading.class",
+    "org\cryptomator\ui\keyloading\KeyLoadingComponent`$Factory.class",
+    "org\cryptomator\ui\keyloading\KeyLoadingComponent.class",
+    "org\cryptomator\ui\keyloading\KeyLoadingModule.class",
+    "org\cryptomator\ui\keyloading\KeyLoadingModule_ProvideKeyLoadingStrategyFactory.class",
+    "org\cryptomator\ui\keyloading\KeyLoadingScoped.class",
+    "org\cryptomator\ui\keyloading\KeyLoadingStrategy`$KeyLoadingStrategyUser.class",
+    "org\cryptomator\ui\keyloading\KeyLoadingStrategy.class"
+)
+Remove-ReviewedClassSlice -PackageName "org.cryptomator.ui.keyloading" -RemovedClassFiles $reviewedKeyLoadingPresentationClassFiles -RetainedClassFiles $retainedKeyLoadingFunctionalClassFiles
 
 $reviewedMainWindowPresentationClassFiles = @(
     "org\cryptomator\ui\mainwindow\ActivityController.class",
@@ -1338,6 +1382,50 @@ foreach ($entry in $releaseClasspathEntries) {
 $runtimeModules = "java.base,java.compiler,java.desktop,java.instrument,java.logging,java.management,java.naming,java.net.http,java.scripting,java.sql,java.xml,jdk.accessibility,jdk.crypto.cryptoki,jdk.crypto.ec,jdk.crypto.mscapi,jdk.management.jfr,jdk.unsupported"
 & $jlink --output $runtimeTarget --add-modules $runtimeModules --no-header-files --no-man-pages --strip-debug --compress zip-0
 if ($LASTEXITCODE -ne 0) { throw "jlink could not create the bundled Java runtime." }
+
+# jlink includes Windows linker import libraries for native applications that
+# embed or link against AWT/the JVM. VaultKind launches runtime\bin\java.exe
+# as a separate process and does not compile or link native code in the staged
+# layout. Keep this exact and fail closed if a future JDK changes the set.
+$reviewedRuntimeImportLibraries = @("jawt.lib", "jvm.lib")
+$runtimeLibraryDirectory = Join-Path $runtimeTarget "lib"
+$actualRuntimeImportLibraries = @(Get-ChildItem -LiteralPath $runtimeLibraryDirectory -File -Filter "*.lib" | Select-Object -ExpandProperty Name)
+$runtimeImportLibraryDifference = @(Compare-Object -ReferenceObject $reviewedRuntimeImportLibraries -DifferenceObject $actualRuntimeImportLibraries)
+if ($runtimeImportLibraryDifference.Count -ne 0) {
+    throw "The jlink runtime import-library set changed. Review it before updating the exact release exclusion."
+}
+foreach ($runtimeImportLibrary in $reviewedRuntimeImportLibraries) {
+    Remove-Item -LiteralPath (Join-Path $runtimeLibraryDirectory $runtimeImportLibrary) -Force
+}
+
+# The native host launches javaw.exe, while the isolated engine probe uses
+# java.exe. The remaining jlink launchers are standalone administration,
+# diagnostics, and accessibility tools that VaultKind never invokes.
+$reviewedRuntimeExecutables = @(
+    "jabswitch.exe",
+    "jaccessinspector.exe",
+    "jaccesswalker.exe",
+    "java.exe",
+    "javaw.exe",
+    "jfr.exe",
+    "keytool.exe"
+)
+$removedRuntimeToolExecutables = @(
+    "jabswitch.exe",
+    "jaccessinspector.exe",
+    "jaccesswalker.exe",
+    "jfr.exe",
+    "keytool.exe"
+)
+$runtimeBinaryDirectory = Join-Path $runtimeTarget "bin"
+$actualRuntimeExecutables = @(Get-ChildItem -LiteralPath $runtimeBinaryDirectory -File -Filter "*.exe" | Select-Object -ExpandProperty Name)
+$runtimeExecutableDifference = @(Compare-Object -ReferenceObject $reviewedRuntimeExecutables -DifferenceObject $actualRuntimeExecutables)
+if ($runtimeExecutableDifference.Count -ne 0) {
+    throw "The jlink runtime executable set changed. Review it before updating the exact release exclusion."
+}
+foreach ($runtimeToolExecutable in $removedRuntimeToolExecutables) {
+    Remove-Item -LiteralPath (Join-Path $runtimeBinaryDirectory $runtimeToolExecutable) -Force
+}
 
 $noticesTarget = Join-Path $stageRoot "Notices"
 New-Item -ItemType Directory -Path $noticesTarget | Out-Null

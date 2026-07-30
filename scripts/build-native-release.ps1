@@ -1038,6 +1038,178 @@ $retainedCommonWorkflowClassFiles = @(
 )
 Remove-ReviewedClassSlice -PackageName "org.cryptomator.ui.common" -RemovedClassFiles $reviewedCommonPresentationClassFiles -RetainedClassFiles $retainedCommonWorkflowClassFiles
 
+$reviewedNonWindowsSslContextClassFiles = @(
+    "org\cryptomator\networking\SSLContextWithMacKeychain`$1.class",
+    "org\cryptomator\networking\SSLContextWithMacKeychain`$2.class",
+    "org\cryptomator\networking\SSLContextWithMacKeychain.class",
+    "org\cryptomator\networking\SSLContextWithPKCS12TrustStore.class"
+)
+$retainedWindowsSslContextClassFiles = @(
+    "org\cryptomator\networking\CombinedKeyStoreSpi.class",
+    "org\cryptomator\networking\SSLContextDifferentTrustStoreBase.class",
+    "org\cryptomator\networking\SSLContextProvider`$SSLContextBuildException.class",
+    "org\cryptomator\networking\SSLContextProvider.class",
+    "org\cryptomator\networking\SSLContextWithWindowsCertStore`$1.class",
+    "org\cryptomator\networking\SSLContextWithWindowsCertStore`$2.class",
+    "org\cryptomator\networking\SSLContextWithWindowsCertStore.class"
+)
+Remove-ReviewedClassSlice -PackageName "org.cryptomator.networking" -RemovedClassFiles $reviewedNonWindowsSslContextClassFiles -RetainedClassFiles $retainedWindowsSslContextClassFiles
+
+$reviewedLegacyIpcClassFiles = @(
+    "org\cryptomator\ipc\Client.class",
+    "org\cryptomator\ipc\HandleLaunchArgsMessage.class",
+    "org\cryptomator\ipc\IpcCommunicator.class",
+    "org\cryptomator\ipc\IpcMessage`$MessageType.class",
+    "org\cryptomator\ipc\IpcMessage.class",
+    "org\cryptomator\ipc\IpcMessageListener.class",
+    "org\cryptomator\ipc\LoopbackCommunicator.class",
+    "org\cryptomator\ipc\RevealRunningAppMessage.class",
+    "org\cryptomator\ipc\Server.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ipc" -ReviewedClassFiles $reviewedLegacyIpcClassFiles
+
+$reviewedTestSupportClassFiles = @(
+    "org\cryptomator\JavaFXUtil.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator" -ReviewedClassFiles $reviewedTestSupportClassFiles
+
+$reviewedUnusedNativeFactoryClassFiles = @(
+    "org\cryptomator\nativeui\NativeBackendApplication_Factory.class",
+    "org\cryptomator\nativeui\NativeBackendTerminator_Factory`$InstanceHolder.class",
+    "org\cryptomator\nativeui\NativeBackendTerminator_Factory.class",
+    "org\cryptomator\nativeui\NativeMountSettings_Factory.class",
+    "org\cryptomator\nativeui\NativeUiBridge_Factory.class",
+    "org\cryptomator\nativeui\NativeUiProtocol_Factory.class",
+    "org\cryptomator\nativeui\NativeVaultCreator_Factory.class",
+    "org\cryptomator\nativeui\NativeVaultOperations_Factory.class",
+    "org\cryptomator\nativeui\VaultListSnapshotProvider_Factory.class"
+)
+$retainedNativeEngineClassFiles = @(
+    "org\cryptomator\nativeui\NativeBackendApplication.class",
+    "org\cryptomator\nativeui\NativeBackendTerminator.class",
+    "org\cryptomator\nativeui\NativeMountSettings`$NativeMountService.class",
+    "org\cryptomator\nativeui\NativeMountSettings`$NativeMountSettingsResult.class",
+    "org\cryptomator\nativeui\NativeMountSettings.class",
+    "org\cryptomator\nativeui\NativeUiBridge.class",
+    "org\cryptomator\nativeui\NativeUiProtocol`$MountSettingsSource.class",
+    "org\cryptomator\nativeui\NativeUiProtocol`$NativeUiRequest.class",
+    "org\cryptomator\nativeui\NativeUiProtocol`$NativeUiResponse.class",
+    "org\cryptomator\nativeui\NativeUiProtocol`$ShutdownSource.class",
+    "org\cryptomator\nativeui\NativeUiProtocol`$VaultCommandSource.class",
+    "org\cryptomator\nativeui\NativeUiProtocol`$VaultConnectSource.class",
+    "org\cryptomator\nativeui\NativeUiProtocol`$VaultCreateSource.class",
+    "org\cryptomator\nativeui\NativeUiProtocol`$VaultSummarySource.class",
+    "org\cryptomator\nativeui\NativeUiProtocol.class",
+    "org\cryptomator\nativeui\NativeVaultCreator`$NativeCreateResult.class",
+    "org\cryptomator\nativeui\NativeVaultCreator.class",
+    "org\cryptomator\nativeui\NativeVaultOperations`$FileNameMapping.class",
+    "org\cryptomator\nativeui\NativeVaultOperations`$NativeCommandResult.class",
+    "org\cryptomator\nativeui\NativeVaultOperations.class",
+    "org\cryptomator\nativeui\VaultListSnapshotProvider.class"
+)
+Remove-ReviewedClassSlice -PackageName "org.cryptomator.nativeui" -RemovedClassFiles $reviewedUnusedNativeFactoryClassFiles -RetainedClassFiles $retainedNativeEngineClassFiles
+
+$reviewedUnusedEventFactoryClassFiles = @(
+    "org\cryptomator\event\FileSystemEventAggregator_Factory`$InstanceHolder.class",
+    "org\cryptomator\event\FileSystemEventAggregator_Factory.class",
+    "org\cryptomator\event\NotificationManager_Factory`$InstanceHolder.class",
+    "org\cryptomator\event\NotificationManager_Factory.class"
+)
+$retainedEventClassFiles = @(
+    "org\cryptomator\event\Answer`$DoNothing.class",
+    "org\cryptomator\event\Answer`$DoSomething.class",
+    "org\cryptomator\event\Answer.class",
+    "org\cryptomator\event\FileSystemEventAggregator.class",
+    "org\cryptomator\event\FSEventBucket.class",
+    "org\cryptomator\event\FSEventBucketContent.class",
+    "org\cryptomator\event\NotificationHandler.class",
+    "org\cryptomator\event\NotificationManager.class",
+    "org\cryptomator\event\VaultEvent.class"
+)
+Remove-ReviewedClassSlice -PackageName "org.cryptomator.event" -RemovedClassFiles $reviewedUnusedEventFactoryClassFiles -RetainedClassFiles $retainedEventClassFiles
+
+$reviewedUnusedLoggingFactoryClassFiles = @(
+    "org\cryptomator\logging\DebugMode_Factory.class"
+)
+$retainedLoggingClassFiles = @(
+    "org\cryptomator\logging\DebugMode.class",
+    "org\cryptomator\logging\LaunchAndSizeBasedTriggeringPolicy.class",
+    "org\cryptomator\logging\LaunchBasedTriggeringPolicy.class",
+    "org\cryptomator\logging\LogbackConfigurator.class",
+    "org\cryptomator\logging\LogbackConfiguratorFactory`$1Holder.class",
+    "org\cryptomator\logging\LogbackConfiguratorFactory.class"
+)
+Remove-ReviewedClassSlice -PackageName "org.cryptomator.logging" -RemovedClassFiles $reviewedUnusedLoggingFactoryClassFiles -RetainedClassFiles $retainedLoggingClassFiles
+
+$reviewedUnusedDirectCommonFactoryClassFiles = @(
+    "org\cryptomator\common\CommonsModule_ProvideExecutorServiceFactory.class",
+    "org\cryptomator\common\CommonsModule_ProvideLicensePublicKeyFactory`$InstanceHolder.class",
+    "org\cryptomator\common\CommonsModule_ProvideLicensePublicKeyFactory.class",
+    "org\cryptomator\common\CommonsModule_ProvideRevealPathServiceFactory`$InstanceHolder.class",
+    "org\cryptomator\common\CommonsModule_ProvideRevealPathServiceFactory.class",
+    "org\cryptomator\common\LicenseChecker_Factory.class",
+    "org\cryptomator\common\LicenseHolder_Factory.class"
+)
+$retainedDirectCommonClassFiles = @(
+    "org\cryptomator\common\CatchingExecutors`$CatchingScheduledThreadPoolExecutor.class",
+    "org\cryptomator\common\CatchingExecutors`$CatchingThreadPoolExecutor.class",
+    "org\cryptomator\common\CatchingExecutors.class",
+    "org\cryptomator\common\CommonsModule.class",
+    "org\cryptomator\common\CommonsModule_ProvideCSPRNGFactory`$InstanceHolder.class",
+    "org\cryptomator\common\CommonsModule_ProvideCSPRNGFactory.class",
+    "org\cryptomator\common\CommonsModule_ProvideEnvironmentFactory`$InstanceHolder.class",
+    "org\cryptomator\common\CommonsModule_ProvideEnvironmentFactory.class",
+    "org\cryptomator\common\CommonsModule_ProvideMasterkeyFileAccessFactory.class",
+    "org\cryptomator\common\CommonsModule_ProvideScheduledExecutorServiceFactory.class",
+    "org\cryptomator\common\CommonsModule_ProvideSettingsFactory.class",
+    "org\cryptomator\common\Constants.class",
+    "org\cryptomator\common\ConsumerThrowingException.class",
+    "org\cryptomator\common\Environment`$1Holder.class",
+    "org\cryptomator\common\Environment.class",
+    "org\cryptomator\common\ErrorCode.class",
+    "org\cryptomator\common\FilesystemOwnerSupplier.class",
+    "org\cryptomator\common\LicenseChecker.class",
+    "org\cryptomator\common\LicenseHolder.class",
+    "org\cryptomator\common\Nullable.class",
+    "org\cryptomator\common\ObservableUtil.class",
+    "org\cryptomator\common\Passphrase.class",
+    "org\cryptomator\common\PropertiesDecorator.class",
+    "org\cryptomator\common\RunnableThrowingException.class",
+    "org\cryptomator\common\ShutdownHook`$OrderedTask.class",
+    "org\cryptomator\common\ShutdownHook.class",
+    "org\cryptomator\common\ShutdownHook_Factory`$InstanceHolder.class",
+    "org\cryptomator\common\ShutdownHook_Factory.class",
+    "org\cryptomator\common\SubstitutingProperties`$Source.class",
+    "org\cryptomator\common\SubstitutingProperties.class",
+    "org\cryptomator\common\SupplierThrowingException.class"
+)
+Remove-ReviewedClassSlice -PackageName "org.cryptomator.common" -RemovedClassFiles $reviewedUnusedDirectCommonFactoryClassFiles -RetainedClassFiles $retainedDirectCommonClassFiles
+
+$reviewedUnusedSettingsFactoryClassFiles = @(
+    "org\cryptomator\common\settings\DeviceKey_Factory.class",
+    "org\cryptomator\common\settings\LegacySettingsAdapter_Factory.class",
+    "org\cryptomator\common\settings\SettingsProvider_Factory.class"
+)
+$retainedSettingsClassFiles = @(
+    "org\cryptomator\common\settings\DeviceKey`$DeviceKeyRetrievalException.class",
+    "org\cryptomator\common\settings\DeviceKey.class",
+    "org\cryptomator\common\settings\EngineSettings.class",
+    "org\cryptomator\common\settings\LegacySettingsAdapter.class",
+    "org\cryptomator\common\settings\LegacyVaultSettingsProperties`$1.class",
+    "org\cryptomator\common\settings\LegacyVaultSettingsProperties.class",
+    "org\cryptomator\common\settings\Settings.class",
+    "org\cryptomator\common\settings\SettingsJson.class",
+    "org\cryptomator\common\settings\SettingsProvider.class",
+    "org\cryptomator\common\settings\UiTheme.class",
+    "org\cryptomator\common\settings\VaultSettings.class",
+    "org\cryptomator\common\settings\VaultSettingsData`$Field.class",
+    "org\cryptomator\common\settings\VaultSettingsData`$Listener.class",
+    "org\cryptomator\common\settings\VaultSettingsData.class",
+    "org\cryptomator\common\settings\VaultSettingsJson.class",
+    "org\cryptomator\common\settings\WhenUnlocked.class"
+)
+Remove-ReviewedClassSlice -PackageName "org.cryptomator.common.settings" -RemovedClassFiles $reviewedUnusedSettingsFactoryClassFiles -RetainedClassFiles $retainedSettingsClassFiles
+
 $requiredRootResources = @("logback-native.xml", "module-info.class", "THIRD-PARTY.txt")
 foreach ($resourceName in $requiredRootResources) {
     $resourcePath = Join-Path $classesSource $resourceName

@@ -75,6 +75,45 @@ $project = Join-Path $repositoryRoot "native\VaultKind.Windows\VaultKind.Windows
 & dotnet publish $project -c Release --no-restore -r $RuntimeIdentifier "-p:PublishDir=$stageRoot\" -p:PublishReadyToRun=false -p:PublishTrimmed=false
 if ($LASTEXITCODE -ne 0) { throw "The native Windows publish failed." }
 
+# VaultKind uses the Windows App SDK's UI, DWrite, runtime, foundation, and
+# interactive-experience components, but none of its optional Widgets, AI, or
+# ML surfaces. The umbrella package pulls all three into a self-contained
+# publish, including ONNX Runtime and DirectML. Keep the component boundary
+# fail closed so a restore or project edit cannot silently restore that unused
+# native payload.
+$nativeAssetsFile = Join-Path (Split-Path $project -Parent) "obj\project.assets.json"
+if (-not (Test-Path -LiteralPath $nativeAssetsFile -PathType Leaf)) {
+    throw "The native project's restored dependency graph is missing: $nativeAssetsFile"
+}
+$nativeAssets = Get-Content -LiteralPath $nativeAssetsFile -Raw | ConvertFrom-Json
+$restoredNativePackages = @($nativeAssets.targets.PSObject.Properties | ForEach-Object {
+    $_.Value.PSObject.Properties.Name
+})
+$forbiddenWindowsAppSdkPackages = @(
+    "Microsoft.WindowsAppSDK",
+    "Microsoft.WindowsAppSDK.AI",
+    "Microsoft.WindowsAppSDK.ML",
+    "Microsoft.WindowsAppSDK.Widgets",
+    "Microsoft.Windows.AI.MachineLearning"
+)
+foreach ($forbiddenWindowsAppSdkPackage in $forbiddenWindowsAppSdkPackages) {
+    if ($restoredNativePackages | Where-Object { $_ -like "$forbiddenWindowsAppSdkPackage/*" }) {
+        throw "The native dependency graph restored unused Windows App SDK package $forbiddenWindowsAppSdkPackage. Review the component references before publishing."
+    }
+}
+$forbiddenWindowsMlPayloadFiles = @(
+    "DirectML.dll",
+    "Microsoft.ML.OnnxRuntime.dll",
+    "Microsoft.Windows.AI.MachineLearning.dll",
+    "Microsoft.Windows.AI.MachineLearning.Projection.dll",
+    "onnxruntime.dll"
+)
+foreach ($forbiddenWindowsMlPayloadFile in $forbiddenWindowsMlPayloadFiles) {
+    if (Test-Path -LiteralPath (Join-Path $stageRoot $forbiddenWindowsMlPayloadFile) -PathType Leaf) {
+        throw "The native publish unexpectedly contains unused Windows ML payload $forbiddenWindowsMlPayloadFile."
+    }
+}
+
 # The unpackaged WinUI publish target does not copy the app's compiled XAML and
 # PRI resources into a custom PublishDir. Without them Microsoft.UI.Xaml fails
 # during startup, even though the managed and Windows App SDK binaries exist.
@@ -1339,13 +1378,17 @@ $retainedVaultClassFiles = @(
 )
 Remove-ReviewedClassSlice -PackageName "org.cryptomator.common.vaults" -RemovedClassFiles $reviewedUnusedVaultFactoryClassFiles -RetainedClassFiles $retainedVaultClassFiles
 
-$requiredRootResources = @("logback-native.xml", "module-info.class", "THIRD-PARTY.txt")
+$requiredRootResources = @("logback-native.xml", "module-info.class")
 foreach ($resourceName in $requiredRootResources) {
     $resourcePath = Join-Path $classesSource $resourceName
     if (-not (Test-Path -LiteralPath $resourcePath -PathType Leaf)) {
         throw "The engine classes are incomplete; $resourceName is missing."
     }
     Copy-Item -LiteralPath $resourcePath -Destination $classesTarget -Force
+}
+$thirdPartyNoticeSource = Join-Path $classesSource "THIRD-PARTY.txt"
+if (-not (Test-Path -LiteralPath $thirdPartyNoticeSource -PathType Leaf)) {
+    throw "The generated third-party notice is missing."
 }
 
 $i18nTarget = Join-Path $classesTarget "i18n"
@@ -1427,13 +1470,112 @@ foreach ($runtimeToolExecutable in $removedRuntimeToolExecutables) {
     Remove-Item -LiteralPath (Join-Path $runtimeBinaryDirectory $runtimeToolExecutable) -Force
 }
 
+# The native engine fixes its process locale to English and the packaged class
+# set excludes the inherited JavaFX recovery-key printing controller. jlink
+# nevertheless carries a single locale-specific legacy PostScript mapping for
+# Japanese printers. Keep the general Java 2D/font configuration intact, and
+# fail closed if a future JDK changes this exact locale-specific file set.
+$reviewedRuntimeLocaleSpecificSupportFiles = @("psfont.properties.ja")
+$actualRuntimeLocaleSpecificSupportFiles = @(Get-ChildItem -LiteralPath $runtimeLibraryDirectory -File -Filter "psfont.properties.*" | Select-Object -ExpandProperty Name)
+$runtimeLocaleSpecificSupportDifference = @(Compare-Object -ReferenceObject $reviewedRuntimeLocaleSpecificSupportFiles -DifferenceObject $actualRuntimeLocaleSpecificSupportFiles)
+if ($runtimeLocaleSpecificSupportDifference.Count -ne 0) {
+    throw "The jlink locale-specific runtime support-file set changed. Review it before updating the exact release exclusion."
+}
+foreach ($runtimeLocaleSpecificSupportFile in $reviewedRuntimeLocaleSpecificSupportFiles) {
+    Remove-Item -LiteralPath (Join-Path $runtimeLibraryDirectory $runtimeLocaleSpecificSupportFile) -Force
+}
+
+# OpenJDK ships jrt-fs.jar so external tools running on JDK 8 can inspect a
+# modular JDK's jimage. VaultKind ships no JDK 8 tooling and runs directly on
+# this Java runtime, whose java.base module already provides the jrt filesystem.
+# The jar is not on the engine classpath. Keep this exact and fail closed if a
+# future JDK changes the direct runtime-lib JAR set.
+$reviewedRuntimeToolingJars = @("jrt-fs.jar")
+$actualRuntimeToolingJars = @(Get-ChildItem -LiteralPath $runtimeLibraryDirectory -File -Filter "*.jar" | Select-Object -ExpandProperty Name)
+$runtimeToolingJarDifference = @(Compare-Object -ReferenceObject $reviewedRuntimeToolingJars -DifferenceObject $actualRuntimeToolingJars)
+if ($runtimeToolingJarDifference.Count -ne 0) {
+    throw "The jlink direct runtime-lib JAR set changed. Review it before updating the exact release exclusion."
+}
+foreach ($runtimeToolingJar in $reviewedRuntimeToolingJars) {
+    Remove-Item -LiteralPath (Join-Path $runtimeLibraryDirectory $runtimeToolingJar) -Force
+}
+
+# The standard JFR configuration profiles are loaded only when Flight Recorder
+# is explicitly started with the default/profile settings. VaultKind's fixed
+# engine command has no recording flags or JFR API caller, and the packaged
+# runtime has no jfr/jcmd tooling. Retain the JFR modules themselves, but keep
+# this profile-file exclusion exact and fail closed if the JDK changes it.
+$reviewedRuntimeFlightRecorderProfiles = @("default.jfc", "profile.jfc")
+$runtimeFlightRecorderDirectory = Join-Path $runtimeLibraryDirectory "jfr"
+$actualRuntimeFlightRecorderProfiles = @(Get-ChildItem -LiteralPath $runtimeFlightRecorderDirectory -File | Select-Object -ExpandProperty Name)
+$runtimeFlightRecorderProfileDifference = @(Compare-Object -ReferenceObject $reviewedRuntimeFlightRecorderProfiles -DifferenceObject $actualRuntimeFlightRecorderProfiles)
+if ($runtimeFlightRecorderProfileDifference.Count -ne 0) {
+    throw "The jlink Flight Recorder profile set changed. Review it before updating the exact release exclusion."
+}
+foreach ($runtimeFlightRecorderProfile in $reviewedRuntimeFlightRecorderProfiles) {
+    Remove-Item -LiteralPath (Join-Path $runtimeFlightRecorderDirectory $runtimeFlightRecorderProfile) -Force
+}
+Remove-Item -LiteralPath $runtimeFlightRecorderDirectory -Force
+
+# Java Sound reads this optional file only to override its default MIDI and
+# sampled-audio service providers. Neither the retained engine classes nor the
+# staged libraries reference Java Sound or declare a Java Sound provider. The
+# three VaultKind signature sounds are packaged separately and played by the
+# native WinUI/.NET MediaPlayer service. Retain java.desktop and its native
+# audio support, but keep this one configuration-file exclusion exact and fail
+# closed if the JDK changes the sound-named runtime configuration set.
+$reviewedRuntimeSoundConfigurationFiles = @("sound.properties")
+$runtimeConfigurationDirectory = Join-Path $runtimeTarget "conf"
+$actualRuntimeSoundConfigurationFiles = @(Get-ChildItem -LiteralPath $runtimeConfigurationDirectory -File -Filter "*sound*" | Select-Object -ExpandProperty Name)
+$runtimeSoundConfigurationDifference = @(Compare-Object -ReferenceObject $reviewedRuntimeSoundConfigurationFiles -DifferenceObject $actualRuntimeSoundConfigurationFiles)
+if ($runtimeSoundConfigurationDifference.Count -ne 0) {
+    throw "The jlink Java Sound configuration-file set changed. Review it before updating the exact release exclusion."
+}
+foreach ($runtimeSoundConfigurationFile in $reviewedRuntimeSoundConfigurationFiles) {
+    Remove-Item -LiteralPath (Join-Path $runtimeConfigurationDirectory $runtimeSoundConfigurationFile) -Force
+}
+
+# JAXP loads conf/jaxp.properties by default. This stricter file is explicitly a
+# template: Oracle documents copying it to a .properties file and selecting the
+# copy with -Djava.xml.config.file for compatibility testing. VaultKind's fixed
+# engine command does not set that property, and no staged class or library
+# references it. Retain the active jaxp.properties file, java.xml, its parser
+# implementations, and all live XML security limits. Keep the template-only
+# exclusion exact and fail closed if a future JDK changes this reviewed set.
+$reviewedRuntimeConfigurationTemplates = @("jaxp-strict.properties.template")
+$actualRuntimeConfigurationTemplates = @(Get-ChildItem -LiteralPath $runtimeConfigurationDirectory -File -Filter "*.template" | Select-Object -ExpandProperty Name)
+$runtimeConfigurationTemplateDifference = @(Compare-Object -ReferenceObject $reviewedRuntimeConfigurationTemplates -DifferenceObject $actualRuntimeConfigurationTemplates)
+if ($runtimeConfigurationTemplateDifference.Count -ne 0) {
+    throw "The jlink runtime configuration-template set changed. Review it before updating the exact release exclusion."
+}
+foreach ($runtimeConfigurationTemplate in $reviewedRuntimeConfigurationTemplates) {
+    Remove-Item -LiteralPath (Join-Path $runtimeConfigurationDirectory $runtimeConfigurationTemplate) -Force
+}
+
+# This jlink image contains no CDS archive, and normal startup diagnostics
+# already confirm that no shared archive is mapped. The classlist header and
+# Oracle's JVM documentation identify it only as input to an explicit
+# -Xshare:dump archive-creation operation, which VaultKind never performs.
+# Remove the orphaned dump-time input, but fail closed if a future JDK/jlink
+# starts producing a .jsa archive so its startup benefit is reviewed first.
+$runtimeSharedArchives = @(Get-ChildItem -LiteralPath $runtimeTarget -Recurse -File -Filter "*.jsa")
+if ($runtimeSharedArchives.Count -ne 0) {
+    throw "The jlink runtime now contains a CDS archive. Review it and classlist together before updating the release exclusion."
+}
+$reviewedRuntimeClassListFiles = @("classlist")
+$actualRuntimeClassListFiles = @(Get-ChildItem -LiteralPath $runtimeLibraryDirectory -File -Filter "classlist" | Select-Object -ExpandProperty Name)
+$runtimeClassListDifference = @(Compare-Object -ReferenceObject $reviewedRuntimeClassListFiles -DifferenceObject $actualRuntimeClassListFiles)
+if ($runtimeClassListDifference.Count -ne 0) {
+    throw "The jlink runtime class-list set changed. Review it before updating the exact release exclusion."
+}
+foreach ($runtimeClassListFile in $reviewedRuntimeClassListFiles) {
+    Remove-Item -LiteralPath (Join-Path $runtimeLibraryDirectory $runtimeClassListFile) -Force
+}
+
 $noticesTarget = Join-Path $stageRoot "Notices"
 New-Item -ItemType Directory -Path $noticesTarget | Out-Null
 Copy-Item -LiteralPath (Join-Path $repositoryRoot "LICENSE.txt") -Destination $noticesTarget
-$thirdPartyNotice = Join-Path $classesSource "THIRD-PARTY.txt"
-if (Test-Path -LiteralPath $thirdPartyNotice) {
-    Copy-Item -LiteralPath $thirdPartyNotice -Destination $noticesTarget
-}
+Copy-Item -LiteralPath $thirdPartyNoticeSource -Destination $noticesTarget
 
 if (-not [string]::IsNullOrWhiteSpace($SigningThumbprint)) {
     [xml]$projectXml = Get-Content -LiteralPath $project -Raw

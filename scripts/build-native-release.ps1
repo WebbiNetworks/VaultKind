@@ -161,6 +161,45 @@ function Remove-ReviewedClassPackage {
     }
 }
 
+function Remove-ReviewedClassSlice {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PackageName,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$RemovedClassFiles,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$RetainedClassFiles
+    )
+
+    $reviewedClassFiles = @($RemovedClassFiles) + @($RetainedClassFiles)
+    $duplicateReviewedFiles = @($reviewedClassFiles | Group-Object | Where-Object Count -gt 1)
+    if ($duplicateReviewedFiles.Count -ne 0) {
+        throw "The reviewed $PackageName class slice contains duplicate entries."
+    }
+
+    $packageSourceDirectory = Join-Path $classesSource ($PackageName.Replace('.', '\'))
+    $actualClassFiles = @(Get-ChildItem -LiteralPath $packageSourceDirectory -File -Filter "*.class" | ForEach-Object {
+        $_.FullName.Substring($classesSource.Length + 1)
+    })
+    $classDifference = @(Compare-Object -ReferenceObject $reviewedClassFiles -DifferenceObject $actualClassFiles)
+    if ($classDifference.Count -ne 0) {
+        throw "The inherited $PackageName class set changed. Re-run the native reachability audit before updating the exact release exclusion."
+    }
+
+    foreach ($relativeClassFile in $reviewedClassFiles) {
+        $stagedClassFile = Join-Path $classesTarget $relativeClassFile
+        if (-not (Test-Path -LiteralPath $stagedClassFile -PathType Leaf)) {
+            throw "The reviewed inherited class is missing from the stage: $relativeClassFile"
+        }
+    }
+
+    foreach ($relativeClassFile in $RemovedClassFiles) {
+        Remove-Item -LiteralPath (Join-Path $classesTarget $relativeClassFile) -Force
+    }
+}
+
 $reviewedDialogClassFiles = @(
     "org\cryptomator\ui\dialogs\Dialogs`$1.class",
     "org\cryptomator\ui\dialogs\Dialogs.class",
@@ -317,6 +356,687 @@ $reviewedLockWindowClassFiles = @(
     "org\cryptomator\ui\lock\LockWorkflow_Factory.class"
 )
 Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.lock" -ReviewedClassFiles $reviewedLockWindowClassFiles
+
+$reviewedChangePasswordWindowClassFiles = @(
+    "org\cryptomator\ui\changepassword\ChangePasswordComponent`$Builder.class",
+    "org\cryptomator\ui\changepassword\ChangePasswordComponent.class",
+    "org\cryptomator\ui\changepassword\ChangePasswordController.class",
+    "org\cryptomator\ui\changepassword\ChangePasswordController_Factory.class",
+    "org\cryptomator\ui\changepassword\ChangePasswordModule.class",
+    "org\cryptomator\ui\changepassword\ChangePasswordModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\changepassword\ChangePasswordModule_ProvideNewPasswordControllerFactory.class",
+    "org\cryptomator\ui\changepassword\ChangePasswordModule_ProvideStageFactory.class",
+    "org\cryptomator\ui\changepassword\ChangePasswordModule_ProvideUnlockSceneFactory.class",
+    "org\cryptomator\ui\changepassword\ChangePasswordScoped.class",
+    "org\cryptomator\ui\changepassword\ChangePasswordWindow.class",
+    "org\cryptomator\ui\changepassword\NewPasswordController.class",
+    "org\cryptomator\ui\changepassword\PasswordStrengthUtil.class",
+    "org\cryptomator\ui\changepassword\PasswordStrengthUtil_Factory.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.changepassword" -ReviewedClassFiles $reviewedChangePasswordWindowClassFiles
+
+$reviewedRecoveryKeyWindowClassFiles = @(
+    "org\cryptomator\ui\recoverykey\AutoCompleter.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyComponent`$Factory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyComponent.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyCreationController`$RecoveryKeyCreationTask.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyCreationController.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyCreationController_Factory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyDisplayController.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyExpertSettingsController.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyExpertSettingsController_Factory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule_BindRecoveryKeyValidateControllerFactory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule_ProvideCipherComboFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule_ProvideCipherComboFactory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule_ProvideNewPasswordControllerFactory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule_ProvideRecoveryKeyCreationSceneFactory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule_ProvideRecoveryKeyDisplayControllerFactory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule_ProvideRecoveryKeyExpertSettingsSceneFactory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule_ProvideRecoveryKeyOnboardingSceneFactory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule_ProvideRecoveryKeyPropertyFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule_ProvideRecoveryKeyPropertyFactory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule_ProvideRecoveryKeyRecoverSceneFactory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule_ProvideRecoveryKeyResetPasswordSceneFactory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule_ProvideRecoveryKeySuccessSceneFactory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule_ProvideShorteningThresholdFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule_ProvideShorteningThresholdFactory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule_ProvideStageFactory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyModule_VaultConfigFactory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyOnboardingController`$1.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyOnboardingController.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyOnboardingController_Factory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyRecoverController`$1.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyRecoverController.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyRecoverController_Factory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyResetPasswordController`$1.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyResetPasswordController`$ResetPasswordTask.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyResetPasswordController.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyResetPasswordController_Factory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyScoped.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeySuccessController.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeySuccessController_Factory.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyTasks`$1.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyTasks`$TaskAction.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyTasks.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyValidateController`$1.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyValidateController`$RecoveryKeyState.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyValidateController.class",
+    "org\cryptomator\ui\recoverykey\RecoveryKeyWindow.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.recoverykey" -ReviewedClassFiles $reviewedRecoveryKeyWindowClassFiles
+
+$reviewedAddVaultWizardClassFiles = @(
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideAddVaultStartSceneFactory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideChooseExistingVaultSceneFactory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideCreateNewVaultExpertSettingsSceneFactory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideCreateNewVaultLocationSceneFactory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideCreateNewVaultNameSceneFactory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideCreateNewVaultPasswordSceneFactory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideCreateNewVaultRecoveryKeySceneFactory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideCreateNewVaultSuccessSceneFactory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideNewPasswordControllerFactory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideRecoveryKeyDisplayControllerFactory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideRecoveryKeyFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideRecoveryKeyFactory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideShorteningThresholdFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideShorteningThresholdFactory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideStageFactory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideVaultFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideVaultFactory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideVaultNameFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideVaultNameFactory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideVaultPathFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultModule_ProvideVaultPathFactory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultStartController.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultStartController_Factory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultSuccessController.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultSuccessController_Factory.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultWizardComponent`$Builder.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultWizardComponent.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultWizardScoped.class",
+    "org\cryptomator\ui\addvaultwizard\AddVaultWizardWindow.class",
+    "org\cryptomator\ui\addvaultwizard\ChooseExistingVaultController`$1.class",
+    "org\cryptomator\ui\addvaultwizard\ChooseExistingVaultController.class",
+    "org\cryptomator\ui\addvaultwizard\ChooseExistingVaultController_Factory.class",
+    "org\cryptomator\ui\addvaultwizard\CreateNewVaultExpertSettingsController.class",
+    "org\cryptomator\ui\addvaultwizard\CreateNewVaultExpertSettingsController_Factory.class",
+    "org\cryptomator\ui\addvaultwizard\CreateNewVaultLocationController`$VaultPathStatus.class",
+    "org\cryptomator\ui\addvaultwizard\CreateNewVaultLocationController.class",
+    "org\cryptomator\ui\addvaultwizard\CreateNewVaultLocationController_Factory.class",
+    "org\cryptomator\ui\addvaultwizard\CreateNewVaultNameController.class",
+    "org\cryptomator\ui\addvaultwizard\CreateNewVaultNameController_Factory.class",
+    "org\cryptomator\ui\addvaultwizard\CreateNewVaultPasswordController.class",
+    "org\cryptomator\ui\addvaultwizard\CreateNewVaultPasswordController_Factory.class",
+    "org\cryptomator\ui\addvaultwizard\CreateNewVaultRecoveryKeyController.class",
+    "org\cryptomator\ui\addvaultwizard\CreateNewVaultRecoveryKeyController_Factory.class",
+    "org\cryptomator\ui\addvaultwizard\ReadmeGenerator.class",
+    "org\cryptomator\ui\addvaultwizard\ReadmeGenerator_Factory.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.addvaultwizard" -ReviewedClassFiles $reviewedAddVaultWizardClassFiles
+
+$reviewedForgetPasswordWindowClassFiles = @(
+    "org\cryptomator\ui\forgetpassword\ForgetPasswordComponent`$Builder.class",
+    "org\cryptomator\ui\forgetpassword\ForgetPasswordComponent.class",
+    "org\cryptomator\ui\forgetpassword\ForgetPasswordController.class",
+    "org\cryptomator\ui\forgetpassword\ForgetPasswordController_Factory.class",
+    "org\cryptomator\ui\forgetpassword\ForgetPasswordModule.class",
+    "org\cryptomator\ui\forgetpassword\ForgetPasswordModule_ProvideConfirmedPropertyFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\forgetpassword\ForgetPasswordModule_ProvideConfirmedPropertyFactory.class",
+    "org\cryptomator\ui\forgetpassword\ForgetPasswordModule_ProvideForgetPasswordSceneFactory.class",
+    "org\cryptomator\ui\forgetpassword\ForgetPasswordModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\forgetpassword\ForgetPasswordModule_ProvideStageFactory.class",
+    "org\cryptomator\ui\forgetpassword\ForgetPasswordScoped.class",
+    "org\cryptomator\ui\forgetpassword\ForgetPasswordWindow.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.forgetpassword" -ReviewedClassFiles $reviewedForgetPasswordWindowClassFiles
+
+$reviewedLegacyUpdaterClassFiles = @(
+    "org\cryptomator\updater\DelegatingHttpClient.class",
+    "org\cryptomator\updater\FallbackUpdateInfo.class",
+    "org\cryptomator\updater\FallbackUpdateMechanism.class",
+    "org\cryptomator\updater\FallbackUpdateMechanism_Factory.class",
+    "org\cryptomator\updater\UpdateChecker`$1.class",
+    "org\cryptomator\updater\UpdateChecker`$UpdateCheckState.class",
+    "org\cryptomator\updater\UpdateChecker`$UpdateCheckTask.class",
+    "org\cryptomator\updater\UpdateChecker.class",
+    "org\cryptomator\updater\UpdateCheckerHttpClient.class",
+    "org\cryptomator\updater\UpdateChecker_Factory.class",
+    "org\cryptomator\updater\UpdateService`$RunAllStepsTask.class",
+    "org\cryptomator\updater\UpdateService.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.updater" -ReviewedClassFiles $reviewedLegacyUpdaterClassFiles
+
+$reviewedConvertVaultWindowClassFiles = @(
+    "org\cryptomator\ui\convertvault\ConvertVaultComponent`$Factory.class",
+    "org\cryptomator\ui\convertvault\ConvertVaultComponent.class",
+    "org\cryptomator\ui\convertvault\ConvertVaultModule.class",
+    "org\cryptomator\ui\convertvault\ConvertVaultModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\convertvault\ConvertVaultModule_ProvideHubToPasswordConvertSceneFactory.class",
+    "org\cryptomator\ui\convertvault\ConvertVaultModule_ProvideHubToPasswordStartSceneFactory.class",
+    "org\cryptomator\ui\convertvault\ConvertVaultModule_ProvideHubToPasswordSuccessSceneFactory.class",
+    "org\cryptomator\ui\convertvault\ConvertVaultModule_ProvideNewPasswordControllerFactory.class",
+    "org\cryptomator\ui\convertvault\ConvertVaultModule_ProvideRecoveryKeyPropertyFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\convertvault\ConvertVaultModule_ProvideRecoveryKeyPropertyFactory.class",
+    "org\cryptomator\ui\convertvault\ConvertVaultModule_ProvideRecoveryKeyValidateControllerFactory.class",
+    "org\cryptomator\ui\convertvault\ConvertVaultModule_ProvideStageFactory.class",
+    "org\cryptomator\ui\convertvault\ConvertVaultModule_VaultConfigFactory.class",
+    "org\cryptomator\ui\convertvault\ConvertVaultScoped.class",
+    "org\cryptomator\ui\convertvault\ConvertVaultWindow.class",
+    "org\cryptomator\ui\convertvault\HubToPasswordConvertController.class",
+    "org\cryptomator\ui\convertvault\HubToPasswordConvertController_Factory.class",
+    "org\cryptomator\ui\convertvault\HubToPasswordStartController.class",
+    "org\cryptomator\ui\convertvault\HubToPasswordStartController_Factory.class",
+    "org\cryptomator\ui\convertvault\HubToPasswordSuccessController.class",
+    "org\cryptomator\ui\convertvault\HubToPasswordSuccessController_Factory.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.convertvault" -ReviewedClassFiles $reviewedConvertVaultWindowClassFiles
+
+$reviewedVaultOptionsWindowClassFiles = @(
+    "org\cryptomator\ui\vaultoptions\GeneralVaultOptionsController`$IdleTimeSecondsConverter.class",
+    "org\cryptomator\ui\vaultoptions\GeneralVaultOptionsController`$WhenUnlockedConverter.class",
+    "org\cryptomator\ui\vaultoptions\GeneralVaultOptionsController.class",
+    "org\cryptomator\ui\vaultoptions\GeneralVaultOptionsController_Factory.class",
+    "org\cryptomator\ui\vaultoptions\HubOptionsController.class",
+    "org\cryptomator\ui\vaultoptions\HubOptionsController_Factory.class",
+    "org\cryptomator\ui\vaultoptions\MasterkeyOptionsController.class",
+    "org\cryptomator\ui\vaultoptions\MasterkeyOptionsController_Factory.class",
+    "org\cryptomator\ui\vaultoptions\MountOptionsController`$MountServiceConverter.class",
+    "org\cryptomator\ui\vaultoptions\MountOptionsController`$NoDirSelectedException.class",
+    "org\cryptomator\ui\vaultoptions\MountOptionsController`$WinDriveLetterLabelConverter.class",
+    "org\cryptomator\ui\vaultoptions\MountOptionsController.class",
+    "org\cryptomator\ui\vaultoptions\MountOptionsController_Factory.class",
+    "org\cryptomator\ui\vaultoptions\SelectedVaultOptionsTab.class",
+    "org\cryptomator\ui\vaultoptions\VaultOptionsComponent`$Factory.class",
+    "org\cryptomator\ui\vaultoptions\VaultOptionsComponent.class",
+    "org\cryptomator\ui\vaultoptions\VaultOptionsController`$1.class",
+    "org\cryptomator\ui\vaultoptions\VaultOptionsController.class",
+    "org\cryptomator\ui\vaultoptions\VaultOptionsController_Factory.class",
+    "org\cryptomator\ui\vaultoptions\VaultOptionsModule.class",
+    "org\cryptomator\ui\vaultoptions\VaultOptionsModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\vaultoptions\VaultOptionsModule_ProvideSelectedTabPropertyFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\vaultoptions\VaultOptionsModule_ProvideSelectedTabPropertyFactory.class",
+    "org\cryptomator\ui\vaultoptions\VaultOptionsModule_ProvideStageFactory.class",
+    "org\cryptomator\ui\vaultoptions\VaultOptionsModule_ProvideVaultOptionsSceneFactory.class",
+    "org\cryptomator\ui\vaultoptions\VaultOptionsScoped.class",
+    "org\cryptomator\ui\vaultoptions\VaultOptionsWindow.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.vaultoptions" -ReviewedClassFiles $reviewedVaultOptionsWindowClassFiles
+
+$reviewedPreferencesWindowClassFiles = @(
+    "org\cryptomator\ui\preferences\AboutController.class",
+    "org\cryptomator\ui\preferences\AboutController_Factory.class",
+    "org\cryptomator\ui\preferences\GeneralPreferencesController`$NamedServiceConverter.class",
+    "org\cryptomator\ui\preferences\GeneralPreferencesController`$ServiceToSettingsConverter.class",
+    "org\cryptomator\ui\preferences\GeneralPreferencesController.class",
+    "org\cryptomator\ui\preferences\GeneralPreferencesController_Factory.class",
+    "org\cryptomator\ui\preferences\InterfacePreferencesController`$UiThemeConverter.class",
+    "org\cryptomator\ui\preferences\InterfacePreferencesController.class",
+    "org\cryptomator\ui\preferences\InterfacePreferencesController_Factory.class",
+    "org\cryptomator\ui\preferences\PreferencesComponent`$Builder.class",
+    "org\cryptomator\ui\preferences\PreferencesComponent.class",
+    "org\cryptomator\ui\preferences\PreferencesController`$1.class",
+    "org\cryptomator\ui\preferences\PreferencesController.class",
+    "org\cryptomator\ui\preferences\PreferencesController_Factory.class",
+    "org\cryptomator\ui\preferences\PreferencesModule.class",
+    "org\cryptomator\ui\preferences\PreferencesModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\preferences\PreferencesModule_ProvidePreferencesSceneFactory.class",
+    "org\cryptomator\ui\preferences\PreferencesModule_ProvideSelectedTabPropertyFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\preferences\PreferencesModule_ProvideSelectedTabPropertyFactory.class",
+    "org\cryptomator\ui\preferences\PreferencesModule_ProvideStageFactory.class",
+    "org\cryptomator\ui\preferences\PreferencesScoped.class",
+    "org\cryptomator\ui\preferences\PreferencesWindow.class",
+    "org\cryptomator\ui\preferences\SelectedPreferencesTab.class",
+    "org\cryptomator\ui\preferences\UpdatesPreferencesController`$1.class",
+    "org\cryptomator\ui\preferences\UpdatesPreferencesController.class",
+    "org\cryptomator\ui\preferences\UpdatesPreferencesController_Factory.class",
+    "org\cryptomator\ui\preferences\VolumePreferencesController`$MountServiceConverter.class",
+    "org\cryptomator\ui\preferences\VolumePreferencesController.class",
+    "org\cryptomator\ui\preferences\VolumePreferencesController_Factory.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.preferences" -ReviewedClassFiles $reviewedPreferencesWindowClassFiles
+
+$reviewedUnlockWindowClassFiles = @(
+    "org\cryptomator\ui\unlock\UnlockComponent`$Factory.class",
+    "org\cryptomator\ui\unlock\UnlockComponent.class",
+    "org\cryptomator\ui\unlock\UnlockInvalidMountPointController`$ButtonAction.class",
+    "org\cryptomator\ui\unlock\UnlockInvalidMountPointController`$ExceptionType.class",
+    "org\cryptomator\ui\unlock\UnlockInvalidMountPointController.class",
+    "org\cryptomator\ui\unlock\UnlockInvalidMountPointController_Factory.class",
+    "org\cryptomator\ui\unlock\UnlockModule.class",
+    "org\cryptomator\ui\unlock\UnlockModule_IllegalMountPointExceptionFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\unlock\UnlockModule_IllegalMountPointExceptionFactory.class",
+    "org\cryptomator\ui\unlock\UnlockModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\unlock\UnlockModule_ProvideInvalidMountPointSceneFactory.class",
+    "org\cryptomator\ui\unlock\UnlockModule_ProvideKeyLoadingStrategyFactory.class",
+    "org\cryptomator\ui\unlock\UnlockModule_ProvideRestartRequiredSceneFactory.class",
+    "org\cryptomator\ui\unlock\UnlockModule_ProvideStageFactory.class",
+    "org\cryptomator\ui\unlock\UnlockModule_ProvideUnlockSuccessSceneFactory.class",
+    "org\cryptomator\ui\unlock\UnlockRequiresRestartController.class",
+    "org\cryptomator\ui\unlock\UnlockRequiresRestartController_Factory.class",
+    "org\cryptomator\ui\unlock\UnlockScoped.class",
+    "org\cryptomator\ui\unlock\UnlockSuccessController.class",
+    "org\cryptomator\ui\unlock\UnlockSuccessController_Factory.class",
+    "org\cryptomator\ui\unlock\UnlockWindow.class",
+    "org\cryptomator\ui\unlock\UnlockWorkflow`$1.class",
+    "org\cryptomator\ui\unlock\UnlockWorkflow.class",
+    "org\cryptomator\ui\unlock\UnlockWorkflow_Factory.class"
+)
+$retainedUnlockCompatibilityClassFiles = @(
+    "org\cryptomator\ui\unlock\UnlockCancelledException.class"
+)
+Remove-ReviewedClassSlice -PackageName "org.cryptomator.ui.unlock" -RemovedClassFiles $reviewedUnlockWindowClassFiles -RetainedClassFiles $retainedUnlockCompatibilityClassFiles
+
+$reviewedNotificationWindowClassFiles = @(
+    "org\cryptomator\ui\notification\NotificationComponent`$Factory.class",
+    "org\cryptomator\ui\notification\NotificationComponent.class",
+    "org\cryptomator\ui\notification\NotificationController.class",
+    "org\cryptomator\ui\notification\NotificationController_Factory.class",
+    "org\cryptomator\ui\notification\NotificationModule`$1.class",
+    "org\cryptomator\ui\notification\NotificationModule.class",
+    "org\cryptomator\ui\notification\NotificationModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\notification\NotificationModule_ProvideNotificationSceneFactory.class",
+    "org\cryptomator\ui\notification\NotificationModule_ProvideStageFactory.class",
+    "org\cryptomator\ui\notification\NotificationScoped.class",
+    "org\cryptomator\ui\notification\NotificationWindow.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.notification" -ReviewedClassFiles $reviewedNotificationWindowClassFiles
+
+$reviewedEventViewWindowClassFiles = @(
+    "org\cryptomator\ui\eventview\EventListCellController.class",
+    "org\cryptomator\ui\eventview\EventListCellController_Factory.class",
+    "org\cryptomator\ui\eventview\EventListCellFactory`$Cell.class",
+    "org\cryptomator\ui\eventview\EventListCellFactory.class",
+    "org\cryptomator\ui\eventview\EventListCellFactory_Factory.class",
+    "org\cryptomator\ui\eventview\EventViewComponent`$Factory.class",
+    "org\cryptomator\ui\eventview\EventViewComponent.class",
+    "org\cryptomator\ui\eventview\EventViewController`$VaultConverter.class",
+    "org\cryptomator\ui\eventview\EventViewController.class",
+    "org\cryptomator\ui\eventview\EventViewController_Factory.class",
+    "org\cryptomator\ui\eventview\EventViewModule.class",
+    "org\cryptomator\ui\eventview\EventViewModule_ProvideEventViewerSceneFactory.class",
+    "org\cryptomator\ui\eventview\EventViewModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\eventview\EventViewModule_ProvideStageFactory.class",
+    "org\cryptomator\ui\eventview\EventViewScoped.class",
+    "org\cryptomator\ui\eventview\EventViewWindow.class",
+    "org\cryptomator\ui\eventview\UpdateEventViewController.class",
+    "org\cryptomator\ui\eventview\UpdateEventViewController_Factory`$InstanceHolder.class",
+    "org\cryptomator\ui\eventview\UpdateEventViewController_Factory.class"
+)
+Remove-ReviewedClassPackage -PackageName "org.cryptomator.ui.eventview" -ReviewedClassFiles $reviewedEventViewWindowClassFiles
+
+$reviewedHealthPresentationClassFiles = @(
+    "org\cryptomator\ui\health\CheckListCellController.class",
+    "org\cryptomator\ui\health\CheckListCellController_Factory`$InstanceHolder.class",
+    "org\cryptomator\ui\health\CheckListCellController_Factory.class",
+    "org\cryptomator\ui\health\CheckListCellFactory`$Cell.class",
+    "org\cryptomator\ui\health\CheckListCellFactory.class",
+    "org\cryptomator\ui\health\CheckListCellFactory_Factory.class",
+    "org\cryptomator\ui\health\CheckStateIconView`$1.class",
+    "org\cryptomator\ui\health\CheckStateIconView.class",
+    "org\cryptomator\ui\health\ResultListCellFactory`$Cell.class",
+    "org\cryptomator\ui\health\ResultListCellFactory.class",
+    "org\cryptomator\ui\health\ResultListCellFactory_Factory.class"
+)
+$retainedHealthFunctionalClassFiles = @(
+    "org\cryptomator\ui\health\Check`$CheckState.class",
+    "org\cryptomator\ui\health\Check.class",
+    "org\cryptomator\ui\health\CheckDetailController`$1.class",
+    "org\cryptomator\ui\health\CheckDetailController`$FixStateStringifier.class",
+    "org\cryptomator\ui\health\CheckDetailController`$SeverityStringifier.class",
+    "org\cryptomator\ui\health\CheckDetailController.class",
+    "org\cryptomator\ui\health\CheckDetailController_Factory.class",
+    "org\cryptomator\ui\health\CheckExecutor`$CheckTask.class",
+    "org\cryptomator\ui\health\CheckExecutor.class",
+    "org\cryptomator\ui\health\CheckExecutor_Factory.class",
+    "org\cryptomator\ui\health\CheckListController.class",
+    "org\cryptomator\ui\health\CheckListController_Factory.class",
+    "org\cryptomator\ui\health\HealthCheckComponent`$Builder.class",
+    "org\cryptomator\ui\health\HealthCheckComponent.class",
+    "org\cryptomator\ui\health\HealthCheckModule.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideAvailableChecksFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideAvailableChecksFactory.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideHealthCheckListSceneFactory.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideHealthStartSceneFactory.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideKeyLoadingStrategyFactory.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideMasterkeyRefFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideMasterkeyRefFactory.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideSelectedCheckFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideSelectedCheckFactory.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideStageFactory.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideUnlockWindowFactory.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideVaultConfigRefFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideVaultConfigRefFactory.class",
+    "org\cryptomator\ui\health\HealthCheckModule_ProvideWindowShowingChangeListenerFactory.class",
+    "org\cryptomator\ui\health\HealthCheckScoped.class",
+    "org\cryptomator\ui\health\HealthCheckWindow.class",
+    "org\cryptomator\ui\health\ReportWriter`$1.class",
+    "org\cryptomator\ui\health\ReportWriter.class",
+    "org\cryptomator\ui\health\ReportWriter_Factory.class",
+    "org\cryptomator\ui\health\Result`$FixState.class",
+    "org\cryptomator\ui\health\Result.class",
+    "org\cryptomator\ui\health\ResultFixApplier`$FixFailedException.class",
+    "org\cryptomator\ui\health\ResultFixApplier.class",
+    "org\cryptomator\ui\health\ResultFixApplier_Factory.class",
+    "org\cryptomator\ui\health\ResultListCellController`$1.class",
+    "org\cryptomator\ui\health\ResultListCellController.class",
+    "org\cryptomator\ui\health\ResultListCellController_Factory.class",
+    "org\cryptomator\ui\health\StartController`$LoadingFailedException.class",
+    "org\cryptomator\ui\health\StartController.class",
+    "org\cryptomator\ui\health\StartController_Factory.class"
+)
+Remove-ReviewedClassSlice -PackageName "org.cryptomator.ui.health" -RemovedClassFiles $reviewedHealthPresentationClassFiles -RetainedClassFiles $retainedHealthFunctionalClassFiles
+
+$reviewedMainWindowPresentationClassFiles = @(
+    "org\cryptomator\ui\mainwindow\ActivityController.class",
+    "org\cryptomator\ui\mainwindow\ActivityController_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultListCellController`$1.class",
+    "org\cryptomator\ui\mainwindow\VaultListCellController.class",
+    "org\cryptomator\ui\mainwindow\VaultListCellController_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultListCellFactory`$Cell.class",
+    "org\cryptomator\ui\mainwindow\VaultListCellFactory.class",
+    "org\cryptomator\ui\mainwindow\VaultListCellFactory_Factory.class"
+)
+$retainedMainWindowWorkflowClassFiles = @(
+    "org\cryptomator\ui\mainwindow\DiagnosticCase`$Category.class",
+    "org\cryptomator\ui\mainwindow\DiagnosticCase`$Confidence.class",
+    "org\cryptomator\ui\mainwindow\DiagnosticCase`$DiagnosticMatch.class",
+    "org\cryptomator\ui\mainwindow\DiagnosticCase.class",
+    "org\cryptomator\ui\mainwindow\DiagnosticCatalog.class",
+    "org\cryptomator\ui\mainwindow\HowItWorksController.class",
+    "org\cryptomator\ui\mainwindow\HowItWorksController_Factory.class",
+    "org\cryptomator\ui\mainwindow\MainWindow.class",
+    "org\cryptomator\ui\mainwindow\MainWindowComponent`$Builder.class",
+    "org\cryptomator\ui\mainwindow\MainWindowComponent.class",
+    "org\cryptomator\ui\mainwindow\MainWindowController`$1.class",
+    "org\cryptomator\ui\mainwindow\MainWindowController.class",
+    "org\cryptomator\ui\mainwindow\MainWindowController_Factory.class",
+    "org\cryptomator\ui\mainwindow\MainWindowModule.class",
+    "org\cryptomator\ui\mainwindow\MainWindowModule_ProvideEmbeddedEventFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\mainwindow\MainWindowModule_ProvideEmbeddedPreferencesWindowFactory.class",
+    "org\cryptomator\ui\mainwindow\MainWindowModule_ProvideErrorStageFactory.class",
+    "org\cryptomator\ui\mainwindow\MainWindowModule_ProvideFxmlLoaderFactoryFactory.class",
+    "org\cryptomator\ui\mainwindow\MainWindowModule_ProvideMainSceneFactory.class",
+    "org\cryptomator\ui\mainwindow\MainWindowModule_ProvideMainWindowFactory.class",
+    "org\cryptomator\ui\mainwindow\MainWindowModule_ProvideSelectedPreferencesTabFactory.class",
+    "org\cryptomator\ui\mainwindow\MainWindowModule_ProvideSelectedVaultFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\mainwindow\MainWindowModule_ProvideSelectedVaultFactory.class",
+    "org\cryptomator\ui\mainwindow\MainWindowNavigation`$Destination.class",
+    "org\cryptomator\ui\mainwindow\MainWindowNavigation.class",
+    "org\cryptomator\ui\mainwindow\MainWindowNavigation_Factory`$InstanceHolder.class",
+    "org\cryptomator\ui\mainwindow\MainWindowNavigation_Factory.class",
+    "org\cryptomator\ui\mainwindow\MainWindowSceneFactory.class",
+    "org\cryptomator\ui\mainwindow\MainWindowSceneFactory_Factory.class",
+    "org\cryptomator\ui\mainwindow\MainWindowScoped.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailController`$1.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailController.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailController_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailLockedController.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailLockedController_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailMissingVaultController.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailMissingVaultController_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailNeedsMigrationController.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailNeedsMigrationController_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailUnknownErrorController.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailUnknownErrorController_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailUnlockedController.class",
+    "org\cryptomator\ui\mainwindow\VaultDetailUnlockedController_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultListContextMenuController.class",
+    "org\cryptomator\ui\mainwindow\VaultListContextMenuController_Factory.class",
+    "org\cryptomator\ui\mainwindow\VaultListController`$1.class",
+    "org\cryptomator\ui\mainwindow\VaultListController.class",
+    "org\cryptomator\ui\mainwindow\VaultListController_Factory.class",
+    "org\cryptomator\ui\mainwindow\WelcomeController.class",
+    "org\cryptomator\ui\mainwindow\WelcomeController_Factory.class"
+)
+Remove-ReviewedClassSlice -PackageName "org.cryptomator.ui.mainwindow" -RemovedClassFiles $reviewedMainWindowPresentationClassFiles -RetainedClassFiles $retainedMainWindowWorkflowClassFiles
+
+$reviewedFxApplicationRootClassFiles = @(
+    "org\cryptomator\ui\fxapp\FxApplication.class",
+    "org\cryptomator\ui\fxapp\FxApplication_Factory.class",
+    "org\cryptomator\ui\fxapp\FxApplicationComponent`$Builder.class",
+    "org\cryptomator\ui\fxapp\FxApplicationComponent.class",
+    "org\cryptomator\ui\fxapp\FxApplicationModule.class",
+    "org\cryptomator\ui\fxapp\FxApplicationModule_ProvideAppearanceProviderFactory`$InstanceHolder.class",
+    "org\cryptomator\ui\fxapp\FxApplicationModule_ProvideAppearanceProviderFactory.class",
+    "org\cryptomator\ui\fxapp\FxApplicationModule_ProvideEventViewComponentFactory.class",
+    "org\cryptomator\ui\fxapp\FxApplicationModule_ProvideQuitComponentFactory.class",
+    "org\cryptomator\ui\fxapp\FxApplicationModule_ProvideTrayMenuComponentFactory.class",
+    "org\cryptomator\ui\fxapp\FxApplicationStyle`$1.class",
+    "org\cryptomator\ui\fxapp\FxApplicationStyle.class",
+    "org\cryptomator\ui\fxapp\FxApplicationStyle_Factory.class"
+)
+$retainedFxApplicationOperationalClassFiles = @(
+    "org\cryptomator\ui\fxapp\AppLaunchEventHandler`$1.class",
+    "org\cryptomator\ui\fxapp\AppLaunchEventHandler.class",
+    "org\cryptomator\ui\fxapp\AppLaunchEventHandler_Factory.class",
+    "org\cryptomator\ui\fxapp\AutoUnlocker.class",
+    "org\cryptomator\ui\fxapp\AutoUnlocker_Factory.class",
+    "org\cryptomator\ui\fxapp\ExitingQuitResponse.class",
+    "org\cryptomator\ui\fxapp\FxApplicationScoped.class",
+    "org\cryptomator\ui\fxapp\FxApplicationTerminator`$NoopQuitResponse.class",
+    "org\cryptomator\ui\fxapp\FxApplicationTerminator.class",
+    "org\cryptomator\ui\fxapp\FxApplicationTerminator_Factory.class",
+    "org\cryptomator\ui\fxapp\FxApplicationWindows`$CachedLazy.class",
+    "org\cryptomator\ui\fxapp\FxApplicationWindows.class",
+    "org\cryptomator\ui\fxapp\FxApplicationWindows_Factory.class",
+    "org\cryptomator\ui\fxapp\FxFSEventList.class",
+    "org\cryptomator\ui\fxapp\FxFSEventList_Factory.class",
+    "org\cryptomator\ui\fxapp\FxNotificationManager.class",
+    "org\cryptomator\ui\fxapp\FxNotificationManager_Factory.class",
+    "org\cryptomator\ui\fxapp\JfxRevealPathService.class",
+    "org\cryptomator\ui\fxapp\JfxUiAppearanceProvider`$1.class",
+    "org\cryptomator\ui\fxapp\JfxUiAppearanceProvider.class",
+    "org\cryptomator\ui\fxapp\PrimaryStage.class"
+)
+Remove-ReviewedClassSlice -PackageName "org.cryptomator.ui.fxapp" -RemovedClassFiles $reviewedFxApplicationRootClassFiles -RetainedClassFiles $retainedFxApplicationOperationalClassFiles
+
+$reviewedLegacyLauncherClassFiles = @(
+    "org\cryptomator\launcher\AppLaunchEvent.class",
+    "org\cryptomator\launcher\AppLaunchEvent`$EventType.class",
+    "org\cryptomator\launcher\Cryptomator.class",
+    "org\cryptomator\launcher\Cryptomator`$MainApp.class",
+    "org\cryptomator\launcher\Cryptomator_Factory.class",
+    "org\cryptomator\launcher\CryptomatorComponent.class",
+    "org\cryptomator\launcher\CryptomatorComponent`$Factory.class",
+    "org\cryptomator\launcher\CryptomatorModule.class",
+    "org\cryptomator\launcher\CryptomatorModule_ProvideAutostartProviderFactory.class",
+    "org\cryptomator\launcher\CryptomatorModule_ProvideAutostartProviderFactory`$InstanceHolder.class",
+    "org\cryptomator\launcher\CryptomatorModule_ProvideFileOpenRequestsFactory.class",
+    "org\cryptomator\launcher\CryptomatorModule_ProvideFileOpenRequestsFactory`$InstanceHolder.class",
+    "org\cryptomator\launcher\CryptomatorModule_ProvideLocalizationFactory.class",
+    "org\cryptomator\launcher\CryptomatorModule_ProvideLocalizationFactory`$InstanceHolder.class",
+    "org\cryptomator\launcher\CryptomatorModule_ProvideTrayIntegrationProviderFactory.class",
+    "org\cryptomator\launcher\CryptomatorModule_ProvideTrayIntegrationProviderFactory`$InstanceHolder.class",
+    "org\cryptomator\launcher\CryptomatorModule_ProvideVaultMutationDispatcherFactory.class",
+    "org\cryptomator\launcher\CryptomatorModule_ProvideVaultMutationDispatcherFactory`$InstanceHolder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$AddVaultWizardComponentBuilder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$AddVaultWizardComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$AddVaultWizardComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ChangePasswordComponentBuilder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ChangePasswordComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ChangePasswordComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ConvertVaultComponentFactory.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ConvertVaultComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ConvertVaultComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$CryptomatorComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$CryptomatorComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$DecryptNameComponentFactory.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$DecryptNameComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$DecryptNameComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ErrorComponentFactory.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ErrorComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ErrorComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$EventViewComponentFactory.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$EventViewComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$EventViewComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$Factory.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$FxApplicationComponentBuilder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$FxApplicationComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$FxApplicationComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$HealthCheckComponentBuilder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$HealthCheckComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$HealthCheckComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$LockComponentFactory.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$LockComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$LockComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$MainWindowComponentBuilder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$MainWindowComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$MainWindowComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$MigrationComponentBuilder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$MigrationComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$MigrationComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$NotificationComponentFactory.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$NotificationComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$NotificationComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocuf_ForgetPasswordComponentBuilder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocuf_ForgetPasswordComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocuf_ForgetPasswordComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocuf2_ForgetPasswordComponentBuilder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocuf2_ForgetPasswordComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocuf2_ForgetPasswordComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocuf3_ForgetPasswordComponentBuilder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocuf3_ForgetPasswordComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocuf3_ForgetPasswordComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocuk_KeyLoadingComponentFactory.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocuk_KeyLoadingComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocuk_KeyLoadingComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocuk2_KeyLoadingComponentFactory.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocuk2_KeyLoadingComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocuk2_KeyLoadingComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocukm_ChooseMasterkeyFileComponentBuilder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocukm_ChooseMasterkeyFileComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocukm_ChooseMasterkeyFileComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocukm_PassphraseEntryComponentBuilder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocukm_PassphraseEntryComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocukm_PassphraseEntryComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocukm2_ChooseMasterkeyFileComponentBuilder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocukm2_ChooseMasterkeyFileComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocukm2_ChooseMasterkeyFileComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocukm2_PassphraseEntryComponentBuilder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocukm2_PassphraseEntryComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocukm2_PassphraseEntryComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocur_RecoveryKeyComponentFactory.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocur_RecoveryKeyComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocur_RecoveryKeyComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocur2_RecoveryKeyComponentFactory.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocur2_RecoveryKeyComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocur2_RecoveryKeyComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocur3_RecoveryKeyComponentFactory.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocur3_RecoveryKeyComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocur3_RecoveryKeyComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocur4_RecoveryKeyComponentFactory.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocur4_RecoveryKeyComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ocur4_RecoveryKeyComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$PreferencesComponentBuilder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$PreferencesComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$PreferencesComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$QuitComponentBuilder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$QuitComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$QuitComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ShareVaultComponentFactory.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ShareVaultComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$ShareVaultComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$TrayMenuComponentBuilder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$TrayMenuComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$TrayMenuComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$UnlockComponentFactory.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$UnlockComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$UnlockComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$UpdateReminderComponentFactory.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$UpdateReminderComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$UpdateReminderComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$VaultComponentFactory.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$VaultComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$VaultComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$VaultOptionsComponentFactory.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$VaultOptionsComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$VaultOptionsComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$VaultStatisticsComponentBuilder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$VaultStatisticsComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$VaultStatisticsComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$WrongFileAlertComponentBuilder.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$WrongFileAlertComponentImpl.class",
+    "org\cryptomator\launcher\DaggerCryptomatorComponent`$WrongFileAlertComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\FileOpenRequestHandler.class",
+    "org\cryptomator\launcher\FileOpenRequestHandler_Factory.class",
+    "org\cryptomator\launcher\IpcMessageHandler.class",
+    "org\cryptomator\launcher\IpcMessageHandler_Factory.class"
+)
+$retainedNativeLauncherClassFiles = @(
+    "org\cryptomator\launcher\AdminPropertiesFactory.class",
+    "org\cryptomator\launcher\DaggerNativeBackendComponent.class",
+    "org\cryptomator\launcher\DaggerNativeBackendComponent`$Builder.class",
+    "org\cryptomator\launcher\DaggerNativeBackendComponent`$NativeBackendComponentImpl.class",
+    "org\cryptomator\launcher\DaggerNativeBackendComponent`$NativeBackendComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\DaggerNativeBackendComponent`$VaultComponentFactory.class",
+    "org\cryptomator\launcher\DaggerNativeBackendComponent`$VaultComponentImpl.class",
+    "org\cryptomator\launcher\DaggerNativeBackendComponent`$VaultComponentImpl`$SwitchingProvider.class",
+    "org\cryptomator\launcher\EventualLogger.class",
+    "org\cryptomator\launcher\NativeBackendComponent.class",
+    "org\cryptomator\launcher\NativeBackendMain.class",
+    "org\cryptomator\launcher\NativeBackendModule.class",
+    "org\cryptomator\launcher\NativeBackendModule`$1.class",
+    "org\cryptomator\launcher\NativeBackendModule_ProvideLocalizationFactory.class",
+    "org\cryptomator\launcher\NativeBackendModule_ProvideLocalizationFactory`$InstanceHolder.class",
+    "org\cryptomator\launcher\NativeBackendModule_ProvideVaultListFactory.class",
+    "org\cryptomator\launcher\NativeBackendModule_ProvideVaultListFactory`$InstanceHolder.class",
+    "org\cryptomator\launcher\NativeBackendModule_ProvideVaultListPersistenceFactory.class",
+    "org\cryptomator\launcher\NativeBackendModule_ProvideVaultMutationDispatcherFactory.class",
+    "org\cryptomator\launcher\NativeBackendModule_ProvideVaultMutationDispatcherFactory`$InstanceHolder.class"
+)
+Remove-ReviewedClassSlice -PackageName "org.cryptomator.launcher" -RemovedClassFiles $reviewedLegacyLauncherClassFiles -RetainedClassFiles $retainedNativeLauncherClassFiles
+
+$reviewedCommonPresentationClassFiles = @(
+    "org\cryptomator\ui\common\FontLoader`$FontLoaderException.class",
+    "org\cryptomator\ui\common\FontLoader.class",
+    "org\cryptomator\ui\common\SystemBarUtil`$Placement.class",
+    "org\cryptomator\ui\common\SystemBarUtil.class"
+)
+$retainedCommonWorkflowClassFiles = @(
+    "org\cryptomator\ui\common\Animations`$1.class",
+    "org\cryptomator\ui\common\Animations.class",
+    "org\cryptomator\ui\common\AutoAnimator`$Builder.class",
+    "org\cryptomator\ui\common\AutoAnimator.class",
+    "org\cryptomator\ui\common\DefaultSceneFactory.class",
+    "org\cryptomator\ui\common\DefaultSceneFactory_Factory`$InstanceHolder.class",
+    "org\cryptomator\ui\common\DefaultSceneFactory_Factory.class",
+    "org\cryptomator\ui\common\FxController.class",
+    "org\cryptomator\ui\common\FxControllerKey.class",
+    "org\cryptomator\ui\common\FxmlFile.class",
+    "org\cryptomator\ui\common\FxmlLoaderFactory.class",
+    "org\cryptomator\ui\common\FxmlScene.class",
+    "org\cryptomator\ui\common\MicroInteractionSupport.class",
+    "org\cryptomator\ui\common\StageFactory.class",
+    "org\cryptomator\ui\common\StageFactory_Factory.class",
+    "org\cryptomator\ui\common\StageInitializer.class",
+    "org\cryptomator\ui\common\StageInitializer_Factory`$InstanceHolder.class",
+    "org\cryptomator\ui\common\StageInitializer_Factory.class",
+    "org\cryptomator\ui\common\Tasks`$ErrorHandler.class",
+    "org\cryptomator\ui\common\Tasks`$RestartingService.class",
+    "org\cryptomator\ui\common\Tasks`$TaskBuilder.class",
+    "org\cryptomator\ui\common\Tasks`$TaskImpl.class",
+    "org\cryptomator\ui\common\Tasks`$VoidCallable.class",
+    "org\cryptomator\ui\common\Tasks.class",
+    "org\cryptomator\ui\common\VaultKindUrls.class",
+    "org\cryptomator\ui\common\VaultService`$LockVaultTask.class",
+    "org\cryptomator\ui\common\VaultService`$RevealVaultTask.class",
+    "org\cryptomator\ui\common\VaultService`$WaitForTasksTask.class",
+    "org\cryptomator\ui\common\VaultService.class",
+    "org\cryptomator\ui\common\VaultService_Factory.class",
+    "org\cryptomator\ui\common\WeakBindings`$1.class",
+    "org\cryptomator\ui\common\WeakBindings`$2.class",
+    "org\cryptomator\ui\common\WeakBindings`$3.class",
+    "org\cryptomator\ui\common\WeakBindings`$4.class",
+    "org\cryptomator\ui\common\WeakBindings.class",
+    "org\cryptomator\ui\common\WindowsCaptionSupport.class"
+)
+Remove-ReviewedClassSlice -PackageName "org.cryptomator.ui.common" -RemovedClassFiles $reviewedCommonPresentationClassFiles -RetainedClassFiles $retainedCommonWorkflowClassFiles
 
 $requiredRootResources = @("logback-native.xml", "module-info.class", "THIRD-PARTY.txt")
 foreach ($resourceName in $requiredRootResources) {

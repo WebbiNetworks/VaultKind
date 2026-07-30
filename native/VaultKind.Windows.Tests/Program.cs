@@ -9,6 +9,16 @@ if (args is ["--probe-socket", var socketPath])
     return await ProbeBundledEngineAsync(socketPath);
 }
 
+if (args is ["--restore-vault-registration", var restoreSocketPath, var displayName, var vaultPath])
+{
+    return await RestoreVaultRegistrationAsync(restoreSocketPath, displayName, vaultPath);
+}
+
+if (args is ["--inspect-live-engine", var inspectSocketPath])
+{
+    return await InspectLiveEngineAsync(inspectSocketPath);
+}
+
 (string Kind, string? CaseId, bool Expected)[] doctorCases =
 [
     ("attention", "VK-1003", true),
@@ -90,6 +100,14 @@ foreach ((string? reported, string expected, bool matches) in engineProfileCases
     }
 
     Console.Error.WriteLine($"FAIL: engine profile={reported ?? "<null>"}, expected={expected}, match={matches}, actual={actual}");
+    failures++;
+}
+
+string persistentSettingsPath = JavaVaultEngineHost.ResolvePersistentSettingsPath(Path.Combine("C:\\", "Users", "Greg", "AppData", "Local"));
+string expectedPersistentSettingsPath = Path.Combine("C:\\", "Users", "Greg", "AppData", "Local", "VaultKind", "engine", "settings.json");
+if (!persistentSettingsPath.Equals(expectedPersistentSettingsPath, StringComparison.OrdinalIgnoreCase) || persistentSettingsPath.Contains("target", StringComparison.OrdinalIgnoreCase))
+{
+    Console.Error.WriteLine($"FAIL: persistent engine settings path={persistentSettingsPath}, expected={expectedPersistentSettingsPath}");
     failures++;
 }
 
@@ -475,7 +493,7 @@ if (failures > 0)
     return 1;
 }
 
-Console.WriteLine($"Passed {doctorCases.Length + lockFailureCases.Length + keyboardNavigationCases.Length + engineProfileCases.Length + developmentClasspathCases.Length + backendIdentityCases.Length + vaultStateCountCases.Length + keyboardDocumentCases.Length + activityPersistenceChecks + preferencePersistenceChecks + doctorSummaryPersistenceChecks + learningProgressPersistenceChecks + windowPlacementPersistenceChecks} native policy, persistence, keyboard navigation, documentation, backend identity, profile, preference, and workflow checks.");
+Console.WriteLine($"Passed {doctorCases.Length + lockFailureCases.Length + keyboardNavigationCases.Length + engineProfileCases.Length + 1 + developmentClasspathCases.Length + backendIdentityCases.Length + vaultStateCountCases.Length + keyboardDocumentCases.Length + activityPersistenceChecks + preferencePersistenceChecks + doctorSummaryPersistenceChecks + learningProgressPersistenceChecks + windowPlacementPersistenceChecks} native policy, persistence, keyboard navigation, documentation, backend identity, profile, preference, and workflow checks.");
 return 0;
 
 static void DeleteTestDirectory(string path)
@@ -649,6 +667,96 @@ static async Task<int> ProbeBundledEngineAsync(string socketPath)
     catch (Exception exception)
     {
         Console.Error.WriteLine($"Bundled engine protocol probe failed: {exception.Message}");
+        return 1;
+    }
+}
+
+static async Task<int> RestoreVaultRegistrationAsync(string socketPath, string displayName, string vaultPath)
+{
+    try
+    {
+        string resolvedVaultPath = Path.GetFullPath(vaultPath);
+        if (!File.Exists(Path.Combine(resolvedVaultPath, "vault.cryptomator"))
+            || !Directory.Exists(Path.Combine(resolvedVaultPath, "d")))
+        {
+            throw new InvalidDataException("The requested encrypted vault structure is incomplete.");
+        }
+
+        using var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        await socket.ConnectAsync(new UnixDomainSocketEndPoint(socketPath), timeout.Token);
+        await using var stream = new NetworkStream(socket, ownsSocket: false);
+
+        using JsonDocument hello = await InvokeAsync(stream, "backend.hello", timeout.Token);
+        JsonElement helloRoot = hello.RootElement;
+        string expectedProfile = JavaVaultEngineHost.ResolveExpectedSettingsPath();
+        if (!helloRoot.GetProperty("ok").GetBoolean()
+            || helloRoot.GetProperty("backend").GetString() != "VaultKind Java Engine"
+            || !JavaVaultEngineHost.IsExpectedProfile(helloRoot.GetProperty("profile").GetString(), expectedProfile))
+        {
+            throw new InvalidDataException("The live engine did not report the expected persistent VaultKind profile.");
+        }
+
+        using JsonDocument before = await InvokeAsync(stream, "vault.list", timeout.Token);
+        if (!before.RootElement.GetProperty("ok").GetBoolean()
+            || before.RootElement.GetProperty("vaults").GetArrayLength() != 0)
+        {
+            throw new InvalidDataException("The persistent vault list is not empty; refusing an automatic registration repair.");
+        }
+
+        using JsonDocument connect = await InvokeAsync(stream, "vault.connect", timeout.Token, displayName: displayName, vaultPath: resolvedVaultPath);
+        AssertProtocolSuccess(connect.RootElement, "created", "persistent vault registration repair");
+
+        using JsonDocument after = await InvokeAsync(stream, "vault.list", timeout.Token);
+        JsonElement[] registeredVaults = after.RootElement.GetProperty("vaults").EnumerateArray().ToArray();
+        if (registeredVaults.Length != 1
+            || !Path.GetFullPath(registeredVaults[0].GetProperty("path").GetString() ?? string.Empty).Equals(resolvedVaultPath, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidDataException("The repaired vault registration did not read back correctly.");
+        }
+
+        Console.WriteLine($"Restored {registeredVaults[0].GetProperty("name").GetString()} at {resolvedVaultPath} in {expectedProfile}.");
+        return 0;
+    }
+    catch (Exception exception)
+    {
+        Console.Error.WriteLine($"Vault registration repair failed: {exception.Message}");
+        return 1;
+    }
+}
+
+static async Task<int> InspectLiveEngineAsync(string socketPath)
+{
+    try
+    {
+        using var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        await socket.ConnectAsync(new UnixDomainSocketEndPoint(socketPath), timeout.Token);
+        await using var stream = new NetworkStream(socket, ownsSocket: false);
+
+        using JsonDocument hello = await InvokeAsync(stream, "backend.hello", timeout.Token);
+        using JsonDocument vaultList = await InvokeAsync(stream, "vault.list", timeout.Token);
+        JsonElement helloRoot = hello.RootElement;
+        string expectedProfile = JavaVaultEngineHost.ResolveExpectedSettingsPath();
+        if (!helloRoot.GetProperty("ok").GetBoolean()
+            || helloRoot.GetProperty("backend").GetString() != "VaultKind Java Engine"
+            || !JavaVaultEngineHost.IsExpectedProfile(helloRoot.GetProperty("profile").GetString(), expectedProfile)
+            || !vaultList.RootElement.GetProperty("ok").GetBoolean())
+        {
+            throw new InvalidDataException("The live engine identity, profile, or vault list was invalid.");
+        }
+
+        JsonElement[] vaults = vaultList.RootElement.GetProperty("vaults").EnumerateArray().ToArray();
+        Console.WriteLine($"Backend: VaultKind Java Engine; profile: {expectedProfile}; vaults: {vaults.Length}.");
+        foreach (JsonElement vault in vaults)
+        {
+            Console.WriteLine($"{vault.GetProperty("name").GetString()} | {vault.GetProperty("state").GetString()} | {vault.GetProperty("path").GetString()}");
+        }
+        return 0;
+    }
+    catch (Exception exception)
+    {
+        Console.Error.WriteLine($"Live engine inspection failed: {exception.Message}");
         return 1;
     }
 }

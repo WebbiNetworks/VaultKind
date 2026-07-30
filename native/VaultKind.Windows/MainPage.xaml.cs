@@ -1165,10 +1165,11 @@ public sealed partial class MainPage : Page
 
     private async void OpenDiagnosticsFolder(object sender, RoutedEventArgs e)
     {
-        string? repositoryRoot = FindRepositoryRoot();
-        string logDirectory = repositoryRoot is null
-            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultKind", "logs")
-            : Path.Combine(repositoryRoot, "target", "ui-dev-profile", "logs");
+        string logDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "VaultKind",
+            "engine",
+            "logs");
 
         try
         {

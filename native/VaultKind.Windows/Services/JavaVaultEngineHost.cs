@@ -232,18 +232,16 @@ internal sealed class JavaVaultEngineHost : IDisposable
 
     internal static string ResolveExpectedSettingsPath()
     {
-        BundledEngineLayout? bundledEngine = FindBundledEngine();
-        string? repositoryRoot = bundledEngine is null ? FindRepositoryRoot() : null;
-        return ResolveExpectedSettingsPath(bundledEngine, repositoryRoot);
+        return ResolvePersistentSettingsPath(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
     }
 
     private static string ResolveExpectedSettingsPath(BundledEngineLayout? bundledEngine, string? repositoryRoot)
     {
-        string profileRoot = bundledEngine is null
-            ? Path.Combine(repositoryRoot ?? string.Empty, "target", "ui-dev-profile")
-            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultKind", "engine");
-        return Path.Combine(profileRoot, "settings.json");
+        return ResolveExpectedSettingsPath();
     }
+
+    internal static string ResolvePersistentSettingsPath(string localApplicationData) =>
+        Path.Combine(localApplicationData, "VaultKind", "engine", "settings.json");
 
     private static bool WaitForBackendToStop()
     {

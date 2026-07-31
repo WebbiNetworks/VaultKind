@@ -27,6 +27,7 @@ public sealed partial class MainPage : Page
     private readonly IVaultBackend backend = new LocalSocketVaultBackend();
     private readonly SignatureSoundService signatureSounds = new();
     private readonly List<Button> vaultButtons = [];
+    private readonly List<Button> vaultManagerLandingButtons = [];
     private VaultSummary? activeVault;
     private VaultSummary? createdVault;
     private string? selectedCreateVaultParentPath;
@@ -61,6 +62,7 @@ public sealed partial class MainPage : Page
     private IReadOnlyList<DoctorCheck> latestDoctorChecks = [];
     private DateTime? latestDoctorRunAt;
     private bool doctorRunInProgress;
+    private bool updatingManagedVaultSelector;
     private string? recoveryTargetVaultId;
     private bool recoveryOpenedFromVaultManagement;
     private string? doctorFocusVaultId;
@@ -102,7 +104,7 @@ public sealed partial class MainPage : Page
                 [
                     new("What the key protects", "The key belongs to one specific vault. Anyone who has it can restore access, so treat it with the same care as the vault password."),
                     new("Where to keep it", "Store at least one copy away from the encrypted vault: a printed copy in a secure place, an offline password manager, or a protected removable drive."),
-                    new("How recovery works", "Open Manage Vault, choose Restore password access, enter every recovery-key word in order, and then choose a new password."),
+                    new("How recovery works", "Open Vault Manager, choose the vault, select Use Recovery Key, enter every recovery-key word in order, and then choose a new password."),
                     new("After recovery", "Confirm that the vault unlocks with the new password. Preserve existing backups until you have verified the files you need.")
                 ],
                 "Never store the only recovery-key copy inside the vault it protects. You would need to unlock the vault to reach it."),
@@ -406,6 +408,7 @@ public sealed partial class MainPage : Page
         UnlockedVaultsCard.IsEnabled = snapshot.UnlockedCount > 0;
         LockedVaultsCard.IsEnabled = snapshot.LockedCount > 0;
         AttentionVaultsCard.IsEnabled = attentionCount > 0;
+        VaultManagerButton.IsEnabled = snapshot.Vaults.Count > 0;
         UpdateDashboardHealth(snapshot, attentionCount);
         EngineStatusFooter.Text = snapshot.ConnectionState == BackendConnectionState.Ready
             ? "Connected securely to the local VaultKind engine."
@@ -569,7 +572,7 @@ public sealed partial class MainPage : Page
             }));
         }
 
-        menu.Items.Add(CreateVaultMenuItem("Manage Vault", "\uE713", (_, e) =>
+        menu.Items.Add(CreateVaultMenuItem("Open Vault Manager", "\uE713", (_, e) =>
         {
             SelectVaultForContextAction(vault);
             ShowVaultManagement(menu, e);
@@ -629,6 +632,7 @@ public sealed partial class MainPage : Page
             DashboardButton,
             DoctorButton,
             AddVaultButton,
+            VaultManagerButton,
             .. vaultButtons,
             ActivityButton,
             SettingsButton,
@@ -663,6 +667,7 @@ public sealed partial class MainPage : Page
 
     private void ShowDashboard(object sender, RoutedEventArgs e)
     {
+        SetDestinationUnselected(VaultManagerButton, "Vault Manager");
         DashboardView.Visibility = Visibility.Visible;
         DoctorView.Visibility = Visibility.Collapsed;
         AddVaultView.Visibility = Visibility.Collapsed;
@@ -705,6 +710,7 @@ public sealed partial class MainPage : Page
 
     private void OpenDoctorView()
     {
+        SetDestinationUnselected(VaultManagerButton, "Vault Manager");
         DashboardView.Visibility = Visibility.Collapsed;
         DoctorView.Visibility = Visibility.Visible;
         AddVaultView.Visibility = Visibility.Collapsed;
@@ -743,6 +749,7 @@ public sealed partial class MainPage : Page
 
     private void ShowAddVault(object sender, RoutedEventArgs e)
     {
+        SetDestinationUnselected(VaultManagerButton, "Vault Manager");
         recoveryOpenedFromVaultManagement = false;
         activeVault = null;
         DashboardView.Visibility = Visibility.Collapsed;
@@ -770,9 +777,10 @@ public sealed partial class MainPage : Page
         SetDestinationUnselected(SettingsButton, "Preferences");
         SetDestinationUnselected(LearningButton, "Learning Center");
         ClearVaultSelection();
-        AddVaultButton.Background = new SolidColorBrush(Color.FromArgb(255, 58, 66, 72));
-        AddVaultButton.BorderBrush = new SolidColorBrush(Color.FromArgb(255, 78, 161, 255));
-        AddVaultButton.BorderThickness = new Thickness(1);
+        AddVaultButton.Background = new SolidColorBrush(Color.FromArgb(255, 23, 111, 203));
+        AddVaultButton.BorderBrush = new SolidColorBrush(Color.FromArgb(255, 255, 255, 255));
+        AddVaultButton.BorderThickness = new Thickness(2);
+        SetContentForeground(AddVaultButton, new SolidColorBrush(Color.FromArgb(255, 255, 255, 255)));
         AutomationProperties.SetName(AddVaultButton, "Add Vault, selected");
         DispatcherQueue.TryEnqueue(() => AddVaultView.ChangeView(null, 0, null, true));
         FocusAfterNavigation(CreateNewVaultButton);
@@ -812,6 +820,7 @@ public sealed partial class MainPage : Page
 
     private void ShowActivity(object sender, RoutedEventArgs e)
     {
+        SetDestinationUnselected(VaultManagerButton, "Vault Manager");
         DashboardView.Visibility = Visibility.Collapsed;
         DoctorView.Visibility = Visibility.Collapsed;
         ActivityView.Visibility = Visibility.Visible;
@@ -882,6 +891,7 @@ public sealed partial class MainPage : Page
 
     private void ShowSettings(object sender, RoutedEventArgs e)
     {
+        SetDestinationUnselected(VaultManagerButton, "Vault Manager");
         DashboardView.Visibility = Visibility.Collapsed;
         DoctorView.Visibility = Visibility.Collapsed;
         ActivityView.Visibility = Visibility.Collapsed;
@@ -1445,6 +1455,7 @@ public sealed partial class MainPage : Page
 
     private void ShowLearningCenter(object sender, RoutedEventArgs e)
     {
+        SetDestinationUnselected(VaultManagerButton, "Vault Manager");
         DashboardView.Visibility = Visibility.Collapsed;
         DoctorView.Visibility = Visibility.Collapsed;
         ActivityView.Visibility = Visibility.Collapsed;
@@ -2505,6 +2516,7 @@ public sealed partial class MainPage : Page
 
     private void ShowRecoveryHub(object sender, RoutedEventArgs e)
     {
+        SetDestinationUnselected(VaultManagerButton, "Vault Manager");
         recoveryOpenedFromVaultManagement = false;
         activeVault = null;
         DashboardView.Visibility = Visibility.Collapsed;
@@ -3178,6 +3190,7 @@ public sealed partial class MainPage : Page
 
     private void ShowVault(VaultSummary vault, Button selectedButton)
     {
+        SetDestinationUnselected(VaultManagerButton, "Vault Manager");
         activeVault = vault;
         DashboardView.Visibility = Visibility.Collapsed;
         DoctorView.Visibility = Visibility.Collapsed;
@@ -3255,8 +3268,24 @@ public sealed partial class MainPage : Page
             return;
         }
 
+        DashboardView.Visibility = Visibility.Collapsed;
+        DoctorView.Visibility = Visibility.Collapsed;
+        AddVaultView.Visibility = Visibility.Collapsed;
+        ConnectVaultView.Visibility = Visibility.Collapsed;
+        CreateVaultView.Visibility = Visibility.Collapsed;
+        CreateVaultStorageView.Visibility = Visibility.Collapsed;
+        CreateVaultReviewView.Visibility = Visibility.Collapsed;
+        CreateVaultProtectionView.Visibility = Visibility.Collapsed;
+        CreateVaultSuccessView.Visibility = Visibility.Collapsed;
         VaultView.Visibility = Visibility.Collapsed;
         VaultManagementView.Visibility = Visibility.Visible;
+        UnlockView.Visibility = Visibility.Collapsed;
+        RecoveryHubView.Visibility = Visibility.Collapsed;
+        RecoveryResetView.Visibility = Visibility.Collapsed;
+        ActivityView.Visibility = Visibility.Collapsed;
+        SettingsView.Visibility = Visibility.Collapsed;
+        LearningView.Visibility = Visibility.Collapsed;
+        VaultManagementLanding.Visibility = Visibility.Collapsed;
         VaultManagementHome.Visibility = Visibility.Visible;
         VaultShareGuide.Visibility = Visibility.Collapsed;
         VaultChangePassword.Visibility = Visibility.Collapsed;
@@ -3264,8 +3293,18 @@ public sealed partial class MainPage : Page
         VaultStatisticsPanel.Visibility = Visibility.Collapsed;
         VaultLocateEncryptedFilePanel.Visibility = Visibility.Collapsed;
         VaultDecryptFileNamePanel.Visibility = Visibility.Collapsed;
-        ContextTitle.Text = "Manage Vault";
-        ContextSubtitle.Text = "Share, recover, inspect, or remove this vault without leaving the main window.";
+        ContextTitle.Text = "Vault Manager";
+        ContextSubtitle.Text = "Choose a vault, then share, recover, inspect, rename, or remove it.";
+
+        SetDestinationUnselected(DashboardButton, "Dashboard");
+        SetDestinationUnselected(DoctorButton, "Vault Doctor");
+        SetDestinationUnselected(ActivityButton, "Activity");
+        SetDestinationUnselected(SettingsButton, "Preferences");
+        SetDestinationUnselected(LearningButton, "Learning Center");
+        SelectSidebarDestination(VaultManagerButton, "Vault Manager");
+        ClearVaultSelection();
+        SetAddVaultUnselected();
+        RefreshManagedVaultSelector();
 
         ManagedVaultName.Text = activeVault.Name;
         ManagedVaultNameDisplay.Visibility = Visibility.Visible;
@@ -3289,6 +3328,192 @@ public sealed partial class MainPage : Page
         ManagedRemoveButton.IsEnabled = !unlocked;
         ManagedRemoveHint.Visibility = unlocked ? Visibility.Visible : Visibility.Collapsed;
         FocusAfterNavigation(ManagedVaultRenameButton);
+    }
+
+    private void ShowVaultManagerFromSidebar(object sender, RoutedEventArgs e)
+    {
+        if (knownVaults.Count == 0)
+        {
+            ShowAddVault(sender, e);
+            return;
+        }
+
+        DashboardView.Visibility = Visibility.Collapsed;
+        DoctorView.Visibility = Visibility.Collapsed;
+        AddVaultView.Visibility = Visibility.Collapsed;
+        ConnectVaultView.Visibility = Visibility.Collapsed;
+        CreateVaultView.Visibility = Visibility.Collapsed;
+        CreateVaultStorageView.Visibility = Visibility.Collapsed;
+        CreateVaultReviewView.Visibility = Visibility.Collapsed;
+        CreateVaultProtectionView.Visibility = Visibility.Collapsed;
+        CreateVaultSuccessView.Visibility = Visibility.Collapsed;
+        VaultView.Visibility = Visibility.Collapsed;
+        VaultManagementView.Visibility = Visibility.Visible;
+        UnlockView.Visibility = Visibility.Collapsed;
+        RecoveryHubView.Visibility = Visibility.Collapsed;
+        RecoveryResetView.Visibility = Visibility.Collapsed;
+        ActivityView.Visibility = Visibility.Collapsed;
+        SettingsView.Visibility = Visibility.Collapsed;
+        LearningView.Visibility = Visibility.Collapsed;
+        VaultManagementLanding.Visibility = Visibility.Visible;
+        VaultManagementHome.Visibility = Visibility.Collapsed;
+        VaultShareGuide.Visibility = Visibility.Collapsed;
+        VaultChangePassword.Visibility = Visibility.Collapsed;
+        VaultRecoveryKeyDisplay.Visibility = Visibility.Collapsed;
+        VaultStatisticsPanel.Visibility = Visibility.Collapsed;
+        VaultLocateEncryptedFilePanel.Visibility = Visibility.Collapsed;
+        VaultDecryptFileNamePanel.Visibility = Visibility.Collapsed;
+        ContextTitle.Text = "Vault Manager";
+        ContextSubtitle.Text = "Choose a configured vault to review and manage.";
+
+        SetDestinationUnselected(DashboardButton, "Dashboard");
+        SetDestinationUnselected(DoctorButton, "Vault Doctor");
+        SetDestinationUnselected(ActivityButton, "Activity");
+        SetDestinationUnselected(SettingsButton, "Preferences");
+        SetDestinationUnselected(LearningButton, "Learning Center");
+        SelectSidebarDestination(VaultManagerButton, "Vault Manager");
+        ClearVaultSelection();
+        SetAddVaultUnselected();
+        RenderVaultManagerLanding();
+        DispatcherQueue.TryEnqueue(() => VaultManagementView.ChangeView(null, 0, null, true));
+        FocusAfterNavigation(vaultManagerLandingButtons[0]);
+    }
+
+    private void RenderVaultManagerLanding()
+    {
+        VaultManagementVaultList.Children.Clear();
+        vaultManagerLandingButtons.Clear();
+
+        foreach (VaultSummary vault in knownVaults)
+        {
+            bool unlocked = vault.State.Equals("unlocked", StringComparison.OrdinalIgnoreCase);
+            SolidColorBrush stateBrush = new(unlocked
+                ? Color.FromArgb(255, 73, 205, 112)
+                : Color.FromArgb(255, 78, 161, 255));
+
+            var icon = new FontIcon
+            {
+                Glyph = unlocked ? "\uE785" : "\uE72E",
+                FontSize = 24,
+                Foreground = stateBrush,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            var labels = new StackPanel { Spacing = 4, VerticalAlignment = VerticalAlignment.Center };
+            labels.Children.Add(new TextBlock
+            {
+                Text = vault.Name,
+                FontSize = 20,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                TextWrapping = TextWrapping.Wrap
+            });
+            labels.Children.Add(new TextBlock
+            {
+                Text = vault.Path,
+                FontSize = 13,
+                Foreground = PaletteBrush("MutedTextBrush"),
+                TextWrapping = TextWrapping.Wrap
+            });
+
+            var status = new StackPanel
+            {
+                Spacing = 5,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Right
+            };
+            status.Children.Add(new TextBlock
+            {
+                Text = FriendlyVaultState(vault.State).ToUpperInvariant(),
+                FontSize = 11,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = stateBrush,
+                HorizontalAlignment = HorizontalAlignment.Right
+            });
+            status.Children.Add(new TextBlock
+            {
+                Text = "Manage This Vault  \u2192",
+                Foreground = PaletteBrush("BrandBlueBrush"),
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                HorizontalAlignment = HorizontalAlignment.Right
+            });
+
+            var content = new Grid { ColumnSpacing = 16 };
+            content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            content.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            content.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            Grid.SetColumn(labels, 1);
+            Grid.SetColumn(status, 2);
+            content.Children.Add(icon);
+            content.Children.Add(labels);
+            content.Children.Add(status);
+
+            var button = new Button
+            {
+                Content = content,
+                Tag = vault.Id,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                Padding = new Thickness(20, 16, 20, 16),
+                CornerRadius = new CornerRadius(10),
+                Background = PaletteBrush("CardBrush"),
+                BorderBrush = PaletteBrush("CardBorderBrush"),
+                BorderThickness = new Thickness(1)
+            };
+            AutomationProperties.SetName(button, $"Manage {vault.Name}, {FriendlyVaultState(vault.State)}, {vault.Path}");
+            button.Click += (_, _) =>
+            {
+                activeVault = vault;
+                ShowVaultManagement(button, new RoutedEventArgs());
+            };
+            vaultManagerLandingButtons.Add(button);
+            VaultManagementVaultList.Children.Add(button);
+        }
+
+        QueueTextScaleRefresh();
+    }
+
+    private void RefreshManagedVaultSelector()
+    {
+        updatingManagedVaultSelector = true;
+        try
+        {
+            ManagedVaultSelector.Items.Clear();
+            foreach (VaultSummary vault in knownVaults)
+            {
+                var item = new ComboBoxItem { Content = vault.Name, Tag = vault.Id };
+                ToolTipService.SetToolTip(item, vault.Path);
+                AutomationProperties.SetName(item, $"{vault.Name}, {FriendlyVaultState(vault.State)}, {vault.Path}");
+                ManagedVaultSelector.Items.Add(item);
+            }
+
+            ManagedVaultSelector.SelectedIndex = knownVaults
+                .Select((vault, index) => (vault, index))
+                .Where(entry => entry.vault.Id == activeVault?.Id)
+                .Select(entry => entry.index)
+                .DefaultIfEmpty(-1)
+                .First();
+        }
+        finally
+        {
+            updatingManagedVaultSelector = false;
+        }
+    }
+
+    private void ManagedVaultSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (updatingManagedVaultSelector || ManagedVaultSelector.SelectedItem is not ComboBoxItem item || item.Tag is not string vaultId)
+        {
+            return;
+        }
+
+        VaultSummary? selectedVault = knownVaults.FirstOrDefault(vault => vault.Id == vaultId);
+        if (selectedVault is null || selectedVault.Id == activeVault?.Id)
+        {
+            return;
+        }
+
+        activeVault = selectedVault;
+        ShowVaultManagement(sender, new RoutedEventArgs());
+        FocusAfterNavigation(ManagedVaultSelector);
     }
 
     private async void ShowVaultStatistics(object sender, RoutedEventArgs e)
@@ -3985,8 +4210,8 @@ public sealed partial class MainPage : Page
         VaultChangePassword.Visibility = Visibility.Collapsed;
         VaultRecoveryKeyDisplay.Visibility = Visibility.Collapsed;
         VaultManagementHome.Visibility = Visibility.Visible;
-        ContextTitle.Text = "Manage Vault";
-        ContextSubtitle.Text = "Share, recover, inspect, or remove this vault without leaving the main window.";
+        ContextTitle.Text = "Vault Manager";
+        ContextSubtitle.Text = "Choose a vault, then share, recover, inspect, rename, or remove it.";
         VaultManagementView.ChangeView(null, 0, null, true);
         FocusAfterNavigation(ManagedShareGuideButton);
     }
@@ -4030,8 +4255,8 @@ public sealed partial class MainPage : Page
         VaultShareGuide.Visibility = Visibility.Collapsed;
         VaultRecoveryKeyDisplay.Visibility = Visibility.Collapsed;
         VaultManagementHome.Visibility = Visibility.Visible;
-        ContextTitle.Text = "Manage Vault";
-        ContextSubtitle.Text = "Share, recover, inspect, or remove this vault without leaving the main window.";
+        ContextTitle.Text = "Vault Manager";
+        ContextSubtitle.Text = "Choose a vault, then share, recover, inspect, rename, or remove it.";
         VaultManagementView.ChangeView(null, 0, null, true);
         FocusAfterNavigation(ManagedChangePasswordButton);
     }
@@ -4156,8 +4381,8 @@ public sealed partial class MainPage : Page
         VaultChangePassword.Visibility = Visibility.Collapsed;
         VaultShareGuide.Visibility = Visibility.Collapsed;
         VaultManagementHome.Visibility = Visibility.Visible;
-        ContextTitle.Text = "Manage Vault";
-        ContextSubtitle.Text = "Share, recover, inspect, or remove this vault without leaving the main window.";
+        ContextTitle.Text = "Vault Manager";
+        ContextSubtitle.Text = "Choose a vault, then share, recover, inspect, rename, or remove it.";
         VaultManagementView.ChangeView(null, 0, null, true);
         FocusAfterNavigation(ManagedShowRecoveryKeyButton);
     }
@@ -5468,14 +5693,19 @@ public sealed partial class MainPage : Page
             button.Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
             button.BorderBrush = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
             button.BorderThickness = new Thickness(0);
+            if (button.Tag is string vaultId && knownVaults.FirstOrDefault(vault => vault.Id == vaultId) is VaultSummary vault)
+            {
+                AutomationProperties.SetName(button, $"{vault.Name}, {FriendlyVaultState(vault.State)}, {vault.Path}");
+            }
         }
     }
 
     private void SetAddVaultUnselected()
     {
-        AddVaultButton.Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
-        AddVaultButton.BorderBrush = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0));
-        AddVaultButton.BorderThickness = new Thickness(0);
+        AddVaultButton.Background = new SolidColorBrush(Color.FromArgb(255, 43, 131, 231));
+        AddVaultButton.BorderBrush = new SolidColorBrush(Color.FromArgb(255, 120, 183, 255));
+        AddVaultButton.BorderThickness = new Thickness(1);
+        SetContentForeground(AddVaultButton, new SolidColorBrush(Color.FromArgb(255, 255, 255, 255)));
         AutomationProperties.SetName(AddVaultButton, "Add Vault");
     }
 

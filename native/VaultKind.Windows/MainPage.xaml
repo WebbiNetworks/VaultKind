@@ -602,20 +602,35 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Grid Margin="20,0,18,8">
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                        <TextBlock x:Name="VaultsNavText" Text="Vaults" Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center" />
-                        <Button x:Name="AddVaultButton" Grid.Column="1" Content="+ Add Vault" Padding="13,6" CornerRadius="5" Click="ShowAddVault" KeyDown="SidebarNavigationKeyDown" AutomationProperties.Name="Add Vault" />
-                    </Grid>
-                    <Border Grid.Row="1" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,1,0,0" />
-                    <StackPanel x:Name="EmptyVaultState" Grid.Row="2" Margin="20,24" HorizontalAlignment="Center" Spacing="8">
+                    <TextBlock x:Name="VaultsNavText" Margin="20,0,18,8" Text="Vaults" Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center" />
+                    <Button x:Name="AddVaultButton" Grid.Row="1" Margin="16,0,16,8" MinHeight="46" Padding="16,10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" CornerRadius="7" Background="#2B83E7" BorderBrush="#78B7FF" BorderThickness="1" Foreground="White" Click="ShowAddVault" KeyDown="SidebarNavigationKeyDown" AutomationProperties.Name="Add Vault">
+                        <Button.Resources>
+                            <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#3C91F0" />
+                            <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#B5D8FF" />
+                            <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#176FCB" />
+                        </Button.Resources>
+                        <StackPanel Orientation="Horizontal" Spacing="9">
+                            <FontIcon Glyph="&#xE710;" FontSize="16" Foreground="White" />
+                            <TextBlock Text="Add Vault" FontWeight="SemiBold" Foreground="White" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="VaultManagerButton" Grid.Row="2" Style="{StaticResource SidebarButtonStyle}" IsEnabled="False" Click="ShowVaultManagerFromSidebar" KeyDown="SidebarNavigationKeyDown" AutomationProperties.Name="Vault Manager">
+                        <StackPanel Orientation="Horizontal" Spacing="11">
+                            <FontIcon Glyph="&#xE713;" FontSize="16" />
+                            <TextBlock Text="Vault Manager" />
+                        </StackPanel>
+                    </Button>
+                    <Border Grid.Row="3" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,1,0,0" />
+                    <StackPanel x:Name="EmptyVaultState" Grid.Row="4" Margin="20,24" HorizontalAlignment="Center" Spacing="8">
                         <FontIcon Glyph="&#xE72E;" FontSize="26" Foreground="{StaticResource MutedTextBrush}" />
                         <TextBlock Text="No vaults connected" Foreground="{StaticResource MutedTextBrush}" />
                         <TextBlock Text="Start or connect the VaultKind engine to view configured vaults." Width="220" TextAlignment="Center" TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource MutedTextBrush}" />
                     </StackPanel>
-                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer Grid.Row="4" VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="VaultListPanel" Padding="0,8,0,12" />
                     </ScrollViewer>
                 </Grid>
@@ -1621,7 +1636,7 @@
                         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <Button Content="Back to Dashboard" HorizontalAlignment="Left" Padding="18,8" Click="ShowDashboard" AutomationProperties.Name="Back to Dashboard" />
-                        <Button x:Name="ManageVaultButton" Grid.Column="1" Content="Manage Vault" HorizontalAlignment="Right" Padding="18,8" Background="#2B83E7" Foreground="White" Click="ShowVaultManagement" AutomationProperties.Name="Manage this vault" />
+                        <Button x:Name="ManageVaultButton" Grid.Column="1" Content="Open Vault Manager" HorizontalAlignment="Right" Padding="18,8" Background="#2B83E7" Foreground="White" Click="ShowVaultManagement" AutomationProperties.Name="Open this vault in Vault Manager" />
                         <Button x:Name="RemoveVaultButton" Grid.Column="2" Content="Remove from VaultKind" HorizontalAlignment="Right" Padding="18,8" Click="ShowRemoveVaultConfirmation" AutomationProperties.Name="Remove vault from VaultKind" />
                     </Grid>
                 </StackPanel>
@@ -1629,14 +1644,32 @@
 
             <ScrollViewer x:Name="VaultManagementView" Grid.Row="1" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                 <StackPanel x:Name="VaultManagementContent" MaxWidth="1120" Margin="36,30,36,50" HorizontalAlignment="Center" Spacing="20">
+                    <StackPanel x:Name="VaultManagementLanding" MaxWidth="1120" HorizontalAlignment="Stretch" Visibility="Collapsed" Spacing="18">
+                        <Border Background="{StaticResource InfoSurfaceBrush}" BorderBrush="{StaticResource InfoBorderBrush}" BorderThickness="1" CornerRadius="11" Padding="20,16">
+                            <Grid ColumnSpacing="14">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                                <Border Width="48" Height="48" CornerRadius="24" Background="{StaticResource IconSurfaceBrush}"><FontIcon Glyph="&#xE713;" FontSize="22" Foreground="{StaticResource BrandBlueBrush}" /></Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="3">
+                                    <TextBlock Text="Choose a vault to manage" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock Text="Nothing is selected automatically. Choose the vault whose settings, recovery, sharing, statistics, or removal options you want to review." TextWrapping="Wrap" Foreground="{StaticResource InfoTextBrush}" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <StackPanel x:Name="VaultManagementVaultList" Spacing="12" />
+                    </StackPanel>
                     <Grid x:Name="VaultManagementHome" MaxWidth="1120" HorizontalAlignment="Stretch" RowSpacing="20">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Grid ColumnSpacing="18">
+                        <StackPanel Spacing="7">
+                            <TextBlock Text="Vault to manage" FontWeight="SemiBold" />
+                            <ComboBox x:Name="ManagedVaultSelector" MinWidth="260" HorizontalAlignment="Stretch" SelectionChanged="ManagedVaultSelectionChanged" AutomationProperties.Name="Choose a vault to manage" />
+                        </StackPanel>
+                        <Grid Grid.Row="1" ColumnSpacing="18">
                             <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                             <Border Width="58" Height="58" CornerRadius="29" Background="{StaticResource IconSurfaceBrush}">
@@ -1660,7 +1693,7 @@
                             </Border>
                         </Grid>
 
-                        <Grid x:Name="ManagementPrimaryCards" Grid.Row="1" ColumnSpacing="16">
+                        <Grid x:Name="ManagementPrimaryCards" Grid.Row="2" ColumnSpacing="16">
                             <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition x:Name="ManagementPrimaryColumn1" Width="*" /></Grid.ColumnDefinitions>
                             <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource CardBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="22">
@@ -1687,7 +1720,7 @@
                             </Border>
                         </Grid>
 
-                        <Grid x:Name="ManagementSecondaryCards" Grid.Row="2" ColumnSpacing="16">
+                        <Grid x:Name="ManagementSecondaryCards" Grid.Row="3" ColumnSpacing="16">
                             <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition x:Name="ManagementSecondaryColumn1" Width="*" /></Grid.ColumnDefinitions>
                             <Border Background="{StaticResource InfoSurfaceBrush}" BorderBrush="{StaticResource InfoBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="22">
@@ -1709,7 +1742,10 @@
                             </Border>
                         </Grid>
 
-                        <Button Grid.Row="3" Content="Back to Vault" HorizontalAlignment="Left" Padding="18,8" Click="ReturnToManagedVault" />
+                        <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="10">
+                            <Button Content="Back to All Vaults" Padding="18,8" Click="ShowVaultManagerFromSidebar" AutomationProperties.Name="Return to the Vault Manager vault list" />
+                            <Button Content="Back to Vault" Padding="18,8" Click="ReturnToManagedVault" />
+                        </StackPanel>
                     </Grid>
 
                     <StackPanel x:Name="VaultShareGuide" MaxWidth="1120" HorizontalAlignment="Stretch" Visibility="Collapsed" Spacing="18">

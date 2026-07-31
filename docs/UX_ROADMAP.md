@@ -17,7 +17,7 @@ VaultKind is permanently English-only. Multilingual support is not on the roadma
 ## Keyboard accessibility — implemented foundation
 
 - Standard Tab, Shift+Tab, Enter, Space, and native Windows control behavior remain available.
-- The main sidebar supports Up/Down movement and Home/End jumps across fixed destinations and configured vaults without activating a destination merely by focusing it.
+- The main sidebar supports Up/Down movement and Home/End jumps across fixed destinations and configured vaults without activating a destination merely by focusing it. Add Vault is a persistent primary action. Vault Manager is a permanent destination that first presents a neutral all-vault list without selecting the first vault; deliberate selection opens the existing tools and an explicit configured-vault selector.
 - Preferences tabs and Learning Center topics provide explicit arrow-key navigation.
 - `/` opens Learning Center search from outside text-entry controls.
 - Valid forms provide task-specific Enter behavior, and sensitive embedded workflows deliberately move and restore focus.

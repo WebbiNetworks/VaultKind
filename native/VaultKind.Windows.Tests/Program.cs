@@ -474,6 +474,7 @@ KeyboardControlsGuide keyboardGuide = KeyboardControlsDocument.Load(typeof(Keybo
 [
     ("contains global slash shortcut", keyboardGuide.Sections.Any(section => section.Body.Contains("/: Opens Learning Center", StringComparison.Ordinal))),
     ("contains sidebar navigation", keyboardGuide.Sections.Any(section => section.Title == "Main sidebar" && section.Body.Contains("Down Arrow", StringComparison.Ordinal))),
+    ("contains primary vault destinations", keyboardGuide.Sections.Any(section => section.Title == "Main sidebar" && section.Body.Contains("Add Vault, Vault Manager", StringComparison.Ordinal))),
     ("excludes release-only checklist", keyboardGuide.Sections.All(section => section.Title != "Release verification checklist"))
 ];
 foreach ((string name, bool passed) in keyboardDocumentCases)

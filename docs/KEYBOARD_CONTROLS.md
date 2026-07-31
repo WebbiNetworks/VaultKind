@@ -28,7 +28,9 @@ There are currently no global `Ctrl` shortcuts, Alt-letter mnemonics, or global 
 
 ## Main sidebar
 
-The sidebar sequence is Dashboard, Vault Doctor, Add Vault, every configured vault in displayed order, Activity, Preferences, and Learning Center.
+The sidebar sequence is Dashboard, Vault Doctor, Add Vault, Vault Manager, every configured vault in displayed order, Activity, Preferences, and Learning Center. Vault Manager is unavailable until at least one vault is configured.
+
+Opening Vault Manager displays every configured vault without selecting one automatically. Focus moves to the first vault card; use `Enter` or `Space` to open that vault's management tools.
 
 | Key | Result while a sidebar destination has focus |
 | --- | --- |
@@ -100,8 +102,8 @@ VaultKind moves keyboard focus to the first meaningful or safest next control wh
 - New Vault focuses Name, then the first password field when protection begins.
 - Password reset focuses the recovery-key field.
 - Unlock focuses the vault-password field and returns there after an unlock error.
-- Change Password focuses Current Password; leaving the form returns focus to its Manage Vault action.
-- Show Recovery Key focuses its password field; leaving returns focus to its Manage Vault action.
+- Change Password focuses Current Password; leaving the form returns focus to its Vault Manager action.
+- Show Recovery Key focuses its password field; leaving returns focus to its Vault Manager action.
 - Rename Vault focuses and selects the current name.
 - Remove from VaultKind focuses the typed-name confirmation; cancellation returns focus to Remove from VaultKind.
 - Locate Encrypted File focuses Choose File; a successful result focuses Copy Encrypted Path.

@@ -31,7 +31,7 @@ Submission 1 (`1152921505701495721`) was sent to Microsoft Store certification o
 - Store acquisition and installation: passed on July 28, 2026
 - App-volume relocation: passed; package content runs from the protected `G:\WindowsApps` volume
 - First launch: passed; the registered `App` identity opened the expected responsive WinUI window
-- Update test: pending a higher-version submission
+- Update test: version `1.0.1.0` adds an in-app installed-package version readout; the validated unsigned upload is `StorePathProof_1.0.1.0_x64.msixupload` with SHA-256 `BC4254C9BE56598A62D9C19589DB090AB47358A8C6AACC6737B8CB251544B4EB`; Submission 2 (`1152921505701528725`) entered certification on July 31, 2026, and Store delivery remains pending
 - Uninstall and reinstall test: pending
 
 The submission includes the required `runFullTrust` explanation for a conventional packaged WinUI 3 desktop executable. The test app does not request elevation, launch external processes, install services or drivers, access the network, or collect data.

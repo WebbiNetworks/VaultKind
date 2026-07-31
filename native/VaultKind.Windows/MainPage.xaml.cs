@@ -492,7 +492,7 @@ public sealed partial class MainPage : Page
                     ? Color.FromArgb(255, 73, 205, 112)
                     : Color.FromArgb(255, 78, 161, 255))
             };
-            var labels = new StackPanel { Spacing = 1, Width = 214 };
+            var labels = new StackPanel { Spacing = 1, Width = 166 };
             labels.Children.Add(new TextBlock
             {
                 Text = vault.Name,
@@ -517,13 +517,40 @@ public sealed partial class MainPage : Page
                 Style = (Style)Resources["VaultSidebarButtonStyle"],
                 Content = content,
                 Tag = vault.Id,
-                ContextFlyout = BuildVaultContextMenu(vault)
+                ContextFlyout = BuildVaultContextMenu(vault),
+                Margin = new Thickness(12, 3, 4, 3)
             };
             AutomationProperties.SetName(vaultButton, $"{vault.Name}, {FriendlyVaultState(vault.State)}, {vault.Path}");
             vaultButton.Click += (_, _) => ShowVault(vault, vaultButton);
             vaultButton.KeyDown += SidebarNavigationKeyDown;
+
+            var actionsButton = new Button
+            {
+                Width = 44,
+                Height = 70,
+                Margin = new Thickness(0, 3, 12, 3),
+                Padding = new Thickness(0),
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center,
+                Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0)),
+                BorderBrush = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0)),
+                CornerRadius = new CornerRadius(7),
+                Content = new FontIcon { Glyph = "\uE712", FontSize = 17 },
+                Flyout = BuildVaultContextMenu(vault)
+            };
+            AutomationProperties.SetName(actionsButton, $"More actions for {vault.Name}");
+            ToolTipService.SetToolTip(actionsButton, $"More actions for {vault.Name}");
+
+            var vaultRow = new Grid();
+            vaultRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            vaultRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            Grid.SetColumn(vaultButton, 0);
+            Grid.SetColumn(actionsButton, 1);
+            vaultRow.Children.Add(vaultButton);
+            vaultRow.Children.Add(actionsButton);
+
             vaultButtons.Add(vaultButton);
-            VaultListPanel.Children.Add(vaultButton);
+            VaultListPanel.Children.Add(vaultRow);
         }
 
         QueueTextScaleRefresh();

@@ -32,6 +32,8 @@ The sidebar sequence is Dashboard, Vault Doctor, Add Vault, Vault Manager, every
 
 Opening Vault Manager displays every configured vault without selecting one automatically. Focus moves to the first vault card; use `Enter` or `Space` to open that vault's management tools.
 
+Each configured vault in the main sidebar is followed by a **More actions** button. Use `Tab` to reach it, then `Enter` or `Space` to open the same vault menu without requiring a multi-key context-menu gesture.
+
 | Key | Result while a sidebar destination has focus |
 | --- | --- |
 | `Up Arrow` | Moves focus to the previous visible, enabled destination. Wraps from the first destination to the last. |
@@ -124,5 +126,5 @@ The automated native checks cover sidebar index movement and wrap boundaries. Th
 4. Test every conditional Enter action in both disabled and enabled states.
 5. Confirm focus placement and focus restoration for embedded confirmations and sensitive workflows.
 6. Confirm visible focus indicators in Light, Dark, larger-text, minimum-window, and high-DPI configurations.
-7. Verify vault context-menu access using the Windows Menu key and `Shift+F10`; treat this as a release gate until confirmed on the release build.
+7. Verify the standard Windows Menu key and `Shift+F10` context-menu gestures on release-candidate hardware. Regardless of platform gesture behavior, confirm every vault's adjacent **More actions** button remains reachable by `Tab` and opens with `Enter` or `Space`.
 8. Repeat the core pass with Narrator so accessible names, control roles, focus changes, and live status announcements are heard in the correct order.

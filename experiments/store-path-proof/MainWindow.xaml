@@ -22,6 +22,12 @@
                 FontSize="19"
                 TextAlignment="Center"
                 TextWrapping="Wrap" />
+            <TextBlock
+                x:Name="VersionText"
+                Foreground="#78B7FF"
+                FontSize="18"
+                FontWeight="SemiBold"
+                TextAlignment="Center" />
             <Border
                 Padding="18"
                 Background="#202B35"

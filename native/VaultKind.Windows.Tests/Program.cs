@@ -95,7 +95,8 @@ finally
 (string Name, Func<string> Resolve, string Expected)[] dataPathCases =
 [
     ("permanent profile", () => VaultKindDataPaths.ResolveLocalApplicationDataRoot("C:\\Users\\Greg\\AppData\\Local", null), "C:\\Users\\Greg\\AppData\\Local"),
-    ("development package profile", () => VaultKindDataPaths.ResolveLocalApplicationDataRoot("C:\\Users\\Greg\\AppData\\Local", "LocalMsix.WebDav"), "C:\\Users\\Greg\\AppData\\Local\\VKP\\LocalMsix.WebDav")
+    ("development package profile", () => VaultKindDataPaths.ResolveLocalApplicationDataRoot("C:\\Users\\Greg\\AppData\\Local", "LocalMsix.WebDav"), "C:\\Users\\Greg\\AppData\\Local\\VKP\\LocalMsix.WebDav"),
+    ("Store package profile", () => VaultKindDataPaths.ResolveLocalApplicationDataRoot("C:\\Users\\Greg\\AppData\\Local", "Store"), "C:\\Users\\Greg\\AppData\\Local\\VKP\\Store")
 ];
 foreach ((string name, Func<string> resolve, string expected) in dataPathCases)
 {
@@ -136,6 +137,46 @@ try
 }
 catch (InvalidDataException)
 {
+}
+
+int packageProfileMarkerChecks = 0;
+foreach ((string profileId, string packageName, bool developmentOnly) in new[]
+{
+    ("LocalMsix.WebDav", "WebbiNetworks.VaultKind.Development", true),
+    ("Store", "Webbi.VaultKind", false)
+})
+{
+    packageProfileMarkerChecks++;
+    try
+    {
+        VaultKindDataPaths.ValidatePackageProfileMarker(profileId, packageName, developmentOnly);
+    }
+    catch (InvalidDataException exception)
+    {
+        Console.Error.WriteLine($"FAIL: valid packaged profile marker was rejected: {exception.Message}");
+        failures++;
+    }
+}
+foreach ((string profileId, string packageName, bool developmentOnly) in new[]
+{
+    ("Store", "WebbiNetworks.VaultKind.Development", false),
+    ("LocalMsix.WebDav", "Webbi.VaultKind", true),
+    ("..", "Webbi.VaultKind", false),
+    ("Store", "Webbi/VaultKind", false),
+    ("", "Webbi.VaultKind", false),
+    ("Store", "", false)
+})
+{
+    packageProfileMarkerChecks++;
+    try
+    {
+        VaultKindDataPaths.ValidatePackageProfileMarker(profileId, packageName, developmentOnly);
+        Console.Error.WriteLine("FAIL: invalid packaged profile marker was accepted.");
+        failures++;
+    }
+    catch (InvalidDataException)
+    {
+    }
 }
 foreach ((string kind, string? caseId, bool expected) in doctorCases)
 {
@@ -601,7 +642,7 @@ if (failures > 0)
     return 1;
 }
 
-Console.WriteLine($"Passed {dataPathCases.Length + 8 + doctorCases.Length + lockFailureCases.Length + keyboardNavigationCases.Length + engineProfileCases.Length + 1 + developmentClasspathCases.Length + backendIdentityCases.Length + vaultStateCountCases.Length + keyboardDocumentCases.Length + activityPersistenceChecks + preferencePersistenceChecks + doctorSummaryPersistenceChecks + learningProgressPersistenceChecks + windowPlacementPersistenceChecks} native policy, persistence, keyboard navigation, documentation, backend identity, profile, preference, and workflow checks.");
+Console.WriteLine($"Passed {dataPathCases.Length + 8 + packageProfileMarkerChecks + doctorCases.Length + lockFailureCases.Length + keyboardNavigationCases.Length + engineProfileCases.Length + 1 + developmentClasspathCases.Length + backendIdentityCases.Length + vaultStateCountCases.Length + keyboardDocumentCases.Length + activityPersistenceChecks + preferencePersistenceChecks + doctorSummaryPersistenceChecks + learningProgressPersistenceChecks + windowPlacementPersistenceChecks} native policy, persistence, keyboard navigation, documentation, backend identity, profile, preference, and workflow checks.");
 return 0;
 
 static void DeleteTestDirectory(string path)

@@ -94,21 +94,41 @@ internal static partial class VaultKindDataPaths
             throw new InvalidDataException("The packaged VaultKind profile marker is invalid JSON.", exception);
         }
 
-        if (!marker.DevelopmentOnly
-            || string.IsNullOrWhiteSpace(marker.PackageName)
-            || !marker.PackageName.EndsWith(".Development", StringComparison.Ordinal))
+        if (marker.DevelopmentOnly is null)
         {
-            throw new InvalidDataException("The packaged VaultKind profile marker is not a development-package marker.");
+            throw new InvalidDataException("The packaged VaultKind profile marker does not declare its package kind.");
         }
+        ValidatePackageProfileMarker(marker.ProfileId, marker.PackageName, marker.DevelopmentOnly.Value);
         string isolatedRoot = ResolveLocalApplicationDataRoot(localApplicationData, marker.ProfileId);
         string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         return new ResolvedPaths(isolatedRoot, ResolveSocketPath(isolatedRoot, marker.ProfileId, userProfile));
     }
 
+    internal static void ValidatePackageProfileMarker(string profileId, string packageName, bool developmentOnly)
+    {
+        if (string.IsNullOrWhiteSpace(profileId) || !IsolatedProfileIdPattern().IsMatch(profileId))
+        {
+            throw new InvalidDataException("The packaged VaultKind profile identifier is invalid.");
+        }
+        if (string.IsNullOrWhiteSpace(packageName) || !PackageNamePattern().IsMatch(packageName))
+        {
+            throw new InvalidDataException("The packaged VaultKind identity name is invalid.");
+        }
+
+        bool usesDevelopmentIdentity = packageName.EndsWith(".Development", StringComparison.Ordinal);
+        if (developmentOnly != usesDevelopmentIdentity)
+        {
+            throw new InvalidDataException("The packaged VaultKind identity does not match its declared package kind.");
+        }
+    }
+
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private sealed record ResolvedPaths(string LocalApplicationDataRoot, string SocketPath);
-    private sealed record PackageProfileMarker(string ProfileId, string PackageName, bool DevelopmentOnly);
+    private sealed record PackageProfileMarker(string ProfileId, string PackageName, bool? DevelopmentOnly);
 
     [GeneratedRegex("^[A-Za-z0-9][A-Za-z0-9.-]{0,15}$", RegexOptions.CultureInvariant)]
     private static partial Regex IsolatedProfileIdPattern();
+
+    [GeneratedRegex("^[A-Za-z0-9][A-Za-z0-9.-]*$", RegexOptions.CultureInvariant)]
+    private static partial Regex PackageNamePattern();
 }

@@ -10,10 +10,17 @@ param(
 
     [string]$PackagePublisher,
 
+    [string]$PackagePublisherDisplayName = "Webbi",
+
     [ValidatePattern("^[A-Za-z0-9.-]+$")]
-    [string]$PackageName = "WebbiNetworks.VaultKind",
+    [string]$PackageName = "Webbi.VaultKind",
 
     [switch]$CreateMsix,
+
+    [switch]$CreateStoreUpload,
+
+    [ValidatePattern("^[A-Za-z0-9][A-Za-z0-9.-]{0,15}$")]
+    [string]$PackageProfileId = "Store",
 
     [switch]$CreatePortableArchive,
 
@@ -21,6 +28,17 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if ($CreateMsix -and $CreateStoreUpload) {
+    throw "CreateMsix and CreateStoreUpload are mutually exclusive."
+}
+if ($CreateStoreUpload) {
+    if (-not [string]::IsNullOrWhiteSpace($SigningThumbprint)) {
+        throw "Store uploads must remain unsigned; Microsoft signs them after certification."
+    }
+    if ([string]::IsNullOrWhiteSpace($PackagePublisher) -or [string]::IsNullOrWhiteSpace($PackagePublisherDisplayName)) {
+        throw "CreateStoreUpload requires the exact Microsoft-assigned PackagePublisher and PackagePublisherDisplayName values."
+    }
+}
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 $artifactsRoot = [System.IO.Path]::GetFullPath((Join-Path $repositoryRoot "artifacts"))
 $stageRoot = [System.IO.Path]::GetFullPath((Join-Path $artifactsRoot "VaultKind-$Version-$RuntimeIdentifier"))
@@ -1612,7 +1630,7 @@ $manifest = [ordered]@{
     runtimeIdentifier = $RuntimeIdentifier
     language = "en-US"
     signed = -not [string]::IsNullOrWhiteSpace($SigningThumbprint)
-    distribution = if ($CreatePortableArchive) { "portable-zip" } else { "staged-layout" }
+    distribution = if ($CreateStoreUpload) { "store-upload" } elseif ($CreateMsix) { "signed-msix" } elseif ($CreatePortableArchive) { "portable-zip" } else { "staged-layout" }
     generatedAtUtc = [DateTimeOffset]::UtcNow.ToString("O")
 }
 $manifest | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $stageRoot "release-manifest.json") -Encoding utf8
@@ -1631,7 +1649,21 @@ if ($CreatePortableArchive) {
     Write-Host "SHA-256: $archiveHash"
 }
 
-if ($CreateMsix) {
+if ($CreateStoreUpload) {
+    $msixScript = Join-Path $repositoryRoot "scripts\build-native-msix.ps1"
+    $msixVersion = "$Version.0"
+    & $msixScript `
+        -BinaryRoot $stageRoot `
+        -RuntimeIdentifier $RuntimeIdentifier `
+        -Version $msixVersion `
+        -PackageName $PackageName `
+        -Publisher $PackagePublisher `
+        -PublisherDisplayName $PackagePublisherDisplayName `
+        -IsolatedProfileId $PackageProfileId `
+        -StoreUpload
+    if ($LASTEXITCODE -ne 0) { throw "The unsigned Microsoft Store upload build failed." }
+}
+elseif ($CreateMsix) {
     if ([string]::IsNullOrWhiteSpace($SigningThumbprint) -or [string]::IsNullOrWhiteSpace($PackagePublisher)) {
         throw "CreateMsix requires both SigningThumbprint and PackagePublisher."
     }
@@ -1649,6 +1681,6 @@ if ($CreateMsix) {
 }
 
 Write-Host "VaultKind release layout created at $stageRoot"
-if ([string]::IsNullOrWhiteSpace($SigningThumbprint)) {
+if ([string]::IsNullOrWhiteSpace($SigningThumbprint) -and -not $CreateStoreUpload) {
     Write-Warning "The layout is unsigned. Windows may warn about or block it on some systems."
 }

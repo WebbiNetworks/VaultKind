@@ -1,7 +1,9 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [string]$BinaryRoot
+    [string]$BinaryRoot,
+
+    [switch]$MountedWebDav
 )
 
 $ErrorActionPreference = "Stop"
@@ -20,6 +22,27 @@ $librariesDirectory = Join-Path $engineRoot "lib"
 foreach ($requiredPath in @($javaExecutable, $classesDirectory, $librariesDirectory)) {
     if (-not (Test-Path -LiteralPath $requiredPath)) {
         throw "Bundled-engine input is missing: $requiredPath"
+    }
+}
+
+$proxySettingsPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings"
+$proxyOverrideExisted = $false
+$originalProxyOverride = $null
+if ($MountedWebDav) {
+    if (-not $IsWindows -and $PSVersionTable.PSEdition -eq "Core") {
+        throw "The mounted WebDAV probe is Windows-only."
+    }
+    $webClientService = Get-Service -Name "WebClient" -ErrorAction SilentlyContinue
+    if ($null -eq $webClientService) {
+        throw "The Windows WebClient service is unavailable; refusing the Windows Explorer WebDAV mount probe."
+    }
+    $internetSettings = Get-ItemProperty -LiteralPath $proxySettingsPath -ErrorAction Stop
+    if ($internetSettings.PSObject.Properties.Name -contains "ProxyOverride") {
+        $originalProxyOverride = $internetSettings.ProxyOverride
+        $proxyOverrideExisted = $true
+    }
+    else {
+        $proxyOverrideExisted = $false
     }
 }
 
@@ -74,20 +97,45 @@ try {
     }
 
     $probeProject = Join-Path $repositoryRoot "native\VaultKind.Windows.Tests\VaultKind.Windows.Tests.csproj"
-    & dotnet run --project $probeProject -c Release --no-restore -- --probe-socket $socketPath
+    $probeMode = if ($MountedWebDav) { "--probe-mounted-webdav" } else { "--probe-socket" }
+    & dotnet run --project $probeProject -c Release --no-restore -- $probeMode $socketPath
     if ($LASTEXITCODE -ne 0) { throw "The bundled engine protocol probe failed." }
     if (-not $engineProcess.WaitForExit(10000)) {
         throw "The bundled engine accepted shutdown but did not exit within 10 seconds."
     }
     $engineProcess.WaitForExit()
 
-    Write-Host "Bundled engine smoke test passed."
+    if ($MountedWebDav) {
+        Write-Host "Bundled engine mounted WebDAV test passed."
+    }
+    else {
+        Write-Host "Bundled engine smoke test passed."
+    }
     Write-Host "Runtime: $javaExecutable"
 }
+catch {
+    if ($MountedWebDav) {
+        $engineLog = Join-Path $profileRoot "logs\native-backend.log"
+        if (Test-Path -LiteralPath $engineLog) {
+            Write-Warning "Mounted WebDAV probe engine log tail:"
+            Get-Content -LiteralPath $engineLog -Tail 120 | Write-Warning
+        }
+    }
+    throw
+}
 finally {
+    $cleanupError = $null
+    $proxyRestoreError = $null
     if ($null -ne $engineProcess) {
-        if (-not $engineProcess.HasExited) { $engineProcess.Kill() }
-        $engineProcess.Dispose()
+        try {
+            if (-not $engineProcess.HasExited) { $engineProcess.Kill() }
+        }
+        catch {
+            $cleanupError = $_
+        }
+        finally {
+            $engineProcess.Dispose()
+        }
     }
     if (Test-Path -LiteralPath $testRoot) {
         for ($cleanupAttempt = 1; $cleanupAttempt -le 20; $cleanupAttempt++) {
@@ -96,9 +144,35 @@ finally {
                 break
             }
             catch [System.IO.IOException] {
-                if ($cleanupAttempt -eq 20) { throw }
+                if ($cleanupAttempt -eq 20) {
+                    if ($null -eq $cleanupError) { $cleanupError = $_ }
+                    break
+                }
                 Start-Sleep -Milliseconds 100
             }
+            catch {
+                if ($null -eq $cleanupError) { $cleanupError = $_ }
+                break
+            }
         }
+    }
+    if ($MountedWebDav) {
+        try {
+            if ($proxyOverrideExisted) {
+                Set-ItemProperty -LiteralPath $proxySettingsPath -Name "ProxyOverride" -Value $originalProxyOverride -ErrorAction Stop
+            }
+            else {
+                Remove-ItemProperty -LiteralPath $proxySettingsPath -Name "ProxyOverride" -ErrorAction SilentlyContinue
+            }
+        }
+        catch {
+            $proxyRestoreError = $_
+        }
+    }
+    if ($null -ne $proxyRestoreError) {
+        throw "The mounted WebDAV probe could not restore the original per-user ProxyOverride value: $($proxyRestoreError.Exception.Message)"
+    }
+    if ($null -ne $cleanupError) {
+        throw "The bundled-engine probe could not complete temporary cleanup: $($cleanupError.Exception.Message)"
     }
 }

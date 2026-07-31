@@ -25,7 +25,10 @@ param(
 
     [string]$TimestampUrl = "http://timestamp.digicert.com",
 
-    [switch]$DevelopmentPackage
+    [switch]$DevelopmentPackage,
+
+    [ValidatePattern("^[A-Za-z0-9][A-Za-z0-9.-]{0,63}$")]
+    [string]$IsolatedProfileId
 )
 
 $ErrorActionPreference = "Stop"
@@ -47,9 +50,15 @@ if ($DevelopmentPackage) {
     if (-not $PackageName.EndsWith(".Development", [System.StringComparison]::Ordinal)) {
         throw "Development package identity names must end with .Development to avoid claiming the production identity."
     }
+    if ([string]::IsNullOrWhiteSpace($IsolatedProfileId)) {
+        throw "Development packages require IsolatedProfileId so they cannot reuse the permanent VaultKind profile."
+    }
 }
 elseif ($Publisher -ceq "CN=VaultKind Development") {
     throw "The locally trusted VaultKind Development certificate cannot create a production package. Use -DevelopmentPackage and a .Development identity for local validation."
+}
+elseif (-not [string]::IsNullOrWhiteSpace($IsolatedProfileId)) {
+    throw "IsolatedProfileId is reserved for explicitly marked development packages."
 }
 
 $normalizedThumbprint = $SigningThumbprint.Replace(" ", "").ToUpperInvariant()
@@ -118,6 +127,20 @@ try {
     New-Item -ItemType Directory -Path $packageContentRoot -Force | Out-Null
     Copy-Item -Path (Join-Path $resolvedBinaryRoot "*") -Destination $packageContentRoot -Recurse -Force
     Get-ChildItem -LiteralPath $packageContentRoot -Filter "*.pdb" -File -Recurse | Remove-Item -Force
+
+    $packageProfileMarkerPath = Join-Path $packageContentRoot "VaultKind.PackageProfile.json"
+    if (Test-Path -LiteralPath $packageProfileMarkerPath) {
+        throw "The staged release input unexpectedly contains a package-profile marker. Rebuild the clean stage before packaging."
+    }
+    if ($DevelopmentPackage) {
+        $packageProfileMarker = [ordered]@{
+            profileId = $IsolatedProfileId
+            packageName = $PackageName
+            developmentOnly = $true
+        }
+        $packageProfileJson = $packageProfileMarker | ConvertTo-Json -Compress
+        [System.IO.File]::WriteAllText($packageProfileMarkerPath, $packageProfileJson, [System.Text.UTF8Encoding]::new($false))
+    }
 
     $assetAliases = [ordered]@{
         "SplashScreen.scale-200.png" = "SplashScreen.png"

@@ -74,6 +74,7 @@ internal sealed class JavaVaultEngineHost : IDisposable
             UseShellExecute = false,
             CreateNoWindow = true
         };
+        startInfo.Environment["LOCALAPPDATA"] = VaultKindDataPaths.LocalApplicationDataRoot;
 
         string classesDirectory = bundledEngine?.ClassesDirectory ?? Path.Combine(repositoryRoot!, "target", "classes");
         startInfo.ArgumentList.Add($"-Dlogback.configurationFile={Path.Combine(classesDirectory, "logback-native.xml")}");
@@ -170,11 +171,7 @@ internal sealed class JavaVaultEngineHost : IDisposable
     private sealed record EngineRequest(int Protocol, string RequestId, string Operation);
     private sealed record EngineResponse(int Protocol, string RequestId, bool Ok, string? Backend, string? Error, IReadOnlyList<string>? Capabilities, string? Profile);
 
-    private static string SocketPath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "VaultKind",
-        "bridge",
-        "native-bridge-v1.sock");
+    private static string SocketPath => VaultKindDataPaths.SocketPath;
 
     private static bool IsCompatibleBackendListening(string expectedProfile, out bool backendListening)
     {
@@ -232,7 +229,7 @@ internal sealed class JavaVaultEngineHost : IDisposable
 
     internal static string ResolveExpectedSettingsPath()
     {
-        return ResolvePersistentSettingsPath(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
+        return VaultKindDataPaths.SettingsPath;
     }
 
     private static string ResolveExpectedSettingsPath(BundledEngineLayout? bundledEngine, string? repositoryRoot)

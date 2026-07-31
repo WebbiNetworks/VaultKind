@@ -16,7 +16,7 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(ConnectionTimeout);
             using var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
-            var socketPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultKind", "bridge", "native-bridge-v1.sock");
+            string socketPath = VaultKindDataPaths.SocketPath;
             await socket.ConnectAsync(new UnixDomainSocketEndPoint(socketPath), timeout.Token);
             await using var stream = new NetworkStream(socket, ownsSocket: false);
 
@@ -122,7 +122,7 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(TimeSpan.FromSeconds(90));
             using var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
-            var socketPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultKind", "bridge", "native-bridge-v1.sock");
+            string socketPath = VaultKindDataPaths.SocketPath;
             await socket.ConnectAsync(new UnixDomainSocketEndPoint(socketPath), timeout.Token);
             await using var stream = new NetworkStream(socket, ownsSocket: false);
 
@@ -161,7 +161,7 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(TimeSpan.FromSeconds(20));
             using var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
-            var socketPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultKind", "bridge", "native-bridge-v1.sock");
+            string socketPath = VaultKindDataPaths.SocketPath;
             await socket.ConnectAsync(new UnixDomainSocketEndPoint(socketPath), timeout.Token);
             await using var stream = new NetworkStream(socket, ownsSocket: false);
 
@@ -215,7 +215,7 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(commandTimeout);
             using var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
-            var socketPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VaultKind", "bridge", "native-bridge-v1.sock");
+            string socketPath = VaultKindDataPaths.SocketPath;
             await socket.ConnectAsync(new UnixDomainSocketEndPoint(socketPath), timeout.Token);
             await using var stream = new NetworkStream(socket, ownsSocket: false);
 

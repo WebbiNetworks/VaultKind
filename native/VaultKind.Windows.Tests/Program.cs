@@ -1,12 +1,18 @@
 using System.Buffers.Binary;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.RegularExpressions;
 using VaultKind_Windows.Services;
 using System.Text.Json;
 
 if (args is ["--probe-socket", var socketPath])
 {
     return await ProbeBundledEngineAsync(socketPath);
+}
+
+if (args is ["--probe-mounted-webdav", var mountedSocketPath])
+{
+    return await ProbeMountedWebDavAsync(mountedSocketPath);
 }
 
 if (args is ["--restore-vault-registration", var restoreSocketPath, var displayName, var vaultPath])
@@ -30,6 +36,34 @@ if (args is ["--inspect-live-engine", var inspectSocketPath])
 ];
 
 int failures = 0;
+
+(string Name, Func<string> Resolve, string Expected)[] dataPathCases =
+[
+    ("permanent profile", () => VaultKindDataPaths.ResolveLocalApplicationDataRoot("C:\\Users\\Greg\\AppData\\Local", null), "C:\\Users\\Greg\\AppData\\Local"),
+    ("development package profile", () => VaultKindDataPaths.ResolveLocalApplicationDataRoot("C:\\Users\\Greg\\AppData\\Local", "StoreTest.Development"), "C:\\Users\\Greg\\AppData\\Local\\VaultKind\\PackageProfiles\\StoreTest.Development")
+];
+foreach ((string name, Func<string> resolve, string expected) in dataPathCases)
+{
+    string actual = resolve();
+    if (!actual.Equals(expected, StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine($"FAIL: {name} resolved to {actual} instead of {expected}.");
+        failures++;
+    }
+}
+
+foreach (string invalidProfileId in new[] { "..", ".leading", "slash/profile", "backslash\\profile", new string('a', 65) })
+{
+    try
+    {
+        VaultKindDataPaths.ResolveLocalApplicationDataRoot("C:\\Users\\Greg\\AppData\\Local", invalidProfileId);
+        Console.Error.WriteLine($"FAIL: invalid packaged profile identifier {invalidProfileId} was accepted.");
+        failures++;
+    }
+    catch (InvalidDataException)
+    {
+    }
+}
 foreach ((string kind, string? caseId, bool expected) in doctorCases)
 {
     bool actual = DoctorFindingPolicy.IsCritical(kind, caseId);
@@ -494,7 +528,7 @@ if (failures > 0)
     return 1;
 }
 
-Console.WriteLine($"Passed {doctorCases.Length + lockFailureCases.Length + keyboardNavigationCases.Length + engineProfileCases.Length + 1 + developmentClasspathCases.Length + backendIdentityCases.Length + vaultStateCountCases.Length + keyboardDocumentCases.Length + activityPersistenceChecks + preferencePersistenceChecks + doctorSummaryPersistenceChecks + learningProgressPersistenceChecks + windowPlacementPersistenceChecks} native policy, persistence, keyboard navigation, documentation, backend identity, profile, preference, and workflow checks.");
+Console.WriteLine($"Passed {dataPathCases.Length + 5 + doctorCases.Length + lockFailureCases.Length + keyboardNavigationCases.Length + engineProfileCases.Length + 1 + developmentClasspathCases.Length + backendIdentityCases.Length + vaultStateCountCases.Length + keyboardDocumentCases.Length + activityPersistenceChecks + preferencePersistenceChecks + doctorSummaryPersistenceChecks + learningProgressPersistenceChecks + windowPlacementPersistenceChecks} native policy, persistence, keyboard navigation, documentation, backend identity, profile, preference, and workflow checks.");
 return 0;
 
 static void DeleteTestDirectory(string path)
@@ -672,6 +706,201 @@ static async Task<int> ProbeBundledEngineAsync(string socketPath)
     }
 }
 
+static async Task<int> ProbeMountedWebDavAsync(string socketPath)
+{
+    const string windowsWebDavProvider = "org.cryptomator.frontend.webdav.mount.WindowsMounter";
+    const string probePassword = "Probe-WebDAV-2026!";
+    string? vaultId = null;
+    string? markerPath = null;
+    bool shutdownRequested = false;
+
+    try
+    {
+        string bridgeDirectory = Path.GetDirectoryName(socketPath) ?? throw new InvalidDataException("The probe socket has no parent directory.");
+        string isolatedTestRoot = Path.GetFullPath(Path.Combine(bridgeDirectory, "..", ".."));
+        string systemTemporaryRoot = Path.GetFullPath(Path.GetTempPath());
+        string systemTemporaryPrefix = systemTemporaryRoot.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        if (!isolatedTestRoot.StartsWith(systemTemporaryPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidDataException("The mounted probe profile must remain inside the Windows temporary directory.");
+        }
+
+        string fixtureParent = Path.Combine(isolatedTestRoot, "mounted-fixtures");
+        string fixtureVaultPath = Path.Combine(fixtureParent, "DisposableWebDavVault");
+        Directory.CreateDirectory(fixtureParent);
+        HashSet<string> driveRootsBefore = Directory.GetLogicalDrives().ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        using var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(120));
+        await socket.ConnectAsync(new UnixDomainSocketEndPoint(socketPath), timeout.Token);
+        await using var stream = new NetworkStream(socket, ownsSocket: false);
+
+        try
+        {
+            using JsonDocument hello = await InvokeAsync(stream, "backend.hello", timeout.Token);
+            JsonElement helloRoot = hello.RootElement;
+            string? reportedProfile = helloRoot.GetProperty("profile").GetString();
+            if (!helloRoot.GetProperty("ok").GetBoolean()
+                || helloRoot.GetProperty("backend").GetString() != "VaultKind Java Engine"
+                || string.IsNullOrWhiteSpace(reportedProfile)
+                || !Path.GetFullPath(reportedProfile).StartsWith(systemTemporaryPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidDataException("The mounted probe engine did not report an isolated temporary profile.");
+            }
+
+            using JsonDocument initialVaultList = await InvokeAsync(stream, "vault.list", timeout.Token);
+            if (!initialVaultList.RootElement.GetProperty("ok").GetBoolean()
+                || initialVaultList.RootElement.GetProperty("vaults").GetArrayLength() != 0)
+            {
+                throw new InvalidDataException("The mounted probe requires an empty isolated vault registry.");
+            }
+
+            using JsonDocument mountSettings = await InvokeAsync(stream, "settings.mount.list", timeout.Token);
+            JsonElement webDavService = mountSettings.RootElement.GetProperty("mountServices").EnumerateArray()
+                .SingleOrDefault(service => service.GetProperty("id").GetString() == windowsWebDavProvider);
+            if (webDavService.ValueKind == JsonValueKind.Undefined
+                || !webDavService.GetProperty("driveLetter").GetBoolean()
+                || !webDavService.GetProperty("loopbackPort").GetBoolean())
+            {
+                throw new InvalidDataException("The Windows Explorer WebDAV provider is unavailable or lacks its required capabilities.");
+            }
+
+            using JsonDocument selectWebDav = await InvokeAsync(stream, "settings.mount.select", timeout.Token, mountService: windowsWebDavProvider);
+            if (!selectWebDav.RootElement.GetProperty("ok").GetBoolean()
+                || selectWebDav.RootElement.GetProperty("selectedMountService").GetString() != windowsWebDavProvider)
+            {
+                throw new InvalidDataException("The isolated engine did not select the Windows Explorer WebDAV provider.");
+            }
+
+            using JsonDocument createVault = await InvokeAsync(stream, "vault.create", timeout.Token, password: probePassword, vaultPath: fixtureVaultPath);
+            AssertProtocolSuccess(createVault.RootElement, "created", "mounted disposable vault creation");
+            vaultId = createVault.RootElement.GetProperty("vaultId").GetString() ?? throw new InvalidDataException("Mounted disposable vault creation returned no vault ID.");
+
+            using JsonDocument unlockVault = await InvokeAsync(stream, "vault.unlock", timeout.Token, vaultId: vaultId, password: probePassword);
+            AssertProtocolSuccess(unlockVault.RootElement, "unlocked", "mounted disposable vault unlock");
+
+            JsonElement unlockedVault = await WaitForVaultStateAsync(stream, vaultId, "unlocked", expectMountPath: true, timeout.Token);
+            string mountRoot = unlockedVault.GetProperty("mountPath").GetString() ?? throw new InvalidDataException("The unlocked WebDAV vault reported no mount path.");
+            if (!Regex.IsMatch(mountRoot, "^[A-Za-z]:\\\\$", RegexOptions.CultureInvariant)
+                || driveRootsBefore.Contains(mountRoot)
+                || !Directory.Exists(mountRoot))
+            {
+                throw new InvalidDataException($"The WebDAV probe did not receive a new readable drive root: {mountRoot}");
+            }
+
+            markerPath = Path.Combine(mountRoot, "VaultKind-Store-WebDAV-Probe.txt");
+            string markerContents = "VaultKind disposable WebDAV probe " + Guid.NewGuid().ToString("N");
+            await File.WriteAllTextAsync(markerPath, markerContents, Encoding.UTF8, timeout.Token);
+            string readBack = await File.ReadAllTextAsync(markerPath, Encoding.UTF8, timeout.Token);
+            if (!string.Equals(markerContents, readBack, StringComparison.Ordinal))
+            {
+                throw new InvalidDataException("The mounted WebDAV drive did not preserve the probe file contents.");
+            }
+            File.Delete(markerPath);
+            markerPath = null;
+
+            using JsonDocument lockVault = await InvokeAsync(stream, "vault.lock", timeout.Token, vaultId: vaultId);
+            AssertProtocolSuccess(lockVault.RootElement, "locked", "mounted disposable vault lock");
+            await WaitForVaultStateAsync(stream, vaultId, "locked", expectMountPath: false, timeout.Token);
+            await WaitForDriveRemovalAsync(mountRoot, timeout.Token);
+
+            using JsonDocument removeVault = await InvokeAsync(stream, "vault.remove", timeout.Token, vaultId: vaultId);
+            AssertProtocolSuccess(removeVault.RootElement, "removed", "mounted disposable vault removal");
+            vaultId = null;
+
+            using JsonDocument restoreAutomatic = await InvokeAsync(stream, "settings.mount.select", timeout.Token, mountService: "automatic");
+            if (!restoreAutomatic.RootElement.GetProperty("ok").GetBoolean()
+                || restoreAutomatic.RootElement.GetProperty("selectedMountService").GetString() != "automatic")
+            {
+                throw new InvalidDataException("The mounted probe did not restore Automatic in its isolated profile.");
+            }
+
+            using JsonDocument finalVaultList = await InvokeAsync(stream, "vault.list", timeout.Token);
+            if (!finalVaultList.RootElement.GetProperty("ok").GetBoolean()
+                || finalVaultList.RootElement.GetProperty("vaults").GetArrayLength() != 0)
+            {
+                throw new InvalidDataException("The mounted disposable vault remained registered after cleanup.");
+            }
+
+            using JsonDocument shutdown = await InvokeAsync(stream, "backend.shutdown", timeout.Token);
+            if (!shutdown.RootElement.GetProperty("ok").GetBoolean())
+            {
+                throw new InvalidDataException("The mounted probe engine rejected backend.shutdown.");
+            }
+            shutdownRequested = true;
+
+            Console.WriteLine("Backend: VaultKind Java Engine; verified isolated Windows Explorer WebDAV selection, disposable unlock, new drive-letter file write/read/delete, lock, unmount, deregistration, setting restoration, and shutdown.");
+            return 0;
+        }
+        finally
+        {
+            if (!shutdownRequested)
+            {
+                using var cleanupTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+                if (markerPath is not null)
+                {
+                    try { File.Delete(markerPath); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+                }
+                if (vaultId is not null)
+                {
+                    await TryInvokeCleanupAsync(stream, "vault.lock", cleanupTimeout.Token, vaultId: vaultId);
+                    await TryInvokeCleanupAsync(stream, "vault.remove", cleanupTimeout.Token, vaultId: vaultId);
+                }
+                await TryInvokeCleanupAsync(stream, "settings.mount.select", cleanupTimeout.Token, mountService: "automatic");
+                await TryInvokeCleanupAsync(stream, "backend.shutdown", cleanupTimeout.Token);
+            }
+        }
+    }
+    catch (Exception exception)
+    {
+        Console.Error.WriteLine($"Mounted WebDAV probe failed: {exception.Message}");
+        return 1;
+    }
+}
+
+static async Task<JsonElement> WaitForVaultStateAsync(NetworkStream stream, string vaultId, string expectedState, bool expectMountPath, CancellationToken cancellationToken)
+{
+    while (true)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        using JsonDocument vaultList = await InvokeAsync(stream, "vault.list", cancellationToken);
+        JsonElement vault = vaultList.RootElement.GetProperty("vaults").EnumerateArray()
+            .SingleOrDefault(entry => entry.GetProperty("id").GetString() == vaultId);
+        if (vault.ValueKind != JsonValueKind.Undefined
+            && string.Equals(vault.GetProperty("state").GetString(), expectedState, StringComparison.OrdinalIgnoreCase))
+        {
+            bool hasMountPath = vault.TryGetProperty("mountPath", out JsonElement mountPath)
+                && mountPath.ValueKind == JsonValueKind.String
+                && !string.IsNullOrWhiteSpace(mountPath.GetString());
+            if (hasMountPath == expectMountPath)
+            {
+                return vault.Clone();
+            }
+        }
+        await Task.Delay(200, cancellationToken);
+    }
+}
+
+static async Task WaitForDriveRemovalAsync(string mountRoot, CancellationToken cancellationToken)
+{
+    while (Directory.Exists(mountRoot))
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await Task.Delay(200, cancellationToken);
+    }
+}
+
+static async Task TryInvokeCleanupAsync(NetworkStream stream, string operation, CancellationToken cancellationToken, string? vaultId = null, string? mountService = null)
+{
+    try
+    {
+        using JsonDocument _ = await InvokeAsync(stream, operation, cancellationToken, vaultId: vaultId, mountService: mountService);
+    }
+    catch (Exception)
+    {
+    }
+}
+
 static async Task<int> RestoreVaultRegistrationAsync(string socketPath, string displayName, string vaultPath)
 {
     try
@@ -815,7 +1044,10 @@ static void AssertProtocolSuccess(JsonElement response, string expectedState, st
     if (!response.GetProperty("ok").GetBoolean()
         || response.GetProperty("state").GetString() != expectedState)
     {
-        throw new InvalidDataException($"Unexpected response for {scenario}; expected successful state {expectedState}.");
+        string? error = response.TryGetProperty("error", out JsonElement errorElement) && errorElement.ValueKind == JsonValueKind.String
+            ? errorElement.GetString()
+            : null;
+        throw new InvalidDataException($"Unexpected response for {scenario}; expected successful state {expectedState}, received error {error ?? "none"}.");
     }
 }
 
@@ -828,10 +1060,10 @@ static void AssertRecoveryKey(JsonElement response, string expectedRecoveryKey, 
     }
 }
 
-static async Task<JsonDocument> InvokeAsync(NetworkStream stream, string operation, CancellationToken cancellationToken, int protocol = 1, string? vaultId = null, string? password = null, string? recoveryKey = null, string? newPassword = null, string? displayName = null, string? vaultPath = null, bool createRecoveryKey = false, bool useShortNames = false)
+static async Task<JsonDocument> InvokeAsync(NetworkStream stream, string operation, CancellationToken cancellationToken, int protocol = 1, string? vaultId = null, string? password = null, string? recoveryKey = null, string? newPassword = null, string? displayName = null, string? vaultPath = null, bool createRecoveryKey = false, bool useShortNames = false, string? mountService = null)
 {
     string requestId = Guid.NewGuid().ToString("N");
-    byte[] payload = JsonSerializer.SerializeToUtf8Bytes(new { protocol, requestId, operation, vaultId, password, recoveryKey, newPassword, displayName, vaultPath, createRecoveryKey, useShortNames });
+    byte[] payload = JsonSerializer.SerializeToUtf8Bytes(new { protocol, requestId, operation, vaultId, password, recoveryKey, newPassword, displayName, vaultPath, createRecoveryKey, useShortNames, mountService });
     byte[] header = new byte[sizeof(int)];
     BinaryPrimitives.WriteInt32BigEndian(header, payload.Length);
     await stream.WriteAsync(header, cancellationToken);

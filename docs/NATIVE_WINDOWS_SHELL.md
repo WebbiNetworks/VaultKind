@@ -27,6 +27,7 @@ The existing Java application remains in its original Maven project structure. W
 | `App.xaml.cs` | Application startup code. It starts the local vault engine and creates the main window. |
 | `MainWindow.xaml` | The genuine Windows window and title-bar layout. |
 | `MainWindow.xaml.cs` | Native window behavior including its icon and restoring the previous size, position, and maximized state. |
+| `Assets/AppIcon.ico` and Windows logo assets | The approved metallic-and-blue VK mark exported for the executable, desktop shortcut, title bar, taskbar, Store logo, package tiles, lock-screen logo, wide tile, and splash screen. |
 | `MainPage.xaml` | The current VaultKind Dashboard and sidebar appearance. XAML describes what appears and how it is arranged. |
 | `MainPage.xaml.cs` | Dashboard behavior, navigation, engine connection status, vault rendering, and native unlock/open/lock interactions. |
 | `Services/JavaVaultEngineHost.cs` | Development lifecycle host that starts and stops the existing Java vault engine with the native app. |
@@ -96,6 +97,8 @@ The reachability audit additionally records every release-JAR service descriptor
 The development build is an unpackaged, self-contained Windows executable. This avoids enabling Windows Developer Mode or registering a test package merely to review the prototype.
 
 Generated build output is placed under the project's `bin` and `obj` directories and is not intended for source control.
+
+The Windows identity artwork is derived deterministically from the approved repository sources `vaultkind_mark_256.png` and `vaultkind_full_lockup.png`; it is not a separate reinterpretation of the brand. The standalone transparent VK mark is used for app-icon surfaces, including an eight-frame 16-through-256-pixel ICO embedded into the executable through `ApplicationIcon`. The full VaultKind lockup is reserved for the wide tile and splash screen. All PNG package assets use the exact Microsoft-required dimensions and 8-bit output. Greg confirmed the rebuilt desktop shortcut, title-bar, and taskbar icons on July 31, 2026.
 
 ## Migration rule
 

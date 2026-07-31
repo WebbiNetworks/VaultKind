@@ -192,18 +192,31 @@ try {
         }
     }
 
-    $assetAliases = [ordered]@{
-        "SplashScreen.scale-200.png" = "SplashScreen.png"
-        "Square150x150Logo.scale-200.png" = "Square150x150Logo.png"
-        "Square44x44Logo.scale-200.png" = "Square44x44Logo.png"
-        "Wide310x150Logo.scale-200.png" = "Wide310x150Logo.png"
+    $requiredPackageAssets = [ordered]@{
+        "SplashScreen.png" = @(620, 300)
+        "SplashScreen.scale-200.png" = @(1240, 600)
+        "Square150x150Logo.png" = @(150, 150)
+        "Square150x150Logo.scale-200.png" = @(300, 300)
+        "Square44x44Logo.png" = @(44, 44)
+        "Square44x44Logo.scale-200.png" = @(88, 88)
+        "Wide310x150Logo.png" = @(310, 150)
+        "Wide310x150Logo.scale-200.png" = @(620, 300)
     }
-    foreach ($assetAlias in $assetAliases.GetEnumerator()) {
-        $assetSource = Join-Path $packageContentRoot "Assets\$($assetAlias.Key)"
+    Add-Type -AssemblyName System.Drawing
+    foreach ($requiredPackageAsset in $requiredPackageAssets.GetEnumerator()) {
+        $assetSource = Join-Path $packageContentRoot "Assets\$($requiredPackageAsset.Key)"
         if (-not (Test-Path -LiteralPath $assetSource -PathType Leaf)) {
-            throw "The staged layout is missing required package artwork: $($assetAlias.Key)"
+            throw "The staged layout is missing required package artwork: $($requiredPackageAsset.Key)"
         }
-        Copy-Item -LiteralPath $assetSource -Destination (Join-Path $packageContentRoot "Assets\$($assetAlias.Value)") -Force
+        $image = [System.Drawing.Image]::FromFile($assetSource)
+        try {
+            $expectedWidth, $expectedHeight = $requiredPackageAsset.Value
+            if ($image.Width -ne $expectedWidth -or $image.Height -ne $expectedHeight) {
+                throw "Package artwork $($requiredPackageAsset.Key) must be ${expectedWidth}x${expectedHeight}; found $($image.Width)x$($image.Height)."
+            }
+        } finally {
+            $image.Dispose()
+        }
     }
 
     $manifestTemplate = Get-Content -LiteralPath (Join-Path $repositoryRoot "packaging\AppxManifest.template.xml") -Raw
@@ -218,6 +231,10 @@ try {
     New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
     if (Test-Path -LiteralPath $resolvedOutputPath) {
         Remove-Item -LiteralPath $resolvedOutputPath -Force
+    }
+    $checksumPath = "$resolvedOutputPath.sha256"
+    if (Test-Path -LiteralPath $checksumPath) {
+        Remove-Item -LiteralPath $checksumPath -Force
     }
 
     $msixPath = if ($StoreUpload) {

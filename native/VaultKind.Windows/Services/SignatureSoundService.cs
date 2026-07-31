@@ -35,7 +35,7 @@ internal sealed class SignatureSoundService
         try
         {
             string soundDirectory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                VaultKindDataPaths.LocalApplicationDataRoot,
                 "VaultKind",
                 "Sounds");
             Directory.CreateDirectory(soundDirectory);

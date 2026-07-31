@@ -47,7 +47,7 @@ internal static class WindowPlacementPersistence
     }
 
     private static string SettingsPath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        VaultKindDataPaths.LocalApplicationDataRoot,
         "VaultKind",
         "native-window-placement.json");
 }

@@ -60,7 +60,7 @@ internal static class DoctorSummaryStore
     }
 
     private static string SettingsDirectory => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        VaultKindDataPaths.LocalApplicationDataRoot,
         "VaultKind");
 
     private static string SummaryPath => Path.Combine(SettingsDirectory, "doctor-summary.json");

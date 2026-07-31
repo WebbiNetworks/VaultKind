@@ -31,8 +31,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public class NativeUiBridge {
 
 	private static final Logger LOG = LoggerFactory.getLogger(NativeUiBridge.class);
-	private static final Path BRIDGE_DIRECTORY = Path.of(System.getenv("LOCALAPPDATA"), "VaultKind", "bridge");
-	private static final Path SOCKET_PATH = BRIDGE_DIRECTORY.resolve("native-bridge-v1.sock");
+	private static final Path SOCKET_PATH = resolveSocketPath();
+	private static final Path BRIDGE_DIRECTORY = SOCKET_PATH.getParent();
 	private final NativeUiProtocol protocol;
 	private final AtomicReference<ServerSocketChannel> server = new AtomicReference<>();
 	private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
@@ -46,6 +46,18 @@ public class NativeUiBridge {
 	public NativeUiBridge(NativeUiProtocol protocol, ShutdownHook shutdownHook) {
 		this.protocol = protocol;
 		shutdownHook.runOnShutdown(this::close);
+	}
+
+	private static Path resolveSocketPath() {
+		var configuredPath = System.getenv("VAULTKIND_BRIDGE_PATH");
+		if (configuredPath != null && !configuredPath.isBlank()) {
+			var path = Path.of(configuredPath).normalize();
+			if (!path.isAbsolute()) {
+				throw new IllegalStateException("The configured native bridge path must be absolute");
+			}
+			return path;
+		}
+		return Path.of(System.getenv("LOCALAPPDATA"), "VaultKind", "bridge", "native-bridge-v1.sock");
 	}
 
 	public void start() {

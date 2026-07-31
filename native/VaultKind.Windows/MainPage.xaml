@@ -627,8 +627,8 @@
                     <Border Grid.Row="3" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,1,0,0" />
                     <StackPanel x:Name="EmptyVaultState" Grid.Row="4" Margin="20,24" HorizontalAlignment="Center" Spacing="8">
                         <FontIcon Glyph="&#xE72E;" FontSize="26" Foreground="{StaticResource MutedTextBrush}" />
-                        <TextBlock Text="No vaults connected" Foreground="{StaticResource MutedTextBrush}" />
-                        <TextBlock Text="Start or connect the VaultKind engine to view configured vaults." Width="220" TextAlignment="Center" TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource MutedTextBrush}" />
+                        <TextBlock Text="No vaults added" Foreground="{StaticResource MutedTextBrush}" />
+                        <TextBlock Text="Add a vault to begin protecting or accessing files in this installation." Width="220" TextAlignment="Center" TextWrapping="Wrap" FontSize="12" Foreground="{StaticResource MutedTextBrush}" />
                     </StackPanel>
                     <ScrollViewer Grid.Row="4" VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="VaultListPanel" Padding="0,8,0,12" />

@@ -62,7 +62,7 @@ internal static class ActivityHistoryStore
         && !string.IsNullOrWhiteSpace(activity.Category);
 
     private static string ActivityHistoryPath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        VaultKindDataPaths.LocalApplicationDataRoot,
         "VaultKind",
         "activity.json");
 }

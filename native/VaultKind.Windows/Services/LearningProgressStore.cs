@@ -60,7 +60,7 @@ internal static class LearningProgressStore
     }
 
     private static string ProgressPath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        VaultKindDataPaths.LocalApplicationDataRoot,
         "VaultKind",
         "learning-progress.json");
 }

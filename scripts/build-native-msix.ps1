@@ -27,7 +27,7 @@ param(
 
     [switch]$DevelopmentPackage,
 
-    [ValidatePattern("^[A-Za-z0-9][A-Za-z0-9.-]{0,63}$")]
+    [ValidatePattern("^[A-Za-z0-9][A-Za-z0-9.-]{0,15}$")]
     [string]$IsolatedProfileId
 )
 

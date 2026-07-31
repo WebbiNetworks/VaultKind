@@ -1203,7 +1203,7 @@ public sealed partial class MainPage : Page
     private async void OpenDiagnosticsFolder(object sender, RoutedEventArgs e)
     {
         string logDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            VaultKindDataPaths.LocalApplicationDataRoot,
             "VaultKind",
             "engine",
             "logs");

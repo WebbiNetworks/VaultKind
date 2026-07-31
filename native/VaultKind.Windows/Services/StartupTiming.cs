@@ -33,7 +33,7 @@ internal static class StartupTiming
             try
             {
                 string directory = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    VaultKindDataPaths.LocalApplicationDataRoot,
                     "VaultKind",
                     "diagnostics");
                 Directory.CreateDirectory(directory);

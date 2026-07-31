@@ -75,6 +75,7 @@ internal sealed class JavaVaultEngineHost : IDisposable
             CreateNoWindow = true
         };
         startInfo.Environment["LOCALAPPDATA"] = VaultKindDataPaths.LocalApplicationDataRoot;
+        startInfo.Environment["VAULTKIND_BRIDGE_PATH"] = VaultKindDataPaths.SocketPath;
 
         string classesDirectory = bundledEngine?.ClassesDirectory ?? Path.Combine(repositoryRoot!, "target", "classes");
         startInfo.ArgumentList.Add($"-Dlogback.configurationFile={Path.Combine(classesDirectory, "logback-native.xml")}");

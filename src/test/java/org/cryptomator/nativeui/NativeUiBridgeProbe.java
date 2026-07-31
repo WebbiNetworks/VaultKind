@@ -18,7 +18,9 @@ import java.util.List;
  */
 public class NativeUiBridgeProbe {
 
-	private static final Path SOCKET_PATH = Path.of(System.getenv("LOCALAPPDATA"), "VaultKind", "bridge", "native-bridge-v1.sock");
+	private static final Path SOCKET_PATH = System.getenv("VAULTKIND_BRIDGE_PATH") == null
+			? Path.of(System.getenv("LOCALAPPDATA"), "VaultKind", "bridge", "native-bridge-v1.sock")
+			: Path.of(System.getenv("VAULTKIND_BRIDGE_PATH"));
 
 	public static void main(String[] args) throws Exception {
 		Files.createDirectories(SOCKET_PATH.getParent());

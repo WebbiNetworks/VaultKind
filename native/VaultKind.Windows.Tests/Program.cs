@@ -15,6 +15,15 @@ if (args is ["--probe-mounted-webdav", var mountedSocketPath])
     return await ProbeMountedWebDavAsync(mountedSocketPath);
 }
 
+if (args is ["--probe-mounted-webdav-package", var packageSocketPath, var packageExpectedProfile, var packageFixtureRoot])
+{
+    return await ProbeMountedWebDavAsync(
+        packageSocketPath,
+        packageExpectedProfile,
+        packageFixtureRoot,
+        shutdownEngine: false);
+}
+
 if (args is ["--restore-vault-registration", var restoreSocketPath, var displayName, var vaultPath])
 {
     return await RestoreVaultRegistrationAsync(restoreSocketPath, displayName, vaultPath);
@@ -23,6 +32,11 @@ if (args is ["--restore-vault-registration", var restoreSocketPath, var displayN
 if (args is ["--inspect-live-engine", var inspectSocketPath])
 {
     return await InspectLiveEngineAsync(inspectSocketPath);
+}
+
+if (args is ["--inspect-isolated-live-engine", var isolatedSocketPath, var isolatedExpectedProfile])
+{
+    return await InspectLiveEngineAsync(isolatedSocketPath, isolatedExpectedProfile, expectedVaultCount: 0);
 }
 
 (string Kind, string? CaseId, bool Expected)[] doctorCases =
@@ -40,7 +54,7 @@ int failures = 0;
 (string Name, Func<string> Resolve, string Expected)[] dataPathCases =
 [
     ("permanent profile", () => VaultKindDataPaths.ResolveLocalApplicationDataRoot("C:\\Users\\Greg\\AppData\\Local", null), "C:\\Users\\Greg\\AppData\\Local"),
-    ("development package profile", () => VaultKindDataPaths.ResolveLocalApplicationDataRoot("C:\\Users\\Greg\\AppData\\Local", "StoreTest.Development"), "C:\\Users\\Greg\\AppData\\Local\\VaultKind\\PackageProfiles\\StoreTest.Development")
+    ("development package profile", () => VaultKindDataPaths.ResolveLocalApplicationDataRoot("C:\\Users\\Greg\\AppData\\Local", "LocalMsix.WebDav"), "C:\\Users\\Greg\\AppData\\Local\\VKP\\LocalMsix.WebDav")
 ];
 foreach ((string name, Func<string> resolve, string expected) in dataPathCases)
 {
@@ -51,8 +65,17 @@ foreach ((string name, Func<string> resolve, string expected) in dataPathCases)
         failures++;
     }
 }
+string isolatedBridgePath = VaultKindDataPaths.ResolveSocketPath(
+    "C:\\Users\\Greg\\AppData\\Local\\VKP\\LocalMsix.WebDav",
+    "LocalMsix.WebDav",
+    "C:\\Users\\Greg");
+if (!isolatedBridgePath.Equals("C:\\Users\\Greg\\.vaultkind-runtime\\LocalMsix.WebDav\\native-bridge-v1.sock", StringComparison.OrdinalIgnoreCase))
+{
+    Console.Error.WriteLine($"FAIL: development package bridge resolved to {isolatedBridgePath}.");
+    failures++;
+}
 
-foreach (string invalidProfileId in new[] { "..", ".leading", "slash/profile", "backslash\\profile", new string('a', 65) })
+foreach (string invalidProfileId in new[] { "..", ".leading", "slash/profile", "backslash\\profile", new string('a', 17) })
 {
     try
     {
@@ -63,6 +86,15 @@ foreach (string invalidProfileId in new[] { "..", ".leading", "slash/profile", "
     catch (InvalidDataException)
     {
     }
+}
+try
+{
+    VaultKindDataPaths.ResolveSocketPath("C:\\Local", "SocketLimit", "C:\\" + new string('x', 100));
+    Console.Error.WriteLine("FAIL: an overlong packaged socket path was accepted.");
+    failures++;
+}
+catch (InvalidDataException)
+{
 }
 foreach ((string kind, string? caseId, bool expected) in doctorCases)
 {
@@ -528,7 +560,7 @@ if (failures > 0)
     return 1;
 }
 
-Console.WriteLine($"Passed {dataPathCases.Length + 5 + doctorCases.Length + lockFailureCases.Length + keyboardNavigationCases.Length + engineProfileCases.Length + 1 + developmentClasspathCases.Length + backendIdentityCases.Length + vaultStateCountCases.Length + keyboardDocumentCases.Length + activityPersistenceChecks + preferencePersistenceChecks + doctorSummaryPersistenceChecks + learningProgressPersistenceChecks + windowPlacementPersistenceChecks} native policy, persistence, keyboard navigation, documentation, backend identity, profile, preference, and workflow checks.");
+Console.WriteLine($"Passed {dataPathCases.Length + 7 + doctorCases.Length + lockFailureCases.Length + keyboardNavigationCases.Length + engineProfileCases.Length + 1 + developmentClasspathCases.Length + backendIdentityCases.Length + vaultStateCountCases.Length + keyboardDocumentCases.Length + activityPersistenceChecks + preferencePersistenceChecks + doctorSummaryPersistenceChecks + learningProgressPersistenceChecks + windowPlacementPersistenceChecks} native policy, persistence, keyboard navigation, documentation, backend identity, profile, preference, and workflow checks.");
 return 0;
 
 static void DeleteTestDirectory(string path)
@@ -706,7 +738,11 @@ static async Task<int> ProbeBundledEngineAsync(string socketPath)
     }
 }
 
-static async Task<int> ProbeMountedWebDavAsync(string socketPath)
+static async Task<int> ProbeMountedWebDavAsync(
+    string socketPath,
+    string? expectedProfileOverride = null,
+    string? fixtureRootOverride = null,
+    bool shutdownEngine = true)
 {
     const string windowsWebDavProvider = "org.cryptomator.frontend.webdav.mount.WindowsMounter";
     const string probePassword = "Probe-WebDAV-2026!";
@@ -716,10 +752,23 @@ static async Task<int> ProbeMountedWebDavAsync(string socketPath)
 
     try
     {
-        string bridgeDirectory = Path.GetDirectoryName(socketPath) ?? throw new InvalidDataException("The probe socket has no parent directory.");
-        string isolatedTestRoot = Path.GetFullPath(Path.Combine(bridgeDirectory, "..", ".."));
         string systemTemporaryRoot = Path.GetFullPath(Path.GetTempPath());
         string systemTemporaryPrefix = systemTemporaryRoot.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        string isolatedTestRoot;
+        if (fixtureRootOverride is null)
+        {
+            string bridgeDirectory = Path.GetDirectoryName(socketPath) ?? throw new InvalidDataException("The probe socket has no parent directory.");
+            isolatedTestRoot = Path.GetFullPath(Path.Combine(bridgeDirectory, "..", ".."));
+        }
+        else
+        {
+            isolatedTestRoot = Path.GetFullPath(fixtureRootOverride);
+            string fixtureRootName = Path.GetFileName(Path.TrimEndingDirectorySeparator(isolatedTestRoot));
+            if (!fixtureRootName.StartsWith("VaultKind-Msix-Probe-", StringComparison.Ordinal))
+            {
+                throw new InvalidDataException("The packaged mounted probe fixture must use a dedicated VaultKind-Msix-Probe-* directory.");
+            }
+        }
         if (!isolatedTestRoot.StartsWith(systemTemporaryPrefix, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidDataException("The mounted probe profile must remain inside the Windows temporary directory.");
@@ -743,7 +792,9 @@ static async Task<int> ProbeMountedWebDavAsync(string socketPath)
             if (!helloRoot.GetProperty("ok").GetBoolean()
                 || helloRoot.GetProperty("backend").GetString() != "VaultKind Java Engine"
                 || string.IsNullOrWhiteSpace(reportedProfile)
-                || !Path.GetFullPath(reportedProfile).StartsWith(systemTemporaryPrefix, StringComparison.OrdinalIgnoreCase))
+                || (expectedProfileOverride is null
+                    ? !Path.GetFullPath(reportedProfile).StartsWith(systemTemporaryPrefix, StringComparison.OrdinalIgnoreCase)
+                    : !JavaVaultEngineHost.IsExpectedProfile(reportedProfile, expectedProfileOverride)))
             {
                 throw new InvalidDataException("The mounted probe engine did not report an isolated temporary profile.");
             }
@@ -822,14 +873,23 @@ static async Task<int> ProbeMountedWebDavAsync(string socketPath)
                 throw new InvalidDataException("The mounted disposable vault remained registered after cleanup.");
             }
 
-            using JsonDocument shutdown = await InvokeAsync(stream, "backend.shutdown", timeout.Token);
-            if (!shutdown.RootElement.GetProperty("ok").GetBoolean())
+            if (shutdownEngine)
             {
-                throw new InvalidDataException("The mounted probe engine rejected backend.shutdown.");
+                using JsonDocument shutdown = await InvokeAsync(stream, "backend.shutdown", timeout.Token);
+                if (!shutdown.RootElement.GetProperty("ok").GetBoolean())
+                {
+                    throw new InvalidDataException("The mounted probe engine rejected backend.shutdown.");
+                }
+                shutdownRequested = true;
             }
-            shutdownRequested = true;
 
-            Console.WriteLine("Backend: VaultKind Java Engine; verified isolated Windows Explorer WebDAV selection, disposable unlock, new drive-letter file write/read/delete, lock, unmount, deregistration, setting restoration, and shutdown.");
+            if (fixtureRootOverride is not null)
+            {
+                Directory.Delete(isolatedTestRoot, recursive: true);
+            }
+
+            string shutdownResult = shutdownEngine ? ", and shutdown" : " while leaving the package engine running";
+            Console.WriteLine($"Backend: VaultKind Java Engine; verified isolated Windows Explorer WebDAV selection, disposable unlock, new drive-letter file write/read/delete, lock, unmount, deregistration, setting restoration{shutdownResult}.");
             return 0;
         }
         finally
@@ -847,12 +907,32 @@ static async Task<int> ProbeMountedWebDavAsync(string socketPath)
                     await TryInvokeCleanupAsync(stream, "vault.remove", cleanupTimeout.Token, vaultId: vaultId);
                 }
                 await TryInvokeCleanupAsync(stream, "settings.mount.select", cleanupTimeout.Token, mountService: "automatic");
-                await TryInvokeCleanupAsync(stream, "backend.shutdown", cleanupTimeout.Token);
+                if (shutdownEngine)
+                {
+                    await TryInvokeCleanupAsync(stream, "backend.shutdown", cleanupTimeout.Token);
+                }
             }
         }
     }
     catch (Exception exception)
     {
+        if (fixtureRootOverride is not null)
+        {
+            try
+            {
+                string failedFixtureRoot = Path.GetFullPath(fixtureRootOverride);
+                string temporaryPrefix = Path.GetFullPath(Path.GetTempPath()).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                string failedFixtureName = Path.GetFileName(Path.TrimEndingDirectorySeparator(failedFixtureRoot));
+                if (failedFixtureRoot.StartsWith(temporaryPrefix, StringComparison.OrdinalIgnoreCase)
+                    && failedFixtureName.StartsWith("VaultKind-Msix-Probe-", StringComparison.Ordinal)
+                    && Directory.Exists(failedFixtureRoot))
+                {
+                    Directory.Delete(failedFixtureRoot, recursive: true);
+                }
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        }
         Console.Error.WriteLine($"Mounted WebDAV probe failed: {exception.Message}");
         return 1;
     }
@@ -955,7 +1035,10 @@ static async Task<int> RestoreVaultRegistrationAsync(string socketPath, string d
     }
 }
 
-static async Task<int> InspectLiveEngineAsync(string socketPath)
+static async Task<int> InspectLiveEngineAsync(
+    string socketPath,
+    string? expectedProfileOverride = null,
+    int? expectedVaultCount = null)
 {
     try
     {
@@ -969,7 +1052,7 @@ static async Task<int> InspectLiveEngineAsync(string socketPath)
         using JsonDocument mountSettings = await InvokeAsync(stream, "settings.mount.list", timeout.Token);
         JsonElement helloRoot = hello.RootElement;
         JsonElement mountSettingsRoot = mountSettings.RootElement;
-        string expectedProfile = JavaVaultEngineHost.ResolveExpectedSettingsPath();
+        string expectedProfile = expectedProfileOverride ?? JavaVaultEngineHost.ResolveExpectedSettingsPath();
         if (!helloRoot.GetProperty("ok").GetBoolean()
             || helloRoot.GetProperty("backend").GetString() != "VaultKind Java Engine"
             || !JavaVaultEngineHost.IsExpectedProfile(helloRoot.GetProperty("profile").GetString(), expectedProfile)
@@ -980,6 +1063,11 @@ static async Task<int> InspectLiveEngineAsync(string socketPath)
         }
 
         JsonElement[] vaults = vaultList.RootElement.GetProperty("vaults").EnumerateArray().ToArray();
+        if (expectedVaultCount is int requiredVaultCount && vaults.Length != requiredVaultCount)
+        {
+            throw new InvalidDataException($"The live engine returned {vaults.Length} vaults; expected {requiredVaultCount}.");
+        }
+
         JsonElement[] mountServices = mountSettingsRoot.GetProperty("mountServices").EnumerateArray().ToArray();
         string? selectedMountService = mountSettingsRoot.GetProperty("selectedMountService").GetString();
         string?[] mountServiceIds = mountServices.Select(service => service.GetProperty("id").GetString()).ToArray();

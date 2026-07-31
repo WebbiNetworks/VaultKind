@@ -62,7 +62,7 @@ internal static class AppPreferencesStore
     };
 
     private static string SettingsDirectory => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        VaultKindDataPaths.LocalApplicationDataRoot,
         "VaultKind");
 
     private static string PreferencesPath => Path.Combine(SettingsDirectory, "preferences.json");

@@ -737,21 +737,39 @@ static async Task<int> InspectLiveEngineAsync(string socketPath)
 
         using JsonDocument hello = await InvokeAsync(stream, "backend.hello", timeout.Token);
         using JsonDocument vaultList = await InvokeAsync(stream, "vault.list", timeout.Token);
+        using JsonDocument mountSettings = await InvokeAsync(stream, "settings.mount.list", timeout.Token);
         JsonElement helloRoot = hello.RootElement;
+        JsonElement mountSettingsRoot = mountSettings.RootElement;
         string expectedProfile = JavaVaultEngineHost.ResolveExpectedSettingsPath();
         if (!helloRoot.GetProperty("ok").GetBoolean()
             || helloRoot.GetProperty("backend").GetString() != "VaultKind Java Engine"
             || !JavaVaultEngineHost.IsExpectedProfile(helloRoot.GetProperty("profile").GetString(), expectedProfile)
-            || !vaultList.RootElement.GetProperty("ok").GetBoolean())
+            || !vaultList.RootElement.GetProperty("ok").GetBoolean()
+            || !mountSettingsRoot.GetProperty("ok").GetBoolean())
         {
-            throw new InvalidDataException("The live engine identity, profile, or vault list was invalid.");
+            throw new InvalidDataException("The live engine identity, profile, vault list, or mount-provider list was invalid.");
         }
 
         JsonElement[] vaults = vaultList.RootElement.GetProperty("vaults").EnumerateArray().ToArray();
+        JsonElement[] mountServices = mountSettingsRoot.GetProperty("mountServices").EnumerateArray().ToArray();
+        string? selectedMountService = mountSettingsRoot.GetProperty("selectedMountService").GetString();
+        string?[] mountServiceIds = mountServices.Select(service => service.GetProperty("id").GetString()).ToArray();
+        if (mountServiceIds.Any(string.IsNullOrWhiteSpace)
+            || mountServiceIds.Distinct(StringComparer.Ordinal).Count() != mountServiceIds.Length
+            || !mountServiceIds.Contains("automatic", StringComparer.Ordinal)
+            || !mountServiceIds.Contains(selectedMountService, StringComparer.Ordinal))
+        {
+            throw new InvalidDataException("The live engine returned an inconsistent mount-provider selection or inventory.");
+        }
         Console.WriteLine($"Backend: VaultKind Java Engine; profile: {expectedProfile}; vaults: {vaults.Length}.");
         foreach (JsonElement vault in vaults)
         {
             Console.WriteLine($"{vault.GetProperty("name").GetString()} | {vault.GetProperty("state").GetString()} | {vault.GetProperty("path").GetString()}");
+        }
+        Console.WriteLine($"Selected mount provider: {selectedMountService}; providers: {mountServices.Length}.");
+        foreach (JsonElement service in mountServices)
+        {
+            Console.WriteLine($"{service.GetProperty("id").GetString()} | {service.GetProperty("name").GetString()} | mountPoint={service.GetProperty("mountPoint").GetBoolean()} | driveLetter={service.GetProperty("driveLetter").GetBoolean()} | loopbackPort={service.GetProperty("loopbackPort").GetBoolean()} | mountFlags={service.GetProperty("mountFlags").GetBoolean()} | readOnly={service.GetProperty("readOnly").GetBoolean()}");
         }
         return 0;
     }

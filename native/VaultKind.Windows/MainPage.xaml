@@ -1215,7 +1215,11 @@
                         <Border x:Name="ConnectVaultReviewCard" Visibility="Collapsed" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource InfoBorderBrush}" BorderThickness="1" CornerRadius="12" Padding="24,20">
                             <StackPanel Spacing="10"><TextBlock Text="Review your vault" FontSize="18" FontWeight="SemiBold" /><TextBlock x:Name="ConnectVaultNameText" Foreground="{StaticResource BrandBlueBrush}" FontSize="16" /><TextBlock x:Name="ConnectVaultPathText" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" /><Grid ColumnSpacing="10"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions><TextBlock Text="Configuration file" Foreground="{StaticResource MutedTextBrush}" /><TextBlock x:Name="ConnectVaultConfigText" Grid.Column="1" FontWeight="SemiBold" TextWrapping="Wrap" /></Grid><TextBlock Text="Connecting this vault will not move, copy, rename, or change its encrypted files." TextWrapping="Wrap" Foreground="{StaticResource InfoTextBrush}" /></StackPanel>
                         </Border>
-                        <StackPanel Orientation="Horizontal" Spacing="10"><ProgressRing x:Name="ConnectVaultProgress" Width="20" Height="20" IsActive="False" Visibility="Collapsed" AutomationProperties.Name="Connecting vault" /><TextBlock x:Name="ConnectVaultStatus" Visibility="Collapsed" TextWrapping="Wrap" Foreground="#FF665D" VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" /></StackPanel>
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <ProgressRing x:Name="ConnectVaultProgress" Width="20" Height="20" IsActive="False" Visibility="Collapsed" AutomationProperties.Name="Connecting vault" />
+                            <TextBlock x:Name="ConnectVaultStatus" Grid.Column="1" Visibility="Collapsed" TextWrapping="Wrap" Foreground="#FF665D" VerticalAlignment="Center" AutomationProperties.LiveSetting="Polite" />
+                        </Grid>
                     </StackPanel>
                     <Grid Grid.Row="2"><Button Content="Back" Padding="28,9" Click="ShowAddVault" AutomationProperties.Name="Back to Add Vault" /><Button x:Name="ConnectVaultButton" Content="Connect Vault" Padding="24,9" HorizontalAlignment="Right" IsEnabled="False" Background="#2B83E7" Foreground="White" Click="ConnectExistingVault" AutomationProperties.Name="Connect selected vault" /></Grid>
                 </Grid>
@@ -1301,7 +1305,7 @@
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
-                                <TextBlock Text="Choose the parent folder. VaultKind will create a new folder inside it using your vault name." Foreground="{StaticResource MutedTextBrush}" FontSize="13" TextWrapping="Wrap" />
+                                <TextBlock Text="Choose a parent folder, or an empty folder already named for your vault. VaultKind shows the exact final path below." Foreground="{StaticResource MutedTextBrush}" FontSize="13" TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
 

@@ -39,6 +39,11 @@ if (args is ["--inspect-isolated-live-engine", var isolatedSocketPath, var isola
     return await InspectLiveEngineAsync(isolatedSocketPath, isolatedExpectedProfile, expectedVaultCount: 0);
 }
 
+if (args is ["--inspect-profile-live-engine", var profileSocketPath, var profileExpectedPath])
+{
+    return await InspectLiveEngineAsync(profileSocketPath, profileExpectedPath);
+}
+
 (string Kind, string? CaseId, bool Expected)[] doctorCases =
 [
     ("attention", "VK-1003", true),
@@ -50,6 +55,42 @@ if (args is ["--inspect-isolated-live-engine", var isolatedSocketPath, var isola
 ];
 
 int failures = 0;
+string vaultPathPolicyRoot = Path.Combine(Path.GetTempPath(), "VaultKind.Tests", Guid.NewGuid().ToString("N"));
+try
+{
+    string parentFolder = Path.Combine(vaultPathPolicyRoot, "Parent");
+    string matchingEmptyFolder = Path.Combine(vaultPathPolicyRoot, "Mooselock");
+    string matchingNonEmptyFolder = Path.Combine(vaultPathPolicyRoot, "Occupied");
+    Directory.CreateDirectory(parentFolder);
+    Directory.CreateDirectory(matchingEmptyFolder);
+    Directory.CreateDirectory(matchingNonEmptyFolder);
+    File.WriteAllText(Path.Combine(matchingNonEmptyFolder, "existing.txt"), "occupied");
+
+    VaultCreationTarget parentTarget = VaultCreationPathPolicy.Resolve(parentFolder, "Mooselock");
+    VaultCreationTarget emptyMatchingTarget = VaultCreationPathPolicy.Resolve(matchingEmptyFolder, "mooselock");
+    VaultCreationTarget occupiedMatchingTarget = VaultCreationPathPolicy.Resolve(matchingNonEmptyFolder, "Occupied");
+    Directory.CreateDirectory(Path.Combine(parentFolder, "Existing"));
+    VaultCreationTarget existingChildTarget = VaultCreationPathPolicy.Resolve(parentFolder, "Existing");
+    if (!parentTarget.IsSuitable
+        || parentTarget.UsesSelectedFolder
+        || !parentTarget.Path.Equals(Path.Combine(parentFolder, "Mooselock"), StringComparison.OrdinalIgnoreCase)
+        || !emptyMatchingTarget.IsSuitable
+        || !emptyMatchingTarget.UsesSelectedFolder
+        || !emptyMatchingTarget.Path.Equals(matchingEmptyFolder, StringComparison.OrdinalIgnoreCase)
+        || occupiedMatchingTarget.IsSuitable
+        || existingChildTarget.IsSuitable)
+    {
+        Console.Error.WriteLine("FAIL: vault creation path policy did not preserve parent-folder and matching-empty-folder behavior.");
+        failures++;
+    }
+}
+finally
+{
+    if (Directory.Exists(vaultPathPolicyRoot))
+    {
+        Directory.Delete(vaultPathPolicyRoot, recursive: true);
+    }
+}
 
 (string Name, Func<string> Resolve, string Expected)[] dataPathCases =
 [
@@ -560,7 +601,7 @@ if (failures > 0)
     return 1;
 }
 
-Console.WriteLine($"Passed {dataPathCases.Length + 7 + doctorCases.Length + lockFailureCases.Length + keyboardNavigationCases.Length + engineProfileCases.Length + 1 + developmentClasspathCases.Length + backendIdentityCases.Length + vaultStateCountCases.Length + keyboardDocumentCases.Length + activityPersistenceChecks + preferencePersistenceChecks + doctorSummaryPersistenceChecks + learningProgressPersistenceChecks + windowPlacementPersistenceChecks} native policy, persistence, keyboard navigation, documentation, backend identity, profile, preference, and workflow checks.");
+Console.WriteLine($"Passed {dataPathCases.Length + 8 + doctorCases.Length + lockFailureCases.Length + keyboardNavigationCases.Length + engineProfileCases.Length + 1 + developmentClasspathCases.Length + backendIdentityCases.Length + vaultStateCountCases.Length + keyboardDocumentCases.Length + activityPersistenceChecks + preferencePersistenceChecks + doctorSummaryPersistenceChecks + learningProgressPersistenceChecks + windowPlacementPersistenceChecks} native policy, persistence, keyboard navigation, documentation, backend identity, profile, preference, and workflow checks.");
 return 0;
 
 static void DeleteTestDirectory(string path)

@@ -2946,26 +2946,18 @@ public sealed partial class MainPage : Page
             return;
         }
 
-        string targetPath = Path.Combine(selectedCreateVaultParentPath, CreateVaultNameInput.Text.Trim());
-        CreateVaultStoragePath.Text = targetPath;
-
-        bool targetAlreadyExists;
-        try
-        {
-            targetAlreadyExists = Directory.Exists(targetPath) || File.Exists(targetPath);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            targetAlreadyExists = true;
-        }
-
-        bool suitable = !targetAlreadyExists;
-        CreateVaultStorageStatus.Text = suitable ? "✓ Suitable location for your vault" : "A file or folder already uses this vault name. Choose a different name or parent folder.";
-        CreateVaultStorageStatus.Foreground = new SolidColorBrush(suitable
+        VaultCreationTarget target = VaultCreationPathPolicy.Resolve(selectedCreateVaultParentPath, CreateVaultNameInput.Text);
+        CreateVaultStoragePath.Text = target.Path;
+        CreateVaultStorageStatus.Text = target.IsSuitable
+            ? target.UsesSelectedFolder
+                ? "✓ This empty folder will become your vault"
+                : "✓ VaultKind will create this folder"
+            : "This location is not empty or already in use. Choose another folder or vault name.";
+        CreateVaultStorageStatus.Foreground = new SolidColorBrush(target.IsSuitable
             ? Color.FromArgb(255, 73, 205, 112)
             : Color.FromArgb(255, 255, 102, 93));
         CreateVaultStorageStatus.Visibility = Visibility.Visible;
-        CreateVaultStorageNextButton.IsEnabled = suitable;
+        CreateVaultStorageNextButton.IsEnabled = target.IsSuitable;
     }
 
     private void ShowCreateVaultReview(object sender, RoutedEventArgs e)

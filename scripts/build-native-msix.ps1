@@ -140,6 +140,17 @@ try {
         }
         $packageProfileJson = $packageProfileMarker | ConvertTo-Json -Compress
         [System.IO.File]::WriteAllText($packageProfileMarkerPath, $packageProfileJson, [System.Text.UTF8Encoding]::new($false))
+
+        foreach ($authoredBinaryName in @("VaultKind.Windows.exe", "VaultKind.Windows.dll")) {
+            $authoredBinaryPath = Join-Path $packageContentRoot $authoredBinaryName
+            if (-not (Test-Path -LiteralPath $authoredBinaryPath -PathType Leaf)) {
+                throw "The development package is missing authored binary: $authoredBinaryName"
+            }
+            & $signTool sign /sha1 $normalizedThumbprint /fd SHA256 $authoredBinaryPath
+            if ($LASTEXITCODE -ne 0) { throw "SignTool could not sign development-package binary $authoredBinaryName." }
+            & $signTool verify /pa /v $authoredBinaryPath
+            if ($LASTEXITCODE -ne 0) { throw "Development-package binary $authoredBinaryName did not pass signature verification." }
+        }
     }
 
     $assetAliases = [ordered]@{

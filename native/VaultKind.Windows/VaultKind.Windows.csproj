@@ -19,6 +19,9 @@
     <EnableWinAppRunSupport>false</EnableWinAppRunSupport>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Never let ignored local publish experiments become app resources through
+         the WinUI SDK's default image/content globs. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

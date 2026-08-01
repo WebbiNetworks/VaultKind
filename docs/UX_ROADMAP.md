@@ -33,15 +33,15 @@ VaultKind is permanently English-only. Multilingual support is not on the roadma
 - Focus is deliberately placed and restored around embedded workflows so keyboard and screen-reader users remain oriented inside the main workspace.
 - A static accessible-name and focus audit now covers fixed and generated controls. Stateful Preferences, Learning Center, FAQ, and Assistant controls announce selection, viewed, expanded, collapsed, and diagnostic-case context where applicable.
 - Primary workspaces, creation steps, vault tools, management subflows, FAQ category rebuilding, Assistant result replacement, and completion screens now receive or restore a deliberate keyboard focus target.
-- Automated coverage now includes 62 native policy, persistence, keyboard-navigation, embedded-documentation, backend-identity, profile, preference, and workflow checks. Activity history, application preferences, cached Vault Doctor summaries, Learning Center progress, and window placement have direct file-level coverage. Dashboard locked/unlocked counts cover empty, mixed-case, and unknown vault states.
+- Automated coverage now includes 87 native policy, protocol, persistence, keyboard-navigation, embedded-documentation, backend-identity, profile, preference, and workflow checks. Activity history, application preferences, cached Vault Doctor summaries, Learning Center progress, and window placement have direct file-level coverage. Dashboard locked/unlocked counts cover empty, mixed-case, and unknown vault states.
 - A July 27, 2026 hands-on pass confirmed the zero-vault shell with keyboard-only navigation, Narrator names and live Doctor status, larger text, minimum-window layout, High Contrast, and visible focus in Light and Dark.
 
 ### Next accessibility milestones
 
-- Repeat the keyboard and Narrator matrix with one and many configured disposable vaults; the zero-vault shell is confirmed.
+- Repeat the keyboard and Narrator matrix on the frozen release candidate. Development passes have covered zero-, one-, and multi-vault navigation; sensitive connected-vault workflows remain below.
 - Complete connected-vault, recovery, password, sharing, file-tool, and removal checks with Narrator.
 - Validate additional supported-DPI configurations. The current development build is confirmed at the test operator's normal 160% Windows Text size; cross-monitor reflow remained functional on a television at an unusually large effective scale; and app larger text, minimum-window layout, High Contrast, and both themes also passed.
-- Verify context-menu access with the Menu key and Shift+F10 before declaring the keyboard release gate complete.
+- Retest the standard Menu-key and `Shift+F10` gestures on release-candidate hardware, but do not depend on them: every vault's visible **More actions** button must remain reachable with `Tab` and operable with `Enter` or `Space`.
 - Repeat the static semantic audit against the exact release candidate after all remaining UI changes are frozen.
 
 ## Learning Center — implemented in the native shell

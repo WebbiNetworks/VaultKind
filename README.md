@@ -2,7 +2,7 @@
 
 **Desktop First. Windows Focused. Privacy Always.**
 
-VaultKind is a Windows desktop encryption application focused on accessibility, modern usability, and transparent security. Its product promise is simple: **VaultKind is the best Windows desktop vault experience.** The source is public for review and GPLv3 compliance while version 1.0 remains in pre-release validation. Development builds are not production releases.
+VaultKind is a Windows desktop encryption application focused on accessibility, modern usability, and transparent security. Its product promise is simple: **VaultKind is the best Windows desktop vault experience.** The source repository is prepared for public review and GPLv3 compliance while version 1.0 remains in pre-release validation. Development builds are not production releases.
 
 VaultKind is derived from [Cryptomator](https://github.com/cryptomator/cryptomator) under the GNU General Public License v3. It is not affiliated with or endorsed by Skymatic GmbH or the Cryptomator project.
 

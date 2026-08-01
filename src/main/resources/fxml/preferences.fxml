@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import org.cryptomator.ui.controls.FontAwesome5IconView?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.layout.HeaderBar?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<VBox xmlns:fx="http://javafx.com/fxml"
+	  xmlns="http://javafx.com/javafx"
+	  fx:controller="org.cryptomator.ui.preferences.PreferencesController"
+	  prefWidth="920"
+	  prefHeight="650"
+	  styleClass="preferences-window">
+	<fx:define>
+		<ToggleGroup fx:id="navigationGroup"/>
+	</fx:define>
+	<HeaderBar managed="${controller.windows}" visible="${controller.windows}" styleClass="app-header-bar">
+		<leading>
+			<HBox alignment="CENTER_LEFT" spacing="8" styleClass="app-header-title">
+				<Label text="%app.name"/>
+			</HBox>
+		</leading>
+	</HeaderBar>
+	<HBox VBox.vgrow="ALWAYS" styleClass="preferences-layout">
+		<VBox minWidth="230" prefWidth="230" maxWidth="230" spacing="6" styleClass="preferences-navigation">
+			<Label text="%preferences.title" styleClass="preferences-navigation-title"/>
+			<Label text="%preferences.navigation.subtitle" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+			<Region minHeight="16"/>
+			<ToggleButton fx:id="generalNavigation" text="%preferences.general" toggleGroup="${navigationGroup}" maxWidth="Infinity" contentDisplay="LEFT" alignment="CENTER_LEFT" styleClass="preferences-navigation-item">
+				<graphic><FontAwesome5IconView glyph="WRENCH"/></graphic>
+			</ToggleButton>
+			<ToggleButton fx:id="interfaceNavigation" text="%preferences.interface" toggleGroup="${navigationGroup}" maxWidth="Infinity" contentDisplay="LEFT" alignment="CENTER_LEFT" styleClass="preferences-navigation-item">
+				<graphic><FontAwesome5IconView glyph="EYE"/></graphic>
+			</ToggleButton>
+			<ToggleButton fx:id="volumeNavigation" text="%preferences.volume" toggleGroup="${navigationGroup}" maxWidth="Infinity" contentDisplay="LEFT" alignment="CENTER_LEFT" styleClass="preferences-navigation-item">
+				<graphic><FontAwesome5IconView glyph="HDD"/></graphic>
+			</ToggleButton>
+			<Region VBox.vgrow="ALWAYS"/>
+			<ToggleButton fx:id="contributeNavigation" text="%preferences.contribute" toggleGroup="${navigationGroup}" maxWidth="Infinity" contentDisplay="LEFT" alignment="CENTER_LEFT" styleClass="preferences-navigation-item">
+				<graphic><FontAwesome5IconView glyph="HEART"/></graphic>
+			</ToggleButton>
+			<ToggleButton fx:id="aboutNavigation" text="%preferences.about" toggleGroup="${navigationGroup}" maxWidth="Infinity" contentDisplay="LEFT" alignment="CENTER_LEFT" styleClass="preferences-navigation-item">
+				<graphic><FontAwesome5IconView glyph="INFO_CIRCLE"/></graphic>
+			</ToggleButton>
+		</VBox>
+		<StackPane fx:id="contentPane" HBox.hgrow="ALWAYS" styleClass="preferences-content">
+			<fx:include fx:id="generalPage" source="preferences_general.fxml"/>
+			<fx:include fx:id="interfacePage" source="preferences_interface.fxml"/>
+			<fx:include fx:id="volumePage" source="preferences_volume.fxml"/>
+			<fx:include fx:id="contributePage" source="preferences_contribute.fxml"/>
+			<fx:include fx:id="aboutPage" source="preferences_about.fxml"/>
+		</StackPane>
+	</HBox>
+</VBox>

@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "VaultKind.Windows (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "VaultKind.Windows (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ButtonBar?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import org.cryptomator.ui.controls.FontAwesome5IconView?>
+<?import org.cryptomator.ui.controls.FormattedLabel?>
+<?import org.cryptomator.ui.controls.NiceSecurePasswordField?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+	  xmlns="http://javafx.com/javafx"
+	  fx:controller="org.cryptomator.ui.recoverykey.RecoveryKeyCreationController"
+	  maxWidth="720"
+	  spacing="18"
+	  accessibleRole="DIALOG"
+	  styleClass="recovery-key-workspace">
+	<padding><Insets top="30" right="34" bottom="30" left="34"/></padding>
+	<VBox spacing="6">
+		<Label text="%recoveryKey.create.heading" styleClass="recovery-key-heading"/>
+		<Label text="%recoveryKey.create.intro" wrapText="true" styleClass="recovery-key-description"/>
+	</VBox>
+
+	<VBox spacing="9" styleClass="recovery-key-password-card">
+		<FormattedLabel fx:id="descriptionLabel" format="%recoveryKey.create.description" arg1="${controller.vault.displayName}" wrapText="true" labelFor="$passwordField" styleClass="recovery-key-section-title"/>
+		<NiceSecurePasswordField fx:id="passwordField" prefHeight="42"/>
+		<HBox spacing="8" alignment="CENTER_LEFT" visible="${controller.passwordInvalid}" managed="${controller.passwordInvalid}" styleClass="recovery-key-inline-error">
+			<FontAwesome5IconView glyph="EXCLAMATION_CIRCLE" glyphSize="14"/>
+			<Label text="%recoveryKey.create.invalidPassword" wrapText="true"/>
+		</HBox>
+	</VBox>
+
+	<HBox spacing="12" alignment="CENTER_LEFT" styleClass="recovery-key-privacy-note">
+		<StackPane minWidth="42" minHeight="42" maxWidth="42" maxHeight="42" styleClass="recovery-key-icon-tile">
+			<FontAwesome5IconView glyph="LOCK" glyphSize="18" styleClass="glyph-icon-primary"/>
+		</StackPane>
+		<Label text="%recoveryKey.create.privacy" wrapText="true" HBox.hgrow="ALWAYS"/>
+	</HBox>
+
+	<Region VBox.vgrow="ALWAYS"/>
+	<ButtonBar buttonMinWidth="140" buttonOrder="+CX">
+		<buttons>
+			<Button fx:id="cancelButton" text="%generic.button.cancel" ButtonBar.buttonData="CANCEL_CLOSE" cancelButton="true" onAction="#close" styleClass="recovery-key-secondary"/>
+			<Button fx:id="nextButton" text="%generic.button.next" ButtonBar.buttonData="NEXT_FORWARD" defaultButton="true" onAction="#createRecoveryKey" disable="${passwordField.text.empty}" styleClass="recovery-key-primary"/>
+		</buttons>
+	</ButtonBar>
+</VBox>

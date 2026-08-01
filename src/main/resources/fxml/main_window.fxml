@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ScrollPane?>
+<?import org.cryptomator.ui.controls.FontAwesome5IconView?>
+<?import org.cryptomator.ui.controls.InfoBar?>
+<?import org.cryptomator.ui.controls.FormattedLabel?>
+<?import org.cryptomator.ui.controls.NiceSecurePasswordField?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ButtonBar?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+
+<StackPane xmlns:fx="http://javafx.com/fxml"
+		   xmlns="http://javafx.com/javafx"
+		   fx:id="root"
+		   fx:controller="org.cryptomator.ui.mainwindow.MainWindowController"
+		   styleClass="main-window">
+	<VBox minWidth="840">
+		<VBox minHeight="82" prefHeight="82" spacing="3" VBox.vgrow="NEVER" styleClass="content-context-header">
+			<Label text="${controller.contentTitle}" styleClass="content-context-title"/>
+			<Label text="${controller.contentSubtitle}" wrapText="true" styleClass="content-context-subtitle"/>
+		</VBox>
+		<StackPane VBox.vgrow="ALWAYS">
+			<SplitPane fx:id="workspacePane" dividerPositions="0.30" orientation="HORIZONTAL" styleClass="dashboard-split">
+				<fx:include source="vault_list.fxml" SplitPane.resizableWithParent="false"/>
+				<fx:include source="vault_detail.fxml" SplitPane.resizableWithParent="true"/>
+			</SplitPane>
+			<HBox fx:id="vaultDoctorPane" visible="false" managed="false" styleClass="embedded-vault-tool">
+				<VBox minWidth="300" prefWidth="300" maxWidth="300" spacing="6" styleClass="preferences-navigation,embedded-preferences-navigation">
+					<Button text="%main.home" onAction="#showDashboard" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="vault-home-button">
+						<VBox.margin><Insets top="12" right="0" bottom="10" left="0"/></VBox.margin>
+						<graphic><FontAwesome5IconView glyph="CHEVRON_LEFT" glyphSize="15"/></graphic>
+					</Button>
+					<Label text="%main.vaultDoctor" styleClass="preferences-navigation-title"/>
+					<Label text="%main.vaultDoctor.navigationSubtitle" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+					<Region VBox.vgrow="ALWAYS"/>
+					<VBox spacing="5" styleClass="vault-doctor-local-note">
+						<Label text="%main.vaultDoctor.localTitle" styleClass="health-section-title"/>
+						<Label text="%main.vaultDoctor.localDescription" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+					</VBox>
+				</VBox>
+				<ScrollPane fitToWidth="true" HBox.hgrow="ALWAYS" styleClass="embedded-vault-tool-content,vault-doctor-home-scroll">
+					<VBox alignment="TOP_CENTER" spacing="16" styleClass="vault-doctor-home">
+						<VBox alignment="CENTER" styleClass="health-icon-tile">
+							<FontAwesome5IconView glyph="STETHOSCOPE" glyphSize="28" styleClass="glyph-icon-primary"/>
+						</VBox>
+						<VBox alignment="CENTER" spacing="6">
+							<Label text="${controller.doctorOverallTitle}" styleClass="vault-doctor-home-title"/>
+							<Label text="${controller.doctorOverallDescription}" textAlignment="CENTER" wrapText="true" maxWidth="760" styleClass="vault-doctor-home-description"/>
+							<Label text="${controller.doctorLastChecked}" styleClass="vault-doctor-last-checked"/>
+						</VBox>
+						<HBox alignment="CENTER" spacing="12" maxWidth="760">
+							<VBox alignment="CENTER" spacing="4" HBox.hgrow="ALWAYS" styleClass="vault-doctor-summary-card,vault-doctor-summary-healthy">
+								<Label text="${controller.doctorHealthyCount}" styleClass="home-stat-value"/>
+								<Label text="%main.vaultDoctor.healthy" styleClass="home-stat-label"/>
+							</VBox>
+							<VBox alignment="CENTER" spacing="4" HBox.hgrow="ALWAYS" styleClass="vault-doctor-summary-card,vault-doctor-summary-attention">
+								<Label text="${controller.doctorAttentionCount}" styleClass="home-stat-value"/>
+								<Label text="%main.vaultDoctor.needsAttention" styleClass="home-stat-label"/>
+							</VBox>
+							<VBox alignment="CENTER" spacing="4" HBox.hgrow="ALWAYS" styleClass="vault-doctor-summary-card,vault-doctor-summary-information">
+								<Label text="${controller.doctorInformationCount}" styleClass="home-stat-value"/>
+								<Label text="%main.vaultDoctor.information" styleClass="home-stat-label"/>
+							</VBox>
+						</HBox>
+						<VBox spacing="10" maxWidth="760" styleClass="vault-doctor-results-card">
+							<HBox alignment="CENTER_LEFT">
+								<Label text="%main.vaultDoctor.automaticChecks" styleClass="health-section-title" HBox.hgrow="ALWAYS"/>
+								<Button text="%main.vaultDoctor.runAgain" onAction="#runVaultDoctor" styleClass="health-secondary">
+									<graphic><FontAwesome5IconView glyph="SYNC" glyphSize="13"/></graphic>
+								</Button>
+							</HBox>
+							<Label fx:id="doctorConfigurationStatus" wrapText="true" styleClass="vault-doctor-status-row"/>
+							<Label fx:id="doctorLocationStatus" wrapText="true" styleClass="vault-doctor-status-row"/>
+							<Label fx:id="doctorStorageStatus" wrapText="true" styleClass="vault-doctor-status-row"/>
+							<Label fx:id="doctorWindowsStatus" wrapText="true" styleClass="vault-doctor-status-row"/>
+							<Label fx:id="doctorMountStatus" wrapText="true" styleClass="vault-doctor-status-row"/>
+							<Label fx:id="doctorSettingsStatus" wrapText="true" styleClass="vault-doctor-status-row"/>
+						</VBox>
+						<HBox alignment="CENTER_LEFT" spacing="12" maxWidth="760" styleClass="vault-doctor-scope-card">
+							<FontAwesome5IconView glyph="INFO_CIRCLE" glyphSize="18" styleClass="glyph-icon-primary"/>
+							<VBox spacing="3">
+								<Label text="%main.vaultDoctor.informationTitle" styleClass="home-health-title"/>
+								<Label text="%main.vaultDoctor.scopeDescription" wrapText="true" styleClass="home-health-description"/>
+							</VBox>
+						</HBox>
+					</VBox>
+				</ScrollPane>
+			</HBox>
+			<fx:include fx:id="settingsPane" source="preferences_embedded.fxml" visible="false" managed="false"/>
+			<fx:include fx:id="activityPane" source="activity_embedded.fxml" visible="false" managed="false"/>
+			<fx:include fx:id="howItWorksPane" source="how_it_works_embedded.fxml" visible="false" managed="false"/>
+			<HBox fx:id="addVaultPane" visible="false" managed="false" styleClass="embedded-add-vault">
+				<VBox minWidth="300" prefWidth="300" maxWidth="300" spacing="6" styleClass="preferences-navigation,embedded-preferences-navigation">
+					<Button text="%main.home" onAction="#showDashboard" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="vault-home-button">
+						<VBox.margin><Insets top="12" right="0" bottom="10" left="0"/></VBox.margin>
+						<graphic><FontAwesome5IconView glyph="HOME" glyphSize="15"/></graphic>
+					</Button>
+					<Label text="%addvaultwizard.title" styleClass="preferences-navigation-title"/>
+					<Label text="%addvaultwizard.embedded.description" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+					<Region VBox.vgrow="ALWAYS"/>
+				</VBox>
+				<StackPane fx:id="addVaultContentHost" HBox.hgrow="ALWAYS" styleClass="embedded-add-vault-content"/>
+			</HBox>
+			<HBox fx:id="unlockPane" visible="false" managed="false" styleClass="embedded-unlock">
+				<VBox minWidth="300" prefWidth="300" maxWidth="300" spacing="6" styleClass="preferences-navigation,embedded-preferences-navigation">
+					<Button text="%main.home" onAction="#showDashboard" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="vault-home-button">
+						<VBox.margin><Insets top="12" right="0" bottom="10" left="0"/></VBox.margin>
+						<graphic><FontAwesome5IconView glyph="HOME" glyphSize="15"/></graphic>
+					</Button>
+					<Label text="%main.content.unlock.title" styleClass="preferences-navigation-title"/>
+					<Label text="${controller.unlockVaultName}" wrapText="true" styleClass="unlock-navigation-vault"/>
+					<Label text="%main.content.unlock.subtitle" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+					<Region VBox.vgrow="ALWAYS"/>
+				</VBox>
+				<StackPane HBox.hgrow="ALWAYS" styleClass="embedded-unlock-content">
+					<VBox minWidth="560" prefWidth="620" maxWidth="680" minHeight="330" prefHeight="360" maxHeight="420" spacing="14" alignment="TOP_CENTER" styleClass="embedded-unlock-card">
+						<StackPane alignment="CENTER" minHeight="72" prefHeight="72">
+							<ImageView fitWidth="64" preserveRatio="true" smooth="true" cache="true"><Image url="@../img/bot/body.png"/></ImageView>
+						</StackPane>
+						<FormattedLabel format="%unlock.passwordPrompt" arg1="${controller.unlockVaultName}" wrapText="true" maxWidth="Infinity" styleClass="unlock-password-prompt"/>
+						<HBox spacing="8" alignment="CENTER_LEFT" maxWidth="Infinity" styleClass="unlock-inline-error" visible="${controller.unlockWrongPassword}" managed="${controller.unlockWrongPassword}">
+							<FontAwesome5IconView glyph="EXCLAMATION_CIRCLE" glyphSize="14"/>
+							<Label text="%unlock.error.wrongPassword" wrapText="true"/>
+						</HBox>
+						<NiceSecurePasswordField fx:id="unlockPasswordField" maxWidth="Infinity" prefHeight="42"/>
+						<CheckBox fx:id="unlockSavePasswordCheckbox" text="%unlock.savePassword" maxWidth="Infinity" visible="${controller.unlockSavePasswordAvailable}" managed="${controller.unlockSavePasswordAvailable}"/>
+						<ButtonBar maxWidth="Infinity" buttonMinWidth="130" buttonOrder="+CI" VBox.vgrow="ALWAYS">
+							<buttons>
+								<Button text="%generic.button.cancel" ButtonBar.buttonData="CANCEL_CLOSE" cancelButton="true" onAction="#cancelUnlock" styleClass="unlock-action-secondary"/>
+								<Button text="%unlock.unlockBtn" ButtonBar.buttonData="FINISH" defaultButton="true" onAction="#submitUnlock" disable="${controller.unlockButtonDisabled}" styleClass="unlock-action-primary"/>
+							</buttons>
+						</ButtonBar>
+					</VBox>
+				</StackPane>
+			</HBox>
+			<HBox fx:id="vaultOptionsPane" visible="false" managed="false" styleClass="embedded-vault-options">
+				<VBox minWidth="300" prefWidth="300" maxWidth="300" spacing="6" styleClass="preferences-navigation,embedded-preferences-navigation">
+					<Button text="%main.content.vaults.title" onAction="#showVaults" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="vault-home-button">
+						<VBox.margin><Insets top="12" right="0" bottom="10" left="0"/></VBox.margin>
+						<graphic><FontAwesome5IconView glyph="CHEVRON_LEFT" glyphSize="15"/></graphic>
+					</Button>
+					<Label text="%main.content.vaultOptions.title" styleClass="preferences-navigation-title"/>
+					<Label text="${controller.vaultOptionsVaultName}" wrapText="true" styleClass="unlock-navigation-vault"/>
+					<Label text="%main.content.vaultOptions.subtitle" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+					<Region VBox.vgrow="ALWAYS"/>
+				</VBox>
+				<StackPane fx:id="vaultOptionsContentHost" HBox.hgrow="ALWAYS" styleClass="embedded-vault-options-content"/>
+			</HBox>
+			<HBox fx:id="shareVaultPane" visible="false" managed="false" styleClass="embedded-vault-tool">
+				<VBox minWidth="300" prefWidth="300" maxWidth="300" spacing="6" styleClass="preferences-navigation,embedded-preferences-navigation">
+					<Button text="%main.content.vaults.title" onAction="#showVaults" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="vault-home-button">
+						<VBox.margin><Insets top="12" right="0" bottom="10" left="0"/></VBox.margin>
+						<graphic><FontAwesome5IconView glyph="CHEVRON_LEFT" glyphSize="15"/></graphic>
+					</Button>
+					<Label text="%shareVault.title" wrapText="true" styleClass="preferences-navigation-title"/>
+					<Label text="${controller.shareVaultName}" wrapText="true" styleClass="unlock-navigation-vault"/>
+					<Label text="%shareVault.workspace.subtitle" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+					<Region VBox.vgrow="ALWAYS"/>
+				</VBox>
+				<StackPane HBox.hgrow="ALWAYS" styleClass="embedded-vault-tool-content">
+					<fx:include source="share_vault.fxml"/>
+				</StackPane>
+			</HBox>
+			<HBox fx:id="vaultToolPane" visible="false" managed="false" styleClass="embedded-vault-tool">
+				<VBox minWidth="300" prefWidth="300" maxWidth="300" spacing="6" styleClass="preferences-navigation,embedded-preferences-navigation">
+					<Button text="%main.content.vaults.title" onAction="#showVaults" maxWidth="Infinity" alignment="CENTER_LEFT" styleClass="vault-home-button">
+						<VBox.margin><Insets top="12" right="0" bottom="10" left="0"/></VBox.margin>
+						<graphic><FontAwesome5IconView glyph="CHEVRON_LEFT" glyphSize="15"/></graphic>
+					</Button>
+					<Label text="${controller.vaultToolTitle}" wrapText="true" styleClass="preferences-navigation-title"/>
+					<Label text="${controller.vaultToolVaultName}" wrapText="true" styleClass="unlock-navigation-vault"/>
+					<Label text="${controller.vaultToolSubtitle}" wrapText="true" styleClass="preferences-navigation-subtitle"/>
+					<Region VBox.vgrow="ALWAYS"/>
+				</VBox>
+				<StackPane fx:id="vaultToolContentHost" HBox.hgrow="ALWAYS" styleClass="embedded-vault-tool-content"/>
+			</HBox>
+		</StackPane>
+	</VBox>
+	<VBox maxWidth="340" maxHeight="210" spacing="14" mouseTransparent="false" StackPane.alignment="TOP_RIGHT" styleClass="notification-stack">
+		<InfoBar onMouseClicked="#showGeneralPreferences"
+					 text="DEBUG MODE"
+					 styleClass="info-bar--red"
+					 notify="${controller.debugModeEnabled}"/>
+	</VBox>
+</StackPane>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import org.cryptomator.ui.controls.FontAwesome5IconView?>
+
+<ScrollPane xmlns:fx="http://javafx.com/fxml"
+				xmlns="http://javafx.com/javafx"
+				fitToWidth="true"
+				pannable="false"
+				hbarPolicy="NEVER"
+				vbarPolicy="AS_NEEDED"
+				styleClass="share-vault-workspace">
+	<content>
+		<VBox spacing="18" maxWidth="900" styleClass="share-vault-content">
+			<padding><Insets top="28" right="32" bottom="28" left="32"/></padding>
+			<VBox spacing="7">
+				<Label text="%shareVault.heading" styleClass="share-vault-heading"/>
+				<Label text="%shareVault.intro" wrapText="true" styleClass="share-vault-intro"/>
+			</VBox>
+
+			<HBox spacing="16">
+				<VBox spacing="10" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="share-vault-step-card">
+					<StackPane minWidth="48" minHeight="48" maxWidth="48" maxHeight="48" styleClass="share-vault-icon-tile">
+						<FontAwesome5IconView glyph="FOLDER_OPEN" glyphSize="22" styleClass="glyph-icon-primary"/>
+					</StackPane>
+					<Label text="%shareVault.storage.title" wrapText="true" styleClass="share-vault-card-title"/>
+					<Label text="%shareVault.storage.description" wrapText="true" styleClass="share-vault-card-copy"/>
+				</VBox>
+				<VBox spacing="10" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="share-vault-step-card">
+					<StackPane minWidth="48" minHeight="48" maxWidth="48" maxHeight="48" styleClass="share-vault-icon-tile">
+						<FontAwesome5IconView glyph="KEY" glyphSize="22" styleClass="glyph-icon-primary"/>
+					</StackPane>
+					<Label text="%shareVault.password.title" wrapText="true" styleClass="share-vault-card-title"/>
+					<Label text="%shareVault.password.description" wrapText="true" styleClass="share-vault-card-copy"/>
+				</VBox>
+			</HBox>
+
+			<HBox spacing="14" alignment="CENTER_LEFT" styleClass="share-vault-recipient-card">
+				<StackPane minWidth="48" minHeight="48" maxWidth="48" maxHeight="48" styleClass="share-vault-icon-tile">
+					<FontAwesome5IconView glyph="SHARE" glyphSize="21" styleClass="glyph-icon-primary"/>
+				</StackPane>
+				<VBox spacing="4" HBox.hgrow="ALWAYS">
+					<Label text="%shareVault.recipient.title" styleClass="share-vault-card-title"/>
+					<Label text="%shareVault.recipient.description" wrapText="true" styleClass="share-vault-card-copy"/>
+				</VBox>
+			</HBox>
+
+			<HBox spacing="14" alignment="CENTER_LEFT" styleClass="share-vault-warning-card">
+				<FontAwesome5IconView glyph="EXCLAMATION_TRIANGLE" glyphSize="23" styleClass="glyph-icon-orange"/>
+				<VBox spacing="4" HBox.hgrow="ALWAYS">
+					<Label text="%shareVault.warning.title" styleClass="share-vault-warning-title"/>
+					<Label text="%shareVault.warning.description" wrapText="true" styleClass="share-vault-warning-copy"/>
+				</VBox>
+			</HBox>
+
+			<Region minHeight="2"/>
+			<HBox spacing="8" alignment="CENTER_LEFT" styleClass="share-vault-local-note">
+				<FontAwesome5IconView glyph="LOCK" glyphSize="14" styleClass="glyph-icon-success"/>
+				<Label text="%shareVault.localOnly" wrapText="true"/>
+			</HBox>
+		</VBox>
+	</content>
+</ScrollPane>

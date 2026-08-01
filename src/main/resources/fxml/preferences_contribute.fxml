@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import org.cryptomator.ui.controls.FontAwesome5IconView?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<StackPane xmlns:fx="http://javafx.com/fxml"
+		   xmlns="http://javafx.com/javafx"
+		   styleClass="support-shell">
+	<VBox alignment="CENTER"
+		  maxWidth="520"
+		  spacing="18"
+		  styleClass="support-card">
+		<StackPane minWidth="76" minHeight="76" maxWidth="76" maxHeight="76">
+			<Circle radius="38" styleClass="support-card-icon-background"/>
+			<FontAwesome5IconView glyph="HAND_HOLDING_HEART" glyphSize="32" styleClass="support-card-icon"/>
+		</StackPane>
+		<Label text="%preferences.contribute.title"
+			   wrapText="true"
+			   textAlignment="CENTER"
+			   styleClass="support-card-title"/>
+		<Label text="%preferences.contribute.description"
+			   maxWidth="430"
+			   wrapText="true"
+			   textAlignment="CENTER"
+			   styleClass="support-card-copy"/>
+		<Label text="%preferences.contribute.status" styleClass="support-status-pill"/>
+		<Label text="%preferences.contribute.details"
+			   maxWidth="430"
+			   wrapText="true"
+			   textAlignment="CENTER"
+			   styleClass="support-card-note"/>
+	</VBox>
+</StackPane>

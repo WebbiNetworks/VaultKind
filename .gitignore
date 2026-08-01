@@ -1,0 +1,52 @@
+*.class
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# Maven #
+target/
+pom.xml.versionsBackup
+
+# .NET #
+**/bin/
+**/obj/
+
+# Java Crash Logs
+hs_err_pid*.log
+
+# Local review and generated media artifacts
+artifacts/
+.codex-video-*/
+
+# Local handoff and editor state
+VAULTKIND_PROJECT_HANDOFF.md
+.idea/
+.vs/
+.vscode/
+*.suo
+*.user
+
+# Local environment and signing material
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.pfx
+*.p12
+*.snk
+
+# Generated Windows packages and binaries
+*.appx
+*.appxupload
+*.msix
+*.msixupload
+*.exe
+*.dll
+
+# Operating-system and diagnostic residue
+Desktop.ini
+Thumbs.db
+*.log

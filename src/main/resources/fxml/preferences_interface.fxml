@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<ScrollPane xmlns:fx="http://javafx.com/fxml"
+			xmlns="http://javafx.com/javafx"
+			fx:controller="org.cryptomator.ui.preferences.InterfacePreferencesController"
+			fitToWidth="true"
+			hbarPolicy="NEVER"
+			styleClass="preferences-page-scroll">
+	<content>
+		<VBox spacing="24" styleClass="preferences-page">
+			<VBox spacing="6">
+				<Label text="%preferences.interface.pageTitle" styleClass="preferences-page-title"/>
+				<Label text="%preferences.interface.pageDescription" wrapText="true" styleClass="preferences-page-description"/>
+			</VBox>
+			<VBox spacing="4" styleClass="settings-card">
+				<Label text="%preferences.interface.group.appearance" styleClass="settings-section-title"/>
+				<HBox spacing="12" alignment="CENTER_LEFT" styleClass="settings-row">
+					<Label text="%preferences.interface.theme" labelFor="$themeChoiceBox"/>
+					<Region HBox.hgrow="ALWAYS"/>
+					<ChoiceBox fx:id="themeChoiceBox" prefWidth="220"/>
+				</HBox>
+			</VBox>
+			<VBox spacing="4" styleClass="settings-card">
+				<Label text="%preferences.interface.group.behavior" styleClass="settings-section-title"/>
+				<CheckBox fx:id="showTrayIconCheckbox" text="%preferences.interface.showTrayIcon" visible="${controller.trayMenuSupported}" managed="${controller.trayMenuSupported}" styleClass="settings-row"/>
+				<CheckBox fx:id="compactModeCheckbox" text="%preferences.interface.compactMode" styleClass="settings-row"/>
+			</VBox>
+		</VBox>
+	</content>
+</ScrollPane>

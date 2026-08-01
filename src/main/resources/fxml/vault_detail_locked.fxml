@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import org.cryptomator.ui.controls.FontAwesome5IconView?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Hyperlink?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<VBox xmlns:fx="http://javafx.com/fxml"
+	  xmlns="http://javafx.com/javafx"
+	  fx:controller="org.cryptomator.ui.mainwindow.VaultDetailLockedController"
+	  alignment="TOP_CENTER"
+	  spacing="16"
+	  styleClass="vault-state-panel">
+	<children>
+		<Region minHeight="8"/>
+		<HBox alignment="CENTER_LEFT" spacing="20" maxWidth="760" styleClass="vault-locked-card">
+			<StackPane alignment="CENTER" minWidth="68" minHeight="68" maxWidth="68" maxHeight="68" styleClass="vault-state-symbol">
+				<Circle radius="34" styleClass="vault-state-symbol-background"/>
+				<FontAwesome5IconView glyph="LOCK" glyphSize="27" styleClass="glyph-icon-primary"/>
+			</StackPane>
+			<VBox spacing="7" HBox.hgrow="ALWAYS">
+				<Label text="%main.vaultDetail.locked.heading" styleClass="vault-state-title"/>
+				<Label text="%main.vaultDetail.locked.description" styleClass="vault-state-description" wrapText="true" maxWidth="430"/>
+				<Hyperlink text="%main.vaultDetail.passwordSavedInKeychain" visible="${controller.passwordSaved}" managed="${controller.passwordSaved}" onAction="#showKeyVaultOptions" styleClass="vault-saved-password">
+					<graphic><FontAwesome5IconView glyph="CHECK"/></graphic>
+				</Hyperlink>
+			</VBox>
+			<VBox alignment="CENTER_RIGHT">
+				<Button styleClass="button-large,vault-primary-action" text="%main.vaultDetail.unlockBtn" minWidth="170" onAction="#unlock" defaultButton="${controller.vault.locked}" visible="${!controller.passwordSaved}" managed="${!controller.passwordSaved}">
+					<graphic><FontAwesome5IconView glyph="KEY" glyphSize="15"/></graphic>
+				</Button>
+				<Button styleClass="button-large,vault-primary-action" text="%main.vaultDetail.unlockNowBtn" minWidth="170" onAction="#unlock" defaultButton="${controller.vault.locked}" visible="${controller.passwordSaved}" managed="${controller.passwordSaved}">
+					<graphic><FontAwesome5IconView glyph="KEY" glyphSize="15"/></graphic>
+				</Button>
+			</VBox>
+		</HBox>
+
+		<HBox alignment="CENTER_LEFT" spacing="14" maxWidth="760" styleClass="vault-protection-card">
+			<FontAwesome5IconView glyph="LOCK" glyphSize="18" styleClass="vault-protection-icon"/>
+			<VBox spacing="3" HBox.hgrow="ALWAYS">
+				<Label text="%main.vaultDetail.locked.protection.title" styleClass="vault-protection-title"/>
+				<Label text="%main.vaultDetail.locked.protection.description" wrapText="true" styleClass="vault-protection-description"/>
+			</VBox>
+		</HBox>
+
+		<HBox alignment="CENTER_RIGHT" spacing="10" maxWidth="760" styleClass="vault-secondary-actions">
+			<Label text="%main.vaultDetail.locked.secondaryActions" styleClass="vault-secondary-label"/>
+			<Region HBox.hgrow="ALWAYS"/>
+			<Button text="%main.vaultDetail.share" minWidth="120" onAction="#share">
+				<graphic><FontAwesome5IconView glyph="SHARE" glyphSize="15"/></graphic>
+			</Button>
+			<Button text="%main.vaultDetail.optionsBtn" minWidth="140" onAction="#showVaultOptions">
+				<graphic><FontAwesome5IconView glyph="COG"/></graphic>
+			</Button>
+		</HBox>
+		<Region VBox.vgrow="ALWAYS"/>
+	</children>
+</VBox>

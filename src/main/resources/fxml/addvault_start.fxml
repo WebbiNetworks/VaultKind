@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import org.cryptomator.ui.controls.FontAwesome5IconView?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Hyperlink?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<VBox xmlns:fx="http://javafx.com/fxml"
+	  xmlns="http://javafx.com/javafx"
+	  fx:controller="org.cryptomator.ui.addvaultwizard.AddVaultStartController"
+	  prefWidth="820"
+	  prefHeight="546"
+	  spacing="26"
+	  styleClass="add-vault-page"
+	  accessibleRole="DIALOG">
+	<padding>
+		<Insets top="38" right="42" bottom="32" left="42"/>
+	</padding>
+	<children>
+		<VBox spacing="7">
+			<Label text="%addvaultwizard.start.title" styleClass="add-vault-page-title"/>
+			<Label text="%addvaultwizard.start.description" wrapText="true" maxWidth="Infinity" styleClass="add-vault-page-description"/>
+		</VBox>
+
+		<HBox spacing="18" VBox.vgrow="ALWAYS">
+			<Button onAction="#createNewVault" styleClass="add-vault-choice" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+				<graphic>
+					<VBox spacing="12" alignment="TOP_LEFT">
+						<StackPane styleClass="add-vault-choice-icon">
+							<FontAwesome5IconView glyph="PLUS" glyphSize="22" styleClass="glyph-icon-primary"/>
+						</StackPane>
+						<Label text="%addvaultwizard.start.create.title" styleClass="add-vault-choice-title"/>
+						<Label text="%addvaultwizard.start.create.description" wrapText="true" styleClass="add-vault-choice-description" maxWidth="290"/>
+						<Region VBox.vgrow="ALWAYS"/>
+						<Label text="%addvaultwizard.start.create.action" styleClass="add-vault-choice-action"/>
+					</VBox>
+				</graphic>
+			</Button>
+
+			<Button onAction="#addExistingVault" styleClass="add-vault-choice" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+				<graphic>
+					<VBox spacing="12" alignment="TOP_LEFT">
+						<StackPane styleClass="add-vault-choice-icon">
+							<FontAwesome5IconView glyph="FOLDER_OPEN" glyphSize="22" styleClass="glyph-icon-primary"/>
+						</StackPane>
+						<Label text="%addvaultwizard.start.existing.title" styleClass="add-vault-choice-title"/>
+						<Label text="%addvaultwizard.start.existing.description" wrapText="true" styleClass="add-vault-choice-description" maxWidth="290"/>
+						<Region VBox.vgrow="ALWAYS"/>
+						<Label text="%addvaultwizard.start.existing.action" styleClass="add-vault-choice-action"/>
+					</VBox>
+				</graphic>
+			</Button>
+		</HBox>
+
+		<HBox alignment="CENTER" spacing="5">
+			<Label text="%addvaultwizard.start.recovery.prompt" styleClass="label-muted"/>
+			<Hyperlink text="%addvaultwizard.start.recovery.action" onAction="#recoverVault"/>
+		</HBox>
+	</children>
+</VBox>

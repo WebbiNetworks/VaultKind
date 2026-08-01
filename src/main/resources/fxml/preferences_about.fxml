@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import org.cryptomator.ui.controls.FormattedLabel?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<VBox xmlns:fx="http://javafx.com/fxml"
+	  xmlns="http://javafx.com/javafx"
+	  fx:controller="org.cryptomator.ui.preferences.AboutController"
+	  spacing="24"
+	  styleClass="preferences-page">
+	<children>
+		<VBox spacing="6">
+			<Label text="%preferences.about.pageTitle" styleClass="preferences-page-title"/>
+			<Label text="%preferences.about.pageDescription" wrapText="true" styleClass="preferences-page-description"/>
+		</VBox>
+
+		<HBox spacing="18" alignment="CENTER_LEFT" styleClass="settings-card">
+			<ImageView fitHeight="64" fitWidth="64" preserveRatio="true" cache="true" accessibleText="VaultKind">
+				<Image url="@../img/vaultkind_mark_256.png"/>
+			</ImageView>
+			<VBox spacing="5" HBox.hgrow="ALWAYS" alignment="CENTER_LEFT">
+				<FormattedLabel styleClass="about-product-title" format="VaultKind %s" arg1="${controller.fullApplicationVersion}"/>
+				<Label text="%preferences.about.forkAttribution" wrapText="true" styleClass="preferences-page-description"/>
+			</VBox>
+		</HBox>
+
+		<VBox spacing="10" VBox.vgrow="ALWAYS">
+			<Label text="%preferences.about.thirdPartyLicenses" styleClass="settings-section-title"/>
+			<Label text="%preferences.about.licensesDescription" wrapText="true" styleClass="preferences-page-description"/>
+			<TextArea text="${controller.thirdPartyLicenseText}" editable="false" wrapText="true" accessibleText="%preferences.about.thirdPartyLicenses" VBox.vgrow="ALWAYS" styleClass="about-license-text"/>
+		</VBox>
+	</children>
+</VBox>

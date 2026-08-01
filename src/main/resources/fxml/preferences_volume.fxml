@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import org.cryptomator.ui.controls.FontAwesome5IconView?>
+<?import org.cryptomator.ui.controls.NumericTextField?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<ScrollPane xmlns:fx="http://javafx.com/fxml"
+			xmlns="http://javafx.com/javafx"
+			fx:controller="org.cryptomator.ui.preferences.VolumePreferencesController"
+			fitToWidth="true"
+			hbarPolicy="NEVER"
+			styleClass="preferences-page-scroll">
+	<content>
+		<VBox spacing="24" styleClass="preferences-page">
+			<VBox spacing="6">
+				<Label text="%preferences.volume.pageTitle" styleClass="preferences-page-title"/>
+				<Label text="%preferences.volume.pageDescription" wrapText="true" styleClass="preferences-page-description"/>
+			</VBox>
+			<VBox spacing="4" styleClass="settings-card">
+				<Label text="%preferences.volume.group.drive" styleClass="settings-section-title"/>
+				<HBox spacing="12" alignment="CENTER_LEFT" styleClass="settings-row">
+					<Label text="%preferences.volume.type" labelFor="$volumeTypeChoiceBox"/>
+					<Region HBox.hgrow="ALWAYS"/>
+					<ChoiceBox fx:id="volumeTypeChoiceBox" prefWidth="220"/>
+				</HBox>
+				<HBox spacing="12" alignment="CENTER_LEFT" visible="${controller.loopbackPortSupported}" managed="${controller.loopbackPortSupported}" styleClass="settings-row">
+					<Label text="%preferences.volume.tcp.port" labelFor="$loopbackPortField"/>
+					<Region HBox.hgrow="ALWAYS"/>
+					<NumericTextField fx:id="loopbackPortField" prefWidth="140"/>
+					<Button text="%generic.button.apply" fx:id="loopbackPortApplyButton" onAction="#doChangeLoopbackPort"/>
+				</HBox>
+			</VBox>
+			<VBox spacing="4" styleClass="settings-card">
+				<Label text="%preferences.volume.supportedFeatures" styleClass="settings-section-title"/>
+				<Label text="%preferences.volume.feature.mountAuto" styleClass="settings-row"><graphic><FontAwesome5IconView glyph="CHECK" styleClass="glyph-icon-primary"/></graphic></Label>
+				<Label text="%preferences.volume.feature.mountToDir" visible="${controller.mountToDirSupported}" managed="${controller.mountToDirSupported}" styleClass="settings-row"><graphic><FontAwesome5IconView glyph="CHECK" styleClass="glyph-icon-primary"/></graphic></Label>
+				<Label text="%preferences.volume.feature.mountToDriveLetter" visible="${controller.mountToDriveLetterSupported}" managed="${controller.mountToDriveLetterSupported}" styleClass="settings-row"><graphic><FontAwesome5IconView glyph="CHECK" styleClass="glyph-icon-primary"/></graphic></Label>
+				<Label text="%preferences.volume.feature.mountFlags" visible="${controller.mountFlagsSupported}" managed="${controller.mountFlagsSupported}" styleClass="settings-row"><graphic><FontAwesome5IconView glyph="CHECK" styleClass="glyph-icon-primary"/></graphic></Label>
+				<Label text="%preferences.volume.feature.readOnly" visible="${controller.readonlySupported}" managed="${controller.readonlySupported}" styleClass="settings-row"><graphic><FontAwesome5IconView glyph="CHECK" styleClass="glyph-icon-primary"/></graphic></Label>
+			</VBox>
+		</VBox>
+	</content>
+</ScrollPane>

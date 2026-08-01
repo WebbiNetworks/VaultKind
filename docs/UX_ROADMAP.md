@@ -4,6 +4,8 @@ This file records the current native-shell UX state and the agreed ideas that re
 
 All roadmap work follows the product direction in [PRODUCT_PHILOSOPHY.md](PRODUCT_PHILOSOPHY.md): **Desktop First. Windows Focused. Privacy Always.** Windows is the sole supported platform, and cross-platform parity is not a roadmap objective.
 
+All public-facing interface work also follows the [VaultKind Shell Specification](VAULTKIND_SHELL_SPECIFICATION.md): **One shell. One identity.** The desktop application remains the reference surface for VaultKind Web, branded documentation, future update experiences, diagnostics, and any future assistant.
+
 VaultKind is permanently English-only. Multilingual support is not on the roadmap. Translation bundles, language selectors/preferences, localization services, and right-to-left layout machinery must not be reintroduced.
 
 ## Windows-only release hygiene

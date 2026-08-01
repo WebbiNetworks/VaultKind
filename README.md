@@ -18,7 +18,7 @@ VaultKind is derived from [Cryptomator](https://github.com/cryptomator/cryptomat
 - Security-sensitive code kept close to upstream to make review and updates safer
 - No VaultKind updater until a dedicated, signed release channel exists
 
-The product philosophy and its engineering decision filter are documented in [PRODUCT_PHILOSOPHY.md](docs/PRODUCT_PHILOSOPHY.md). The implemented keyboard model and its release-test checklist are documented in [KEYBOARD_CONTROLS.md](docs/KEYBOARD_CONTROLS.md). Package names and core cryptographic components retain their upstream identifiers for now; changing them would add risk without improving the user experience.
+The product philosophy and its engineering decision filter are documented in [PRODUCT_PHILOSOPHY.md](docs/PRODUCT_PHILOSOPHY.md). The public design system is governed by the [VaultKind Shell Specification](docs/VAULTKIND_SHELL_SPECIFICATION.md): **One shell. One identity.** The implemented keyboard model and its release-test checklist are documented in [KEYBOARD_CONTROLS.md](docs/KEYBOARD_CONTROLS.md). Package names and core cryptographic components retain their upstream identifiers for now; changing them would add risk without improving the user experience.
 
 ## Release status
 

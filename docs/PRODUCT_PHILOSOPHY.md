@@ -8,6 +8,8 @@ VaultKind is intentionally a Windows desktop product. It does not pursue cross-p
 
 The accepted long-term interface direction is documented in [ADR 0001: Move Toward a Native Windows Interface](decisions/0001-native-windows-ui.md). VaultKind will move incrementally toward a WinUI 3 frontend while retaining the proven Java vault engine until a secure, compatible replacement is independently justified.
 
+The cross-surface public interface is governed by the [VaultKind Shell Specification](VAULTKIND_SHELL_SPECIFICATION.md): **One shell. One identity.** The Windows application is the reference implementation, and VaultKind Web, branded documentation, future update experiences, diagnostics, and any future assistant reuse its language and design system without simulating capabilities they do not provide.
+
 ## Desktop First
 
 - Design complete desktop workflows instead of shrinking web patterns into a desktop window.
@@ -36,6 +38,10 @@ VaultKind should provide useful, task-focused detail without becoming a manual t
 - Guidance pages present compact questions or tasks and expand one detailed answer at a time.
 - Safe actions, risks, and important “do not” guidance appear where they are relevant.
 - Deeper guidance remains inside the main workspace and preserves the user's context.
+
+### VaultKind UI Law #3: The shell is the brand
+
+Every public-facing VaultKind experience uses the same recognizable shell language: persistent navigation, a contextual workspace, shared cards and actions, approved typography and spacing, honest status, and calm plain-language guidance. Each surface names itself clearly and exposes only real capabilities. Consistency teaches the product; simulation undermines trust.
 
 ## Windows Focused
 

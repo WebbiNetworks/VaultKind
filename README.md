@@ -48,7 +48,7 @@ dotnet build native\VaultKind.Windows\VaultKind.Windows.csproj -c Debug --no-res
 dotnet run --project native\VaultKind.Windows.Tests\VaultKind.Windows.Tests.csproj -c Release
 ```
 
-Release staging and distribution requirements are documented in [RELEASE_READINESS.md](docs/RELEASE_READINESS.md). A separately certified WinUI 3 proof package established the Store distribution path, and VaultKind's real Store-identity package has passed local package, engine, and disposable WebDAV validation. No production VaultKind submission has been published.
+Release staging and distribution requirements are documented in [RELEASE_READINESS.md](docs/RELEASE_READINESS.md), with the exact draft listing, certification notes, public URLs, and evidence gate in [STORE_SUBMISSION_PREPARATION.md](docs/STORE_SUBMISSION_PREPARATION.md). A separately certified WinUI 3 proof package established the Store distribution path, and VaultKind's real Store-identity package has passed local package, engine, and disposable WebDAV validation. No production VaultKind submission has been published.
 
 Repository publication boundaries and the checks required before making source history public are documented in [PUBLIC_REPOSITORY_READINESS.md](docs/PUBLIC_REPOSITORY_READINESS.md).
 

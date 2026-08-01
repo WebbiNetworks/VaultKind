@@ -8,32 +8,32 @@ internal static class VaultCreationPathPolicy
         string normalizedName = vaultName.Trim();
         string selectedFolderName = Path.GetFileName(Path.TrimEndingDirectorySeparator(selectedFolder));
         bool selectedFolderMatchesName = selectedFolderName.Equals(normalizedName, StringComparison.OrdinalIgnoreCase);
-        string targetPath = selectedFolderMatchesName
-            ? selectedFolder
-            : Path.Combine(selectedFolder, normalizedName);
 
         try
         {
-            if (File.Exists(targetPath))
+            if (File.Exists(selectedFolder) || !Directory.Exists(selectedFolder))
             {
-                return VaultCreationTarget.Unavailable(targetPath);
+                return VaultCreationTarget.Unavailable(selectedFolder);
             }
 
-            if (!Directory.Exists(targetPath))
+            if (!Directory.EnumerateFileSystemEntries(selectedFolder).Any())
             {
-                return VaultCreationTarget.Available(targetPath, usesSelectedFolder: false);
+                return VaultCreationTarget.Available(selectedFolder, usesSelectedFolder: true);
             }
 
-            if (selectedFolderMatchesName && !Directory.EnumerateFileSystemEntries(targetPath).Any())
+            if (selectedFolderMatchesName)
             {
-                return VaultCreationTarget.Available(targetPath, usesSelectedFolder: true);
+                return VaultCreationTarget.Unavailable(selectedFolder);
             }
 
-            return VaultCreationTarget.Unavailable(targetPath);
+            string targetPath = Path.Combine(selectedFolder, normalizedName);
+            return File.Exists(targetPath) || Directory.Exists(targetPath)
+                ? VaultCreationTarget.Unavailable(targetPath)
+                : VaultCreationTarget.Available(targetPath, usesSelectedFolder: false);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            return VaultCreationTarget.Unavailable(targetPath);
+            return VaultCreationTarget.Unavailable(selectedFolder);
         }
     }
 }

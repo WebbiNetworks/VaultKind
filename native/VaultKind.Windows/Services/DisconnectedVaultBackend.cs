@@ -47,7 +47,7 @@ internal sealed class DisconnectedVaultBackend : IVaultBackend
     public Task<VaultCommandResult> ResetPasswordAsync(string vaultId, string recoveryKey, string newPassword, CancellationToken cancellationToken = default) =>
         Task.FromResult(new VaultCommandResult(false, "engine_unavailable", null));
 
-    public Task<VaultCreateResult> CreateAsync(string path, string password, bool createRecoveryKey, bool useShortNames, CancellationToken cancellationToken = default) =>
+    public Task<VaultCreateResult> CreateAsync(string path, string displayName, string password, bool createRecoveryKey, bool useShortNames, CancellationToken cancellationToken = default) =>
         Task.FromResult(new VaultCreateResult(false, "engine_unavailable", null, null, null));
 
     public Task<VaultCreateResult> ConnectAsync(string path, CancellationToken cancellationToken = default) =>

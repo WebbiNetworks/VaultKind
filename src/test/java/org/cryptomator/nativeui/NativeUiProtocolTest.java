@@ -203,8 +203,9 @@ class NativeUiProtocolTest {
 		var password = "create-password".toCharArray();
 		protocol = new NativeUiProtocol(objectMapper, () -> List.of(),
 				(operation, vaultId, suppliedPassword, suppliedRecoveryKey, suppliedNewPassword, suppliedDisplayName, suppliedVaultPath) -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"),
-				(path, suppliedPassword, createRecoveryKey, useShortNames) -> {
+				(path, displayName, suppliedPassword, createRecoveryKey, useShortNames) -> {
 					assertEquals("F:\\Vaults\\Family", path);
+					assertEquals("Family files", displayName);
 					assertEquals("create-password", new String(suppliedPassword));
 					assertTrue(createRecoveryKey);
 					assertTrue(useShortNames);
@@ -215,7 +216,7 @@ class NativeUiProtocolTest {
 				(operation, serviceId) -> new NativeMountSettings.NativeMountSettingsResult(false, "unsupported_operation", null, List.of()),
 				new NativeBackendTerminator());
 
-		var request = new NativeUiProtocol.NativeUiRequest(1, "request-create", "vault.create", null, password, null, null, null, "F:\\Vaults\\Family", true, true, null);
+		var request = new NativeUiProtocol.NativeUiRequest(1, "request-create", "vault.create", null, password, null, null, "Family files", "F:\\Vaults\\Family", true, true, null);
 		var response = exchange(request);
 
 		assertTrue(response.ok());
@@ -229,7 +230,7 @@ class NativeUiProtocolTest {
 	void dispatchesExistingVaultConnectionAndPropagatesFailure() throws IOException {
 		protocol = new NativeUiProtocol(objectMapper, () -> List.of(),
 				(operation, vaultId, suppliedPassword, suppliedRecoveryKey, suppliedNewPassword, suppliedDisplayName, suppliedVaultPath) -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"),
-				(path, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"),
+				(path, displayName, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"),
 				path -> {
 					assertEquals("F:\\Vaults\\Existing", path);
 					return NativeVaultCreator.NativeCreateResult.error("already_connected");
@@ -251,7 +252,7 @@ class NativeUiProtocolTest {
 		var automatic = new NativeMountSettings.NativeMountService("automatic", "Automatic (recommended)", true, true, true, true, true);
 		protocol = new NativeUiProtocol(objectMapper, () -> List.of(),
 				(operation, vaultId, suppliedPassword, suppliedRecoveryKey, suppliedNewPassword, suppliedDisplayName, suppliedVaultPath) -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"),
-				(path, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"),
+				(path, displayName, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"),
 				path -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"),
 				() -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"),
 				(operation, serviceId) -> {
@@ -318,7 +319,7 @@ class NativeUiProtocolTest {
 	private NativeUiProtocol protocolWithShutdown(NativeUiProtocol.ShutdownSource shutdownSource, NativeBackendTerminator terminator) {
 		return new NativeUiProtocol(objectMapper, () -> List.of(),
 				(operation, vaultId, password, recoveryKey, newPassword, displayName, vaultPath) -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"),
-				(path, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"),
+				(path, displayName, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"),
 				path -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"),
 				shutdownSource,
 				(operation, serviceId) -> new NativeMountSettings.NativeMountSettingsResult(false, "unsupported_operation", null, List.of()),

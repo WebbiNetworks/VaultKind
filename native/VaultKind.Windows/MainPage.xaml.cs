@@ -31,6 +31,8 @@ public sealed partial class MainPage : Page
     private VaultSummary? activeVault;
     private VaultSummary? createdVault;
     private string? selectedCreateVaultParentPath;
+    private string? pendingCreateVaultName;
+    private string? pendingCreateVaultPath;
     private string? selectedConnectVaultPath;
     private IReadOnlyList<VaultSummary> knownVaults = [];
     private readonly List<SessionActivity> activityHistory = [];
@@ -2854,6 +2856,8 @@ public sealed partial class MainPage : Page
         CreateVaultNameStatus.Visibility = Visibility.Collapsed;
         CreateVaultNextButton.IsEnabled = false;
         selectedCreateVaultParentPath = null;
+        pendingCreateVaultName = null;
+        pendingCreateVaultPath = null;
         CreateVaultStoragePath.Text = string.Empty;
         CreateVaultStorageStatus.Visibility = Visibility.Collapsed;
         CreateVaultStorageNextButton.IsEnabled = false;
@@ -2962,12 +2966,14 @@ public sealed partial class MainPage : Page
 
     private void ShowCreateVaultReview(object sender, RoutedEventArgs e)
     {
+        pendingCreateVaultName = CreateVaultNameInput.Text.Trim();
+        pendingCreateVaultPath = CreateVaultStoragePath.Text;
         CreateVaultStorageView.Visibility = Visibility.Collapsed;
         CreateVaultReviewView.Visibility = Visibility.Visible;
         CreateVaultProtectionView.Visibility = Visibility.Collapsed;
         CreateVaultSuccessView.Visibility = Visibility.Collapsed;
-        CreateVaultReviewName.Text = CreateVaultNameInput.Text.Trim();
-        CreateVaultReviewPath.Text = CreateVaultStoragePath.Text;
+        CreateVaultReviewName.Text = pendingCreateVaultName;
+        CreateVaultReviewPath.Text = pendingCreateVaultPath;
         FocusAfterNavigation(CreateVaultShortNamesOption);
     }
 
@@ -3081,11 +3087,13 @@ public sealed partial class MainPage : Page
 
     private async void SubmitCreateVault(object sender, RoutedEventArgs e)
     {
-        if (!CreateVaultFinalButton.IsEnabled || string.IsNullOrWhiteSpace(CreateVaultStoragePath.Text))
+        if (!CreateVaultFinalButton.IsEnabled || string.IsNullOrWhiteSpace(pendingCreateVaultName) || string.IsNullOrWhiteSpace(pendingCreateVaultPath))
         {
             return;
         }
 
+        string vaultName = pendingCreateVaultName;
+        string vaultPath = pendingCreateVaultPath;
         string password = CreateVaultPasswordInput.Password;
         CreateVaultFinalButton.IsEnabled = false;
         CreateVaultCreationProgress.IsActive = true;
@@ -3095,7 +3103,8 @@ public sealed partial class MainPage : Page
         CreateVaultCreationStatus.Visibility = Visibility.Visible;
 
         VaultCreateResult result = await backend.CreateAsync(
-            CreateVaultStoragePath.Text,
+            vaultPath,
+            vaultName,
             password,
             CreateRecoveryKeyOption.IsChecked == true,
             CreateVaultShortNamesOption.IsChecked == true);
@@ -3122,14 +3131,14 @@ public sealed partial class MainPage : Page
         }
         ApplySnapshot(snapshot);
         createdVault = snapshot.Vaults.FirstOrDefault(vault => vault.Id == result.VaultId)
-            ?? snapshot.Vaults.FirstOrDefault(vault => vault.Path.Equals(CreateVaultStoragePath.Text, StringComparison.OrdinalIgnoreCase));
-        LogActivity("Vault created", $"{CreateVaultNameInput.Text.Trim()} was created and added to VaultKind.", "create");
+            ?? snapshot.Vaults.FirstOrDefault(vault => vault.Path.Equals(vaultPath, StringComparison.OrdinalIgnoreCase));
+        LogActivity("Vault created", $"{vaultName} was created and added to VaultKind.", "create");
 
         CreateVaultProtectionView.Visibility = Visibility.Collapsed;
         CreateVaultSuccessView.Visibility = Visibility.Visible;
         ContextTitle.Text = "Vault Created";
         ContextSubtitle.Text = "Your new encrypted space is ready when you are.";
-        CreatedVaultNameText.Text = CreateVaultNameInput.Text.Trim();
+        CreatedVaultNameText.Text = vaultName;
         CreatedRecoveryKeyText.Text = result.RecoveryKey ?? string.Empty;
         bool hasRecoveryKey = !string.IsNullOrWhiteSpace(result.RecoveryKey);
         CreatedRecoveryKeyPanel.Visibility = hasRecoveryKey ? Visibility.Visible : Visibility.Collapsed;
@@ -3194,7 +3203,9 @@ public sealed partial class MainPage : Page
 
     private static string FriendlyCreateError(string? error) => error switch
     {
-        "location_exists" => "That vault folder already exists. Go back and choose a different name or parent folder.",
+        "location_exists" => "That vault location is not empty or became unavailable. Go back and choose another empty folder, name, or parent folder.",
+        "invalid_display_name" => "The vault name changed or became unavailable. Go back and enter the name again.",
+        "invalid_password" => "Use a password between 8 and 1,000 characters, then try again.",
         "invalid_path" => "That storage location is not valid. Go back and choose another folder.",
         "create_failed_folder" => "VaultKind could not create the selected folder. Check its permissions or choose another location.",
         "create_failed_masterkey" => "VaultKind could not securely write the vault key. Check the selected drive and try again.",
@@ -3531,8 +3542,11 @@ public sealed partial class MainPage : Page
         }
 
         activeVault = selectedVault;
-        ShowVaultManagement(sender, new RoutedEventArgs());
-        FocusAfterNavigation(ManagedVaultSelector);
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            ShowVaultManagement(ManagedVaultSelector, new RoutedEventArgs());
+            FocusAfterNavigation(ManagedVaultSelector);
+        });
     }
 
     private async void ShowVaultStatistics(object sender, RoutedEventArgs e)

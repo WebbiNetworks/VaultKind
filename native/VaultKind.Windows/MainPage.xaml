@@ -1305,7 +1305,7 @@
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
-                                <TextBlock Text="Choose a parent folder, or an empty folder already named for your vault. VaultKind shows the exact final path below." Foreground="{StaticResource MutedTextBrush}" FontSize="13" TextWrapping="Wrap" />
+                                <TextBlock Text="Choose an empty folder to use it exactly as selected. If the folder contains other items, VaultKind creates a new folder inside it. The exact final path appears below." Foreground="{StaticResource MutedTextBrush}" FontSize="13" TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
 

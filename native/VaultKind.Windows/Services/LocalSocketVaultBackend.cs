@@ -115,7 +115,7 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
     public async Task<VaultCommandResult> ResetPasswordAsync(string vaultId, string recoveryKey, string newPassword, CancellationToken cancellationToken = default)
         => await ExecuteCommandAsync("vault.reset_password", vaultId, null, TimeSpan.FromSeconds(45), cancellationToken, recoveryKey, newPassword);
 
-    public async Task<VaultCreateResult> CreateAsync(string path, string password, bool createRecoveryKey, bool useShortNames, CancellationToken cancellationToken = default)
+    public async Task<VaultCreateResult> CreateAsync(string path, string displayName, string password, bool createRecoveryKey, bool useShortNames, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -135,7 +135,7 @@ internal sealed class LocalSocketVaultBackend : IVaultBackend
             }
 
             var requestId = Guid.NewGuid().ToString("N");
-            await WriteFrameAsync(stream, new ProtocolRequest(ProtocolVersion, requestId, "vault.create", Password: password, VaultPath: path, CreateRecoveryKey: createRecoveryKey, UseShortNames: useShortNames), timeout.Token);
+            await WriteFrameAsync(stream, new ProtocolRequest(ProtocolVersion, requestId, "vault.create", Password: password, DisplayName: displayName, VaultPath: path, CreateRecoveryKey: createRecoveryKey, UseShortNames: useShortNames), timeout.Token);
             var response = await ReadFrameAsync<ProtocolResponse>(stream, timeout.Token);
             if (response.Protocol != ProtocolVersion || response.RequestId != requestId)
             {

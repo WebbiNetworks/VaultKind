@@ -29,11 +29,11 @@ public class NativeUiProtocol {
 	}
 
 	NativeUiProtocol(ObjectMapper objectMapper, VaultSummarySource vaultSummarySource) {
-		this(objectMapper, vaultSummarySource, (operation, vaultId, password, recoveryKey, newPassword, displayName, vaultPath) -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), (path, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), path -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), () -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), (operation, serviceId) -> new NativeMountSettings.NativeMountSettingsResult(false, "unsupported_operation", null, List.of()), new NativeBackendTerminator());
+		this(objectMapper, vaultSummarySource, (operation, vaultId, password, recoveryKey, newPassword, displayName, vaultPath) -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), (path, displayName, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), path -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), () -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), (operation, serviceId) -> new NativeMountSettings.NativeMountSettingsResult(false, "unsupported_operation", null, List.of()), new NativeBackendTerminator());
 	}
 
 	NativeUiProtocol(ObjectMapper objectMapper, VaultSummarySource vaultSummarySource, VaultCommandSource vaultCommandSource) {
-		this(objectMapper, vaultSummarySource, vaultCommandSource, (path, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), path -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), () -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), (operation, serviceId) -> new NativeMountSettings.NativeMountSettingsResult(false, "unsupported_operation", null, List.of()), new NativeBackendTerminator());
+		this(objectMapper, vaultSummarySource, vaultCommandSource, (path, displayName, password, recovery, shortNames) -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), path -> NativeVaultCreator.NativeCreateResult.error("unsupported_operation"), () -> NativeVaultOperations.NativeCommandResult.error("unsupported_operation"), (operation, serviceId) -> new NativeMountSettings.NativeMountSettingsResult(false, "unsupported_operation", null, List.of()), new NativeBackendTerminator());
 	}
 
 	NativeUiProtocol(ObjectMapper objectMapper, VaultSummarySource vaultSummarySource, VaultCommandSource vaultCommandSource, VaultCreateSource vaultCreateSource, VaultConnectSource vaultConnectSource, ShutdownSource shutdownSource, MountSettingsSource mountSettingsSource, NativeBackendTerminator terminator) {
@@ -61,7 +61,7 @@ public class NativeUiProtocol {
 			var result = vaultCommandSource.execute(request.operation(), request.vaultId(), request.password(), request.recoveryKey(), request.newPassword(), request.displayName(), request.vaultPath());
 			response = result.ok() ? NativeUiResponse.command(request.requestId(), result.state(), result.recoveryKey(), result.statistics(), result.fileNameMapping()) : NativeUiResponse.error(request.requestId(), result.error());
 		} else if ("vault.create".equals(request.operation())) {
-			var result = vaultCreateSource.create(request.vaultPath(), request.password(), request.createRecoveryKey(), request.useShortNames());
+			var result = vaultCreateSource.create(request.vaultPath(), request.displayName(), request.password(), request.createRecoveryKey(), request.useShortNames());
 			response = result.ok() ? NativeUiResponse.created(request.requestId(), result.state(), result.vaultId(), result.recoveryKey()) : NativeUiResponse.error(request.requestId(), result.error());
 		} else if ("vault.connect".equals(request.operation())) {
 			var result = vaultConnectSource.connect(request.vaultPath());
@@ -157,7 +157,7 @@ public class NativeUiProtocol {
 
 	@FunctionalInterface
 	interface VaultCreateSource {
-		NativeVaultCreator.NativeCreateResult create(String path, char[] password, boolean createRecoveryKey, boolean useShortNames);
+		NativeVaultCreator.NativeCreateResult create(String path, String displayName, char[] password, boolean createRecoveryKey, boolean useShortNames);
 	}
 
 	@FunctionalInterface

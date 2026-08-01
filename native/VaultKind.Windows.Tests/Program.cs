@@ -59,28 +59,35 @@ string vaultPathPolicyRoot = Path.Combine(Path.GetTempPath(), "VaultKind.Tests",
 try
 {
     string parentFolder = Path.Combine(vaultPathPolicyRoot, "Parent");
+    string nonEmptyParentFolder = Path.Combine(vaultPathPolicyRoot, "NonEmptyParent");
     string matchingEmptyFolder = Path.Combine(vaultPathPolicyRoot, "Mooselock");
     string matchingNonEmptyFolder = Path.Combine(vaultPathPolicyRoot, "Occupied");
     Directory.CreateDirectory(parentFolder);
+    Directory.CreateDirectory(nonEmptyParentFolder);
     Directory.CreateDirectory(matchingEmptyFolder);
     Directory.CreateDirectory(matchingNonEmptyFolder);
+    File.WriteAllText(Path.Combine(nonEmptyParentFolder, "existing.txt"), "occupied");
     File.WriteAllText(Path.Combine(matchingNonEmptyFolder, "existing.txt"), "occupied");
 
     VaultCreationTarget parentTarget = VaultCreationPathPolicy.Resolve(parentFolder, "Mooselock");
+    VaultCreationTarget nonEmptyParentTarget = VaultCreationPathPolicy.Resolve(nonEmptyParentFolder, "Mooselock");
     VaultCreationTarget emptyMatchingTarget = VaultCreationPathPolicy.Resolve(matchingEmptyFolder, "mooselock");
     VaultCreationTarget occupiedMatchingTarget = VaultCreationPathPolicy.Resolve(matchingNonEmptyFolder, "Occupied");
-    Directory.CreateDirectory(Path.Combine(parentFolder, "Existing"));
-    VaultCreationTarget existingChildTarget = VaultCreationPathPolicy.Resolve(parentFolder, "Existing");
+    Directory.CreateDirectory(Path.Combine(nonEmptyParentFolder, "Existing"));
+    VaultCreationTarget existingChildTarget = VaultCreationPathPolicy.Resolve(nonEmptyParentFolder, "Existing");
     if (!parentTarget.IsSuitable
-        || parentTarget.UsesSelectedFolder
-        || !parentTarget.Path.Equals(Path.Combine(parentFolder, "Mooselock"), StringComparison.OrdinalIgnoreCase)
+        || !parentTarget.UsesSelectedFolder
+        || !parentTarget.Path.Equals(parentFolder, StringComparison.OrdinalIgnoreCase)
+        || !nonEmptyParentTarget.IsSuitable
+        || nonEmptyParentTarget.UsesSelectedFolder
+        || !nonEmptyParentTarget.Path.Equals(Path.Combine(nonEmptyParentFolder, "Mooselock"), StringComparison.OrdinalIgnoreCase)
         || !emptyMatchingTarget.IsSuitable
         || !emptyMatchingTarget.UsesSelectedFolder
         || !emptyMatchingTarget.Path.Equals(matchingEmptyFolder, StringComparison.OrdinalIgnoreCase)
         || occupiedMatchingTarget.IsSuitable
         || existingChildTarget.IsSuitable)
     {
-        Console.Error.WriteLine("FAIL: vault creation path policy did not preserve parent-folder and matching-empty-folder behavior.");
+        Console.Error.WriteLine("FAIL: vault creation path policy did not preserve exact-empty-folder and non-empty-parent behavior.");
         failures++;
     }
 }
@@ -715,8 +722,9 @@ static async Task<int> ProbeBundledEngineAsync(string socketPath)
         const string originalPassword = "Probe-Original-2026!";
         const string changedPassword = "Probe-Changed-2026!";
         const string recoveredPassword = "Probe-Recovered-2026!";
+        const string originalDisplayName = "Disposable Created Vault";
 
-        using JsonDocument createVault = await InvokeAsync(stream, "vault.create", timeout.Token, password: originalPassword, vaultPath: fixtureVaultPath, createRecoveryKey: true);
+        using JsonDocument createVault = await InvokeAsync(stream, "vault.create", timeout.Token, password: originalPassword, displayName: originalDisplayName, vaultPath: fixtureVaultPath, createRecoveryKey: true);
         JsonElement createRoot = createVault.RootElement;
         AssertProtocolSuccess(createRoot, "created", "disposable vault creation");
         string vaultId = createRoot.GetProperty("vaultId").GetString() ?? throw new InvalidDataException("Disposable vault creation returned no vault ID.");
@@ -728,9 +736,17 @@ static async Task<int> ProbeBundledEngineAsync(string socketPath)
 
         using JsonDocument createdVaultList = await InvokeAsync(stream, "vault.list", timeout.Token);
         JsonElement[] createdVaults = createdVaultList.RootElement.GetProperty("vaults").EnumerateArray().ToArray();
-        if (createdVaults.Length != 1 || createdVaults[0].GetProperty("id").GetString() != vaultId)
+        string returnedPath = createdVaults.Length == 1 ? createdVaults[0].GetProperty("path").GetString() ?? string.Empty : string.Empty;
+        string expandedReturnedPath = returnedPath.StartsWith($"~{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), returnedPath[2..])
+            : returnedPath;
+        if (createdVaults.Length != 1
+            || createdVaults[0].GetProperty("id").GetString() != vaultId
+            || createdVaults[0].GetProperty("name").GetString() != originalDisplayName
+            || !Path.GetFullPath(expandedReturnedPath).Equals(Path.GetFullPath(fixtureVaultPath), StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidDataException("The disposable vault was not registered in the isolated profile.");
+            string actualName = createdVaults.Length == 1 ? createdVaults[0].GetProperty("name").GetString() ?? "<null>" : "<unexpected vault count>";
+            throw new InvalidDataException($"The disposable vault was not registered with its requested display name and exact storage path. Name: '{actualName}'. Path: '{returnedPath}'.");
         }
 
         using JsonDocument initialRecovery = await InvokeAsync(stream, "vault.show_recovery_key", timeout.Token, vaultId: vaultId, password: originalPassword);

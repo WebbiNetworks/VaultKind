@@ -57,10 +57,19 @@ public class NativeVaultCreator {
 		this.vaultListManager = vaultListManager;
 	}
 
-	public NativeCreateResult create(String suppliedPath, char[] password, boolean createRecoveryKey, boolean useShortNames) {
-		if (suppliedPath == null || suppliedPath.isBlank() || password == null || password.length < 8 || password.length > MAX_PASSWORD_CHARS) {
+	public NativeCreateResult create(String suppliedPath, String displayName, char[] password, boolean createRecoveryKey, boolean useShortNames) {
+		String trimmedDisplayName = displayName == null ? "" : displayName.trim();
+		if (suppliedPath == null || suppliedPath.isBlank()) {
 			clear(password);
-			return NativeCreateResult.error("invalid_request");
+			return NativeCreateResult.error("invalid_path");
+		}
+		if (!isValidDisplayName(trimmedDisplayName)) {
+			clear(password);
+			return NativeCreateResult.error("invalid_display_name");
+		}
+		if (password == null || password.length < 8 || password.length > MAX_PASSWORD_CHARS) {
+			clear(password);
+			return NativeCreateResult.error("invalid_password");
 		}
 
 		Path path;
@@ -71,14 +80,15 @@ public class NativeVaultCreator {
 			return NativeCreateResult.error("invalid_path");
 		}
 
-		if (Files.exists(path)) {
-			clear(password);
-			return NativeCreateResult.error("location_exists");
-		}
-
 		String stage = "folder";
 		try {
-			Files.createDirectory(path);
+			if (Files.exists(path)) {
+				if (!Files.isDirectory(path) || !isDirectoryEmpty(path)) {
+					return NativeCreateResult.error("location_exists");
+				}
+			} else {
+				Files.createDirectory(path);
+			}
 			stage = "masterkey";
 			Path masterkeyFilePath = path.resolve(MASTERKEY_FILENAME);
 			String recoveryKey;
@@ -109,6 +119,7 @@ public class NativeVaultCreator {
 
 			stage = "registration";
 			var vault = vaultListManager.add(path);
+			vault.setDisplayName(trimmedDisplayName);
 			LOG.info("Created native VaultKind vault at {}", path);
 			return NativeCreateResult.success(vault.getId(), recoveryKey);
 		} catch (IOException | RuntimeException e) {
@@ -116,6 +127,17 @@ public class NativeVaultCreator {
 			return NativeCreateResult.error("create_failed_" + stage);
 		} finally {
 			clear(password);
+		}
+	}
+
+	private static boolean isValidDisplayName(String displayName) {
+		return !displayName.isEmpty() && displayName.length() <= 64 && displayName.codePoints().allMatch(character ->
+				Character.isLetterOrDigit(character) || Character.isWhitespace(character) || character == '-' || character == '_');
+	}
+
+	private static boolean isDirectoryEmpty(Path path) throws IOException {
+		try (var entries = Files.newDirectoryStream(path)) {
+			return !entries.iterator().hasNext();
 		}
 	}
 

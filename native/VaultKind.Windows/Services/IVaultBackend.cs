@@ -14,7 +14,7 @@ internal interface IVaultBackend
     Task<VaultCommandResult> ChangePasswordAsync(string vaultId, string currentPassword, string newPassword, CancellationToken cancellationToken = default);
     Task<VaultCommandResult> ShowRecoveryKeyAsync(string vaultId, string password, CancellationToken cancellationToken = default);
     Task<VaultCommandResult> ResetPasswordAsync(string vaultId, string recoveryKey, string newPassword, CancellationToken cancellationToken = default);
-    Task<VaultCreateResult> CreateAsync(string path, string password, bool createRecoveryKey, bool useShortNames, CancellationToken cancellationToken = default);
+    Task<VaultCreateResult> CreateAsync(string path, string displayName, string password, bool createRecoveryKey, bool useShortNames, CancellationToken cancellationToken = default);
     Task<VaultCreateResult> ConnectAsync(string path, CancellationToken cancellationToken = default);
     Task<MountSettingsResult> GetMountSettingsAsync(CancellationToken cancellationToken = default);
     Task<MountSettingsResult> SetMountServiceAsync(string mountServiceId, CancellationToken cancellationToken = default);

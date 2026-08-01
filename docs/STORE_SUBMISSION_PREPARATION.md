@@ -63,8 +63,8 @@ These URLs must return HTTPS 200 publicly before the submission is saved:
 - Website: `https://vaultkind.dev/`
 - Privacy policy: `https://vaultkind.dev/privacy.html`
 - Support: `https://vaultkind.dev/support.html`
+- Private contact: `https://vaultkind.dev/contact.php`
 - Public source: `https://github.com/WebbiNetworks/VaultKind`
-- Support email: `webbi@webbi.ca`
 
 ## English Store listing
 

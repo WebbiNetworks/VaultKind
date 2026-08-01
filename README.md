@@ -6,6 +6,21 @@ VaultKind is a Windows desktop encryption application focused on accessibility, 
 
 VaultKind is derived from [Cryptomator](https://github.com/cryptomator/cryptomator) under the GNU General Public License v3. It is not affiliated with or endorsed by Skymatic GmbH or the Cryptomator project.
 
+## Screenshots
+
+[![VaultKind Dashboard showing configured vaults, recent activity, and a healthy local engine](docs/images/vaultkind-dashboard.png)](docs/images/vaultkind-dashboard.png)
+
+<table>
+  <tr>
+    <td width="50%"><a href="docs/images/vaultkind-doctor.png"><img src="docs/images/vaultkind-doctor.png" alt="Vault Doctor reporting healthy local checks"></a></td>
+    <td width="50%"><a href="docs/images/vaultkind-learning-center.png"><img src="docs/images/vaultkind-learning-center.png" alt="VaultKind Learning Center explaining the everyday encrypted-vault workflow"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Vault Doctor</strong></td>
+    <td align="center"><strong>Learning Center</strong></td>
+  </tr>
+</table>
+
 ## Project direction
 
 - Windows is the only supported target; cross-platform parity is not a product goal

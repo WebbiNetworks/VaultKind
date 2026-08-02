@@ -40,10 +40,9 @@ VaultKind is permanently English-only. Multilingual support is not on the roadma
 
 ### Next accessibility milestones
 
-- Repeat the keyboard and Narrator matrix on the frozen release candidate. Development passes have covered zero-, one-, and multi-vault navigation; sensitive connected-vault workflows remain below.
-- Complete connected-vault, recovery, password, sharing, file-tool, and removal checks with Narrator.
-- Validate additional supported-DPI configurations. The current development build is confirmed at the test operator's normal 160% Windows Text size; cross-monitor reflow remained functional on a television at an unusually large effective scale; and app larger text, minimum-window layout, High Contrast, and both themes also passed.
-- Retest the standard Menu-key and `Shift+F10` gestures on release-candidate hardware, but do not depend on them: every vault's visible **More actions** button must remain reachable with `Tab` and operable with `Enter` or `Space`.
+- The complete keyboard-only matrix is accepted for the unchanged runtime and is not repeated merely because documentation or Store media changed. Repeat it only after a runtime UI change.
+- Complete one combined frozen-build assistive-technology session: connected-vault, recovery, password, sharing, file-tool, and removal checks with Narrator; minimum-window operation at the test operator's normal 160% Windows Text size; cross-monitor/high-DPI reflow on the current 4K displays; High Contrast; and understandable open, lock, and warning workflows with signature sounds disabled.
+- The standard Menu key and `Shift+F10` did not work reliably on the test operator's hardware and are not release dependencies. Every vault's visible **More actions** button remains the supported keyboard route and must stay reachable with `Tab` and operable with `Enter` or `Space`.
 - Repeat the static semantic audit against the exact release candidate after all remaining UI changes are frozen.
 
 ## Learning Center — implemented in the native shell

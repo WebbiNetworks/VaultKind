@@ -38,12 +38,12 @@ VaultKind is permanently English-only. Multilingual support is not on the roadma
 - Automated coverage now includes 87 native policy, protocol, persistence, keyboard-navigation, embedded-documentation, backend-identity, profile, preference, and workflow checks. Activity history, application preferences, cached Vault Doctor summaries, Learning Center progress, and window placement have direct file-level coverage. Dashboard locked/unlocked counts cover empty, mixed-case, and unknown vault states.
 - A July 27, 2026 hands-on pass confirmed the zero-vault shell with keyboard-only navigation, Narrator names and live Doctor status, larger text, minimum-window layout, High Contrast, and visible focus in Light and Dark.
 
-### Next accessibility milestones
+### Accessibility maintenance rule
 
-- The complete keyboard-only matrix is accepted for the unchanged runtime and is not repeated merely because documentation or Store media changed. Repeat it only after a runtime UI change.
-- Complete one combined frozen-build assistive-technology session: connected-vault, recovery, password, sharing, file-tool, and removal checks with Narrator; minimum-window operation at the test operator's normal 160% Windows Text size; cross-monitor/high-DPI reflow on the current 4K displays; High Contrast; and understandable open, lock, and warning workflows with signature sounds disabled.
+- The complete keyboard-only and Narrator matrices are accepted for the unchanged frozen interface. Do not repeat them merely because documentation, dependencies with no native-interface effect, or Store media changed.
+- The signed-build evidence for minimum-window operation at the test operator's normal 160% Windows Text size, cross-monitor/high-DPI reflow, High Contrast, and understandable open, lock, and warning workflows with signature sounds disabled is also accepted. Repeat only an affected slice after a native-interface or visible-asset change.
 - The standard Menu key and `Shift+F10` did not work reliably on the test operator's hardware and are not release dependencies. Every vault's visible **More actions** button remains the supported keyboard route and must stay reachable with `Tab` and operable with `Enter` or `Space`.
-- Repeat the static semantic audit against the exact release candidate after all remaining UI changes are frozen.
+- The frozen-commit static semantic audit passed with no name, live-region, or focus-transfer drift. Repeat it only after a native-interface change.
 
 ## Learning Center — implemented in the native shell
 

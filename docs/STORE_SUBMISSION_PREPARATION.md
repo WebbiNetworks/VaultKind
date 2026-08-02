@@ -1,10 +1,10 @@
 # Microsoft Store Submission Preparation
 
-This document prepares the first production VaultKind submission without authorizing an upload, certification submission, or publication. Partner Center remains the source of truth for the fields it presents at submission time.
+This document prepares and records the first production VaultKind submission. Greg authorized the exact frozen artifact upload and then separately authorized certification submission on August 2, 2026. Publication remains separately controlled. Partner Center remains the source of truth for the fields it presents at submission time.
 
 ## Safety boundary
 
-- Do not upload or submit until Greg gives explicit approval for that external action.
+- Upload only an exact artifact Greg explicitly approves. Certification submission was separately approved and started on August 2, 2026. Do not cancel, replace, resubmit, or publish without new approval.
 - Do not submit an artifact built before the final release-candidate commit.
 - Keep the production `.msixupload` unsigned. Microsoft signs an accepted Store package.
 - Never upload a locally signed test MSIX or a package containing the development profile marker.
@@ -30,16 +30,23 @@ The checked-in identity source is `packaging/store-identity.json`. The build scr
 
 ## Artifact boundary
 
-The July 31 locally validated reference upload is:
+The August 2 frozen-candidate upload built from clean commit `bdf44083a1dee926f94488a3191e1350b8aff91c` is:
 
 - `artifacts/VaultKind-1.0.0.0-win-x64.msixupload`
-- Size: `96,469,603` bytes
-- SHA-256: `0E4F25149DA6B04B5A9CF42045EB926E5B8834920D2AB20EE25071DE8CF983F7`
-- One unsigned x64 inner MSIX; no `AppxSignature.p7x`
-- WACK `10.0.26100.7705`: complete 24-test run, overall PASS, not partial
-- Real-identity local install, packaged engine launch, Windows Explorer WebDAV file I/O, lock, cleanup, and exact-name uninstall: passed
+- Size: `96,467,931` bytes
+- SHA-256: `A45FB1E1296391B935EB962DD6ADDA7A74E8304380F65847A6D72875BEAF5BDF`
+- Sole inner package: `VaultKind-1.0.0.0-win-x64.msix`
+- Inner size: `97,191,517` bytes
+- Inner SHA-256: `8D82E6DDD24CC37667E29805BD69C546451DAF0E21067C220143C6E688CF27D6`
+- Exact Store identity, version `1.0.0.0`, x64 architecture, `Store`/`developmentOnly: false` marker, and English release manifest
+- All 796 staged files present byte-for-byte in the 800-entry package, with no unexpected payload files
+- Only Logback 1.6.1; all eight package-artwork hashes match the reviewed sources
+- Unsigned as required; no `AppxSignature.p7x`
+- WACK `10.0.26100.7705`: complete 24-test run, overall PASS, `PARTIAL_RUN=FALSE`; 22 direct passes and the same two documented optional analyzer findings
 
-This is evidence, not the final upload. Dependency or source changes after that build—including the Jackson 2.21.5 maintenance update—require a fresh artifact from the frozen release commit, a new recorded hash, package inspection, WACK, and the applicable runtime checks.
+Greg explicitly approved this exact SHA-256 artifact for a non-discoverable draft. It was uploaded to Partner Center Submission 1 (`1152921505701563238`) on August 2, 2026 and Microsoft reported the package as **Validated** and **Complete**. It remains unsigned locally and unmodified. Do not rebuild, replace, or upload another artifact unless a later source, dependency, native-interface, or visible-asset change invalidates it. Never modify this upload for local installation.
+
+The submitted configuration uses all worldwide markets, public audience, direct-link-only non-discoverability, and a CAD base price of zero (**Free**). Pricing and availability, Properties, Age ratings, Packages, Store listings, and Submission options all reported **Complete** before submission. Publishing is held after certification until **Publish now** is explicitly selected. The five reviewed screenshots and approved 300x300 Store tile are saved in the English listing, and the prepared certification instructions are saved with no credentials. Partner Center now reports **In certification**: Submission complete, Pre-processing in progress, Certification not started, and Publishing not started.
 
 ## Recommended Partner Center choices
 
@@ -137,9 +144,9 @@ Suggested Partner Center explanation:
 
 ## Notes for certification
 
-Use concise notes and update the date before submission:
+The following certification notes were saved before submission:
 
-> Submission date: [DATE]
+> Submission date: August 2, 2026
 >
 > VaultKind is an English-only x64 Windows desktop application for creating and using Cryptomator-compatible encrypted vaults. No VaultKind account or internet connection is required for normal vault operations, and there are no test credentials.
 >
@@ -170,11 +177,15 @@ The prepared identity matches `packaging/store-identity.json`. The manifest temp
 - Separately signed local-test copy passes launch, disposable Windows Explorer WebDAV I/O, lock, cleanup, and uninstall.
 - Temporary certificate, package, package data, sockets, mounts, and test vault are absent afterward.
 - Production upload hash is unchanged after local testing.
-- Privacy, support, and private contact-form URLs return HTTPS 200 (verified August 1, 2026), and a benign end-to-end support request reached the private destination inbox.
+- Website, privacy, support, private contact-form, and public-source URLs return HTTPS 200 (reverified August 2, 2026), and a benign end-to-end support request reached the private destination inbox.
 - Screenshots match the frozen release build.
 - Signature sounds disabled workflow confirmed understandable and operable.
 - Keyboard-only, Narrator, Windows text-size, high-DPI, and minimum-window passes complete on the frozen build.
-- Greg reviews the complete Partner Center preview and explicitly approves upload/submission.
+- Exact approved production artifact uploaded; Partner Center package validation is Complete.
+- Pricing and availability saved as worldwide, Free, public audience, and non-discoverable/direct-link only.
+- Properties, Age ratings, Store listings, and Submission options are Complete; reviewed media and certification instructions are saved.
+- Publishing is held until **Publish now** is explicitly selected even after certification.
+- Greg reviewed the complete draft and explicitly approved certification submission as a separate external action; Partner Center accepted it on August 2, 2026.
 
 ## Post-certification production-identity test
 

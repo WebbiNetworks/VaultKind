@@ -3142,6 +3142,9 @@ public sealed partial class MainPage : Page
         CreatedRecoveryKeyText.Text = result.RecoveryKey ?? string.Empty;
         bool hasRecoveryKey = !string.IsNullOrWhiteSpace(result.RecoveryKey);
         CreatedRecoveryKeyPanel.Visibility = hasRecoveryKey ? Visibility.Visible : Visibility.Collapsed;
+        CreatedPasswordRecoveryWarningText.Text = hasRecoveryKey
+            ? "VaultKind cannot recover your password. Anyone with the recovery key can restore access, so treat it like a master key."
+            : "VaultKind cannot recover your password. Without a recovery key, losing the password permanently removes access to this vault.";
         CreatedRecoveryKeyCopyStatus.Text = string.Empty;
         CreatedRecoveryKeyCopyStatus.Visibility = Visibility.Collapsed;
         CreatedRecoveryKeySaved.IsChecked = false;

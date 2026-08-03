@@ -1,6 +1,6 @@
 # Microsoft Store Submission Preparation
 
-This document prepares and records the first production VaultKind submission. Webbi Networks authorized the exact frozen artifact upload and then separately authorized certification submission on August 2, 2026. Microsoft approved Submission 1 certification on August 3, 2026. Publication remains separately controlled. Partner Center remains the source of truth for the fields it presents at submission time.
+This document prepares and records the first production VaultKind submission. Webbi Networks authorized the exact frozen artifact upload and then separately authorized certification submission on August 2, 2026. Microsoft approved Submission 1 certification and processed the direct-link-only publication on August 3, 2026. Partner Center remains the source of truth for the fields it presents at submission time.
 
 ## Safety boundary
 
@@ -9,7 +9,7 @@ This document prepares and records the first production VaultKind submission. We
 - Keep the production `.msixupload` unsigned. Microsoft signs an accepted Store package.
 - Never upload a locally signed test MSIX or a package containing the development profile marker.
 - Use a non-discoverable direct-link listing for the first certified production-identity validation unless Webbi Networks explicitly chooses a public launch instead.
-- Do not make the product discoverable until the Store-signed acquisition, update, uninstall/reinstall, and external-vault retention matrix passes.
+- Do not make the product discoverable until the Store-signed production checks are complete, including a real-product update to a higher version.
 
 ## Product identity
 
@@ -46,7 +46,7 @@ The August 2 frozen-candidate upload built from clean commit `bdf44083a1dee926f9
 
 Webbi Networks explicitly approved this exact SHA-256 artifact for a non-discoverable draft. It was uploaded to Partner Center Submission 1 (`1152921505701563238`) on August 2, 2026 and Microsoft reported the package as **Validated** and **Complete**. It remains unsigned locally and unmodified. Do not rebuild, replace, or upload another artifact unless a later source, dependency, native-interface, or visible-asset change invalidates it. Never modify this upload for local installation.
 
-The submitted configuration uses all worldwide markets, public audience, direct-link-only non-discoverability, and a CAD base price of zero (**Free**). Pricing and availability, Properties, Age ratings, Packages, Store listings, and Submission options all reported **Complete** before submission. Microsoft approved Submission 1 certification on August 3, 2026. Read-only inspection reconfirmed **Available, but not discoverable in the Microsoft Store — Direct link only**. Webbi Networks explicitly authorized **Publish now** for that exact visibility, and Partner Center now reports **In publishing**, Step 4 of 4. The five reviewed screenshots and approved 300x300 Store tile remain in the English listing, and the certification instructions contain no credentials. Publishing completion, signed-package acquisition, and production operation are not yet recorded.
+The submitted configuration uses all worldwide markets, public audience, direct-link-only non-discoverability, and a CAD base price of zero (**Free**). Pricing and availability, Properties, Age ratings, Packages, Store listings, and Submission options all reported **Complete** before submission. Microsoft approved Submission 1 certification and processed publication on August 3, 2026. The listing remains **Available, but not discoverable in the Microsoft Store — Direct link only**. The five reviewed screenshots and approved 300x300 Store tile remain in the English listing, and the certification instructions contain no credentials.
 
 ## Recommended Partner Center choices
 
@@ -186,18 +186,21 @@ The prepared identity matches `packaging/store-identity.json`. The manifest temp
 - Properties, Age ratings, Store listings, and Submission options are Complete; reviewed media and certification instructions are saved.
 - The publishing hold remained in effect through certification and was released only after the saved direct-link-only visibility was reconfirmed and Webbi Networks explicitly authorized **Publish now**.
 - Webbi Networks reviewed the complete draft and explicitly approved certification submission as a separate external action; Partner Center accepted it on August 2, 2026.
-- Microsoft approved Submission 1 certification on August 3, 2026; publication and production-identity validation remain separate gates.
-- Partner Center reconfirmed public audience with direct-link-only non-discoverability; Webbi Networks explicitly approved **Publish now**, and the listing entered Step 4 **In publishing**.
+- Microsoft approved Submission 1 certification and processed publication on August 3, 2026.
+- Partner Center reconfirmed public audience with direct-link-only non-discoverability; Webbi Networks explicitly approved **Publish now**, and the listing remains direct-link only.
+- The Microsoft-signed production package was acquired and launched successfully. Its Store profile was isolated from unpackaged/development profiles, as designed.
+- A disposable external vault at `G:\VK-Store-Validation` passed exact-folder creation without unwanted nesting, unlock, Windows Explorer WebDAV mounting, readable-file write/read persistence, lock, and unmount.
+- Clean close/relaunch preserved the Store-profile registration. Uninstall removed package-local registration but preserved the external encrypted folder; clean reinstall began with an empty Store profile, then reconnect, unlock, persisted-file read, and relock all passed.
 
 ## Post-certification production-identity test
 
-Keep the first listing non-discoverable while validating the Store-signed package. Use only a new disposable external vault. Confirm acquisition, launch, create, unlock, readable-drive file I/O, lock, update to a higher package version, app-volume relocation where supported, uninstall, reinstall, and preservation of the encrypted vault outside package data. Only after this matrix passes should a later submission make VaultKind publicly discoverable.
+The production `1.0.0.0` package has passed acquisition, launch, exact-folder vault creation, unlock, readable-drive file I/O, lock/unmount, clean close/relaunch, uninstall/reinstall, external encrypted-data preservation, reconnect, persisted-file recovery, and supported app-volume relocation from C: to `G:\WindowsApps`. Windows retained the C: package path as a junction to the active G: package directory. After relocation, VaultKind launched from its registered Store identity, retained the connected disposable vault, unlocked it, exposed both persisted files through Windows Explorer, and locked/unmounted cleanly. The external disposable vault remains intact and must not be deleted without separate approval.
 
-Certification is complete, direct-link-only visibility was reconfirmed, and
-the explicitly authorized **Publish now** action is in progress. The exact next
-action is to wait for Partner Center to finish publishing without resubmitting
-or changing visibility. Then obtain version `1.0.0.0` through its direct Store
-path and begin the production-identity matrix above.
+One Store-specific check remains open: the real-product Store update path using a later version greater than `1.0.0.0`. The isolated Store Path Test already proved the packaging approach's update mechanism, but it does not substitute for real-product evidence. Keep VaultKind non-discoverable until that final check is resolved.
+
+A post-`1.0.0.0` wording correction now distinguishes the recovery warning shown when a new vault has no recovery key. The published `1.0.0.0` package does not contain that correction; it belongs in a later, explicitly authorized Store update.
+
+The first local `1.0.1.0` candidate packages that correction separately from the frozen production upload. Its `.msixupload` is 96,468,028 bytes with SHA-256 `3F53C58BB0F082ADE60432AB0CC168E72CF8666D2834924910E5C9BC30533D21`; the sole 97,191,659-byte inner MSIX has SHA-256 `1499FFE4663D647AC48B5CECC431FBDAF1FFD432019DE4CAD579139ECF304389`. The package declares `Webbi.VaultKind`, the assigned Microsoft publisher, version `1.0.1.0`, x64, and the non-development Store profile. It remains unsigned for Microsoft certification. Payload comparison found all 796 staged files unchanged and no missing or unexpected payload; compiled-string inspection found both recovery-warning branches; the eight approved package assets match their source hashes. All 87 native checks pass. WACK completed a full 24-test run with overall `PASS`, 22 direct passes, and only the same two optional analyzer findings already documented for `1.0.0.0`. Do not upload this local candidate. Commit the correction and evidence, rebuild the exact clean artifact, record its new immutable hash, and obtain separate Webbi Networks approval before adding it to Partner Center.
 
 ## Official process references
 

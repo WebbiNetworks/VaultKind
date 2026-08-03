@@ -1500,7 +1500,7 @@
                         <Grid ColumnSpacing="10">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
                             <FontIcon Glyph="&#xE7BA;" Foreground="#FFC107" VerticalAlignment="Top" Margin="0,3,0,0" />
-                            <TextBlock Grid.Column="1" Text="VaultKind cannot recover your password. Anyone with the recovery key can restore access, so treat it like a master key." TextWrapping="Wrap" FontSize="13" />
+                            <TextBlock x:Name="CreatedPasswordRecoveryWarningText" Grid.Column="1" Text="VaultKind cannot recover your password." TextWrapping="Wrap" FontSize="13" />
                         </Grid>
                     </Border>
 

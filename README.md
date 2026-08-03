@@ -37,7 +37,7 @@ The product philosophy and its engineering decision filter are documented in [PR
 
 ## Release status
 
-VaultKind 1.0 has not yet been released. The Windows-native shell, bundled local vault engine, Microsoft Store package, and Windows Explorer WebDAV workflow are under release-candidate validation. Do not use development builds as the only way to access important data, and keep verified backups plus another tested way to open important vaults.
+VaultKind 1.0.1 is available through Microsoft Store as a controlled direct-link release. The listing is intentionally available but not discoverable in Store search while Webbi Networks completes the separate product decision about broader discoverability. Keep verified backups plus another tested way to open important vaults.
 
 The supported public distribution target is an x64 Microsoft Store MSIX. Microsoft Store certification supplies the public package signature. An unsigned portable archive may be offered as a fallback with clear Windows security-warning guidance. VaultKind does not publish macOS or Linux packages.
 
@@ -63,7 +63,7 @@ dotnet build native\VaultKind.Windows\VaultKind.Windows.csproj -c Debug --no-res
 dotnet run --project native\VaultKind.Windows.Tests\VaultKind.Windows.Tests.csproj -c Release
 ```
 
-Release staging and distribution requirements are documented in [RELEASE_READINESS.md](docs/RELEASE_READINESS.md), with the exact draft listing, certification notes, public URLs, and evidence gate in [STORE_SUBMISSION_PREPARATION.md](docs/STORE_SUBMISSION_PREPARATION.md). A separately certified WinUI 3 proof package established the Store distribution path, and VaultKind's real Store-identity package has passed local package, engine, and disposable WebDAV validation. No production VaultKind submission has been published.
+Release staging and distribution requirements are documented in [RELEASE_READINESS.md](docs/RELEASE_READINESS.md), with the exact listing, certification notes, public URLs, and evidence record in [STORE_SUBMISSION_PREPARATION.md](docs/STORE_SUBMISSION_PREPARATION.md). VaultKind's real Store-identity packages have passed certification, Store signing, acquisition, external-vault retention, supported app-volume relocation, and Store-managed update from `1.0.0.0` to `1.0.1.0`. The listing remains direct-link-only and non-discoverable by design.
 
 Repository publication boundaries and the checks required before making source history public are documented in [PUBLIC_REPOSITORY_READINESS.md](docs/PUBLIC_REPOSITORY_READINESS.md).
 

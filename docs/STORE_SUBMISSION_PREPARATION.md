@@ -1,14 +1,14 @@
 # Microsoft Store Submission Preparation
 
-This document prepares and records the first production VaultKind submission. Greg authorized the exact frozen artifact upload and then separately authorized certification submission on August 2, 2026. Publication remains separately controlled. Partner Center remains the source of truth for the fields it presents at submission time.
+This document prepares and records the first production VaultKind submission. Webbi Networks authorized the exact frozen artifact upload and then separately authorized certification submission on August 2, 2026. Publication remains separately controlled. Partner Center remains the source of truth for the fields it presents at submission time.
 
 ## Safety boundary
 
-- Upload only an exact artifact Greg explicitly approves. Certification submission was separately approved and started on August 2, 2026. Do not cancel, replace, resubmit, or publish without new approval.
+- Upload only an exact artifact Webbi Networks explicitly approves. Certification submission was separately approved and started on August 2, 2026. Do not cancel, replace, resubmit, or publish without new approval.
 - Do not submit an artifact built before the final release-candidate commit.
 - Keep the production `.msixupload` unsigned. Microsoft signs an accepted Store package.
 - Never upload a locally signed test MSIX or a package containing the development profile marker.
-- Use a non-discoverable direct-link listing for the first certified production-identity validation unless Greg explicitly chooses a public launch instead.
+- Use a non-discoverable direct-link listing for the first certified production-identity validation unless Webbi Networks explicitly chooses a public launch instead.
 - Do not make the product discoverable until the Store-signed acquisition, update, uninstall/reinstall, and external-vault retention matrix passes.
 
 ## Product identity
@@ -44,7 +44,7 @@ The August 2 frozen-candidate upload built from clean commit `bdf44083a1dee926f9
 - Unsigned as required; no `AppxSignature.p7x`
 - WACK `10.0.26100.7705`: complete 24-test run, overall PASS, `PARTIAL_RUN=FALSE`; 22 direct passes and the same two documented optional analyzer findings
 
-Greg explicitly approved this exact SHA-256 artifact for a non-discoverable draft. It was uploaded to Partner Center Submission 1 (`1152921505701563238`) on August 2, 2026 and Microsoft reported the package as **Validated** and **Complete**. It remains unsigned locally and unmodified. Do not rebuild, replace, or upload another artifact unless a later source, dependency, native-interface, or visible-asset change invalidates it. Never modify this upload for local installation.
+Webbi Networks explicitly approved this exact SHA-256 artifact for a non-discoverable draft. It was uploaded to Partner Center Submission 1 (`1152921505701563238`) on August 2, 2026 and Microsoft reported the package as **Validated** and **Complete**. It remains unsigned locally and unmodified. Do not rebuild, replace, or upload another artifact unless a later source, dependency, native-interface, or visible-asset change invalidates it. Never modify this upload for local installation.
 
 The submitted configuration uses all worldwide markets, public audience, direct-link-only non-discoverability, and a CAD base price of zero (**Free**). Pricing and availability, Properties, Age ratings, Packages, Store listings, and Submission options all reported **Complete** before submission. Publishing is held after certification until **Publish now** is explicitly selected. The five reviewed screenshots and approved 300x300 Store tile are saved in the English listing, and the prepared certification instructions are saved with no credentials. Partner Center now reports **In certification**: Submission complete, Pre-processing in progress, Certification not started, and Publishing not started.
 
@@ -185,7 +185,7 @@ The prepared identity matches `packaging/store-identity.json`. The manifest temp
 - Pricing and availability saved as worldwide, Free, public audience, and non-discoverable/direct-link only.
 - Properties, Age ratings, Store listings, and Submission options are Complete; reviewed media and certification instructions are saved.
 - Publishing is held until **Publish now** is explicitly selected even after certification.
-- Greg reviewed the complete draft and explicitly approved certification submission as a separate external action; Partner Center accepted it on August 2, 2026.
+- Webbi Networks reviewed the complete draft and explicitly approved certification submission as a separate external action; Partner Center accepted it on August 2, 2026.
 
 ## Post-certification production-identity test
 

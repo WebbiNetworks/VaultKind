@@ -10,13 +10,13 @@
   <Identity
     Name="02EDB631-211E-40A4-8371-B955C2F2B1FA"
     Publisher="CN=WebbiNetworks"
-    Version="1.0.0.0" />
+    Version="1.0.2.0" />
 
   <mp:PhoneIdentity PhoneProductId="02EDB631-211E-40A4-8371-B955C2F2B1FA" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>VaultKind</DisplayName>
-    <PublisherDisplayName>WebbiNetworks</PublisherDisplayName>
+    <PublisherDisplayName>Webbi Networks</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 

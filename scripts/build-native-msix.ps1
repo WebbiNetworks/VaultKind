@@ -15,7 +15,7 @@ param(
     [Parameter(Mandatory)]
     [string]$Publisher,
 
-    [string]$PublisherDisplayName = "Webbi",
+    [string]$PublisherDisplayName = "Webbi Networks",
 
     [ValidatePattern("^[A-Fa-f0-9]{40}$")]
     [string]$SigningThumbprint,

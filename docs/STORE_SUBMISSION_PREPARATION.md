@@ -1,6 +1,6 @@
 # Microsoft Store Submission Preparation
 
-This document prepares and records the first production VaultKind submission. Webbi Networks authorized the exact frozen artifact upload and then separately authorized certification submission on August 2, 2026. Microsoft approved Submission 1 certification and processed the direct-link-only publication on August 3, 2026. Partner Center remains the source of truth for the fields it presents at submission time.
+This document prepares and records VaultKind's production Store submissions. Microsoft processed the initial direct-link release, the `1.0.1.0` update, and Submission 3's separately approved public-discoverability launch. Partner Center remains the source of truth for the fields it presents at submission time.
 
 ## Safety boundary
 
@@ -8,8 +8,8 @@ This document prepares and records the first production VaultKind submission. We
 - Do not submit an artifact built before the final release-candidate commit.
 - Keep the production `.msixupload` unsigned. Microsoft signs an accepted Store package.
 - Never upload a locally signed test MSIX or a package containing the development profile marker.
-- Use a non-discoverable direct-link listing for the first certified production-identity validation unless Webbi Networks explicitly chooses a public launch instead.
-- Do not make the product discoverable without a separate Webbi Networks product decision. The Store-signed production and higher-version update checks are complete.
+- The initial non-discoverable validation boundary is complete. Submission 3 was separately approved, certified, and published as the public-discoverability launch.
+- Do not change pricing, audience, markets, or discoverability again without a separate Webbi Networks product decision.
 
 ## Product identity
 
@@ -19,7 +19,7 @@ This document prepares and records the first production VaultKind submission. We
 | Store ID | `9P31PF0927Z4` |
 | Package identity | `Webbi.VaultKind` |
 | Publisher | `CN=B46E8F20-201E-4AEB-AF2B-B6AB3D44E5FC` |
-| Publisher display name | Webbi |
+| Publisher display name | Webbi Networks |
 | Package family | `Webbi.VaultKind_1014d67w6rsqa` |
 | Architecture | x64 |
 | Initial package version | `1.0.0.0` |
@@ -201,6 +201,16 @@ The real-product Store update check is complete. Submission 2 (`1152921505701570
 A post-`1.0.0.0` wording correction distinguishes the recovery warning shown when a new vault has no recovery key. Certified Store version `1.0.1.0` now delivers that correction.
 
 The final `1.0.1.0` update packages that correction separately from the frozen production upload and was rebuilt from clean commit `1a70883a6ad3e1fa2a268e14eab83c0e7820b5b7`. Its `.msixupload` is 96,467,930 bytes with SHA-256 `74709134765F23456785433ACB8F9F910C2D48875CA8A45746CA6A7B3E8DB9B3`; the sole 97,191,689-byte inner MSIX has SHA-256 `1E0B2AD5D4890B0FB1B5EBACB51D28193B855264DD019B70D1B944B653C438D6`. The package declares `Webbi.VaultKind`, the assigned Microsoft publisher, version `1.0.1.0`, x64, and the non-development Store profile. It was intentionally unsigned for Microsoft certification. Payload comparison found all 796 staged files unchanged and no missing or unexpected payload; compiled-string inspection found both recovery-warning branches; the eight approved package assets match their source hashes; and only Logback 1.6.1 is present. All 87 native checks pass. WACK completed a full 24-test run against this exact inner package with overall `PASS`, `PARTIAL_RUN="FALSE"`, 22 direct passes, and only the same two optional analyzer findings already documented for `1.0.0.0`. Webbi Networks separately approved the exact artifact upload, Submission 2 certification, and publication. Microsoft certified, signed, processed, and delivered it through the existing direct-link-only listing.
+
+## Public launch and publisher-name correction
+
+Submission 3 retained version `1.0.1.0`, Free pricing, public audience, and all 240 markets while changing the listing to public Store discoverability. Webbi Networks separately approved certification submission and **Publish now**; Microsoft certified, processed, and published it. VaultKind is therefore publicly discoverable rather than direct-link-only.
+
+Microsoft subsequently authorized the account publisher-name change from **Webbi** to **Webbi Networks**. Partner Center's product identity now assigns `PublisherDisplayName` exactly as `Webbi Networks`; the package identity name, publisher CN, Store ID, and package family remain unchanged. The corrective source also restores `— © Webbi Networks —` to Preferences > About and makes untrimmed .NET publication a project-level invariant so Release builds cannot disable the reflection-based local JSON protocol.
+
+The final local corrective upload is `artifacts/VaultKind-1.0.2.0-win-x64.msixupload`, 96,467,927 bytes, SHA-256 `AF6E93231A503F24B62CE1F397410FB952FF550F429C8971007D4A314FBE001B`. Its sole inner MSIX is 97,191,609 bytes with SHA-256 `CD069C83E5B7A25697499310E42128B4BC86788EAFE57DE954570F06686BE165`. Direct inspection confirms package and assembly version `1.0.2.0`, exact production identity, x64, publisher display name **Webbi Networks**, `Store`/`developmentOnly: false`, 800 payload entries, no signature, and a matching checksum sidecar. The exact development-shortcut build passed all 87 native checks with zero warnings/errors; its authored binaries were development-signed, and Webbi Networks confirmed version `1.0.2`, the copyright footer, a green engine, and all vault registrations. This `.msixupload` remains local and unsubmitted. Upload, certification submission, and publication each require separate explicit approval.
+
+WACK `10.0.26100.7705` completed all 24 tests against the exact `1.0.2.0` inner MSIX with overall `PASS` and `PARTIAL_RUN="FALSE"`; 22 tests passed directly, with only the same two optional Microsoft-component metadata and required process-launch/string analyzer findings already documented for the certified releases.
 
 ## Official process references
 

@@ -10,7 +10,7 @@ param(
 
     [string]$PackagePublisher,
 
-    [string]$PackagePublisherDisplayName = "Webbi",
+    [string]$PackagePublisherDisplayName = "Webbi Networks",
 
     [ValidatePattern("^[A-Za-z0-9.-]+$")]
     [string]$PackageName = "Webbi.VaultKind",
@@ -90,7 +90,7 @@ if ([string]::IsNullOrWhiteSpace($jlink) -or -not (Test-Path -LiteralPath $jlink
 }
 
 $project = Join-Path $repositoryRoot "native\VaultKind.Windows\VaultKind.Windows.csproj"
-& dotnet publish $project -c Release --no-restore -r $RuntimeIdentifier "-p:PublishDir=$stageRoot\" -p:PublishReadyToRun=false -p:PublishTrimmed=false
+& dotnet publish $project -c Release --no-restore -r $RuntimeIdentifier "-p:PublishDir=$stageRoot\" "-p:Version=$Version" -p:PublishReadyToRun=false -p:PublishTrimmed=false
 if ($LASTEXITCODE -ne 0) { throw "The native Windows publish failed." }
 
 # VaultKind uses the Windows App SDK's UI, DWrite, runtime, foundation, and

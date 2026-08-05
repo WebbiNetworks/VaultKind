@@ -983,6 +983,7 @@
                             </Grid>
                         </Border>
                         <TextBlock x:Name="AboutWebsiteStatus" Visibility="Collapsed" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap" FontSize="12" AutomationProperties.LiveSetting="Polite" />
+                        <TextBlock Text="— © Webbi Networks —" Foreground="{StaticResource BrandBlueBrush}" FontSize="16" FontWeight="SemiBold" TextAlignment="Center" HorizontalAlignment="Center" AutomationProperties.Name="Copyright Webbi Networks" />
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>

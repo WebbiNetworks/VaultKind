@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
+    <Version>1.0.2</Version>
     <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <RootNamespace>VaultKind_Windows</RootNamespace>
@@ -96,7 +97,9 @@
   <PropertyGroup>
     <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
     <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
-    <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
-    <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
+    <!-- VaultKind's protocol and persistence models currently use reflection-based
+         System.Text.Json serialization. Trimming disables that path and leaves the
+         local engine unreachable, so every configuration must remain untrimmed. -->
+    <PublishTrimmed>False</PublishTrimmed>
   </PropertyGroup>
 </Project>

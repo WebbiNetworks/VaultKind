@@ -34,7 +34,7 @@ $identityMatches = $identity.productName -ceq "VaultKind" `
     -and $identity.storeId -ceq "9P31PF0927Z4" `
     -and $identity.packageIdentityName -ceq "Webbi.VaultKind" `
     -and $identity.packageIdentityPublisher -ceq "CN=B46E8F20-201E-4AEB-AF2B-B6AB3D44E5FC" `
-    -and $identity.publisherDisplayName -ceq "Webbi" `
+    -and $identity.publisherDisplayName -ceq "Webbi Networks" `
     -and $identity.packageFamilyName -ceq "Webbi.VaultKind_1014d67w6rsqa"
 if (-not $identityMatches) {
     throw "The Microsoft Store identity changed. Review Partner Center before updating the fail-closed build constants."

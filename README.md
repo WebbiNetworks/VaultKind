@@ -2,7 +2,7 @@
 
 **Desktop First. Windows Focused. Privacy Always.**
 
-VaultKind is a Windows desktop encryption application focused on accessibility, modern usability, and transparent security. Its product promise is simple: **VaultKind is the best Windows desktop vault experience.** Version 1.0 is publicly available through Microsoft Store, and the public source repository supports review and GPLv3 compliance. Development builds are not production releases.
+VaultKind is a Windows desktop encryption application focused on accessibility, modern usability, and transparent security. Its product promise is simple: **VaultKind is the best Windows desktop vault experience.** Version 1.0.2 is publicly available through Microsoft Store, and the public source repository supports review and GPLv3 compliance. Development builds are not production releases.
 
 VaultKind is derived from [Cryptomator](https://github.com/cryptomator/cryptomator) under the GNU General Public License v3. It is not affiliated with or endorsed by Skymatic GmbH or the Cryptomator project.
 
@@ -37,7 +37,7 @@ The product philosophy and its engineering decision filter are documented in [PR
 
 ## Release status
 
-VaultKind 1.0.1 is publicly discoverable through Microsoft Store. Keep verified backups plus another tested way to open important vaults.
+VaultKind 1.0.2 is publicly discoverable through Microsoft Store. [Get VaultKind from Microsoft Store](https://apps.microsoft.com/detail/9P31PF0927Z4). Keep verified backups plus another tested way to open important vaults.
 
 The supported public distribution target is an x64 Microsoft Store MSIX. Microsoft Store certification supplies the public package signature. An unsigned portable archive may be offered as a fallback with clear Windows security-warning guidance. VaultKind does not publish macOS or Linux packages.
 
@@ -63,7 +63,7 @@ dotnet build native\VaultKind.Windows\VaultKind.Windows.csproj -c Debug --no-res
 dotnet run --project native\VaultKind.Windows.Tests\VaultKind.Windows.Tests.csproj -c Release
 ```
 
-Release staging and distribution requirements are documented in [RELEASE_READINESS.md](docs/RELEASE_READINESS.md), with the exact listing, certification notes, public URLs, and evidence record in [STORE_SUBMISSION_PREPARATION.md](docs/STORE_SUBMISSION_PREPARATION.md). VaultKind's real Store-identity packages have passed certification, Store signing, acquisition, external-vault retention, supported app-volume relocation, and Store-managed update from `1.0.0.0` to `1.0.1.0`. Submission 3 completed the separately approved public-discoverability launch.
+Release staging and distribution requirements are documented in [RELEASE_READINESS.md](docs/RELEASE_READINESS.md), with the exact listing, certification notes, public URLs, and evidence record in [STORE_SUBMISSION_PREPARATION.md](docs/STORE_SUBMISSION_PREPARATION.md). VaultKind's real Store-identity packages have passed certification, Store signing, acquisition, external-vault retention, supported app-volume relocation, and Store-managed updates through `1.0.2.0`. Submission 3 completed the separately approved public-discoverability launch, and Submission 4 delivered the current **Webbi Networks** publisher presentation and About-page copyright footer.
 
 Repository publication boundaries and the checks required before making source history public are documented in [PUBLIC_REPOSITORY_READINESS.md](docs/PUBLIC_REPOSITORY_READINESS.md).
 

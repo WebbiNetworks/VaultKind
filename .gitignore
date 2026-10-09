@@ -49,6 +49,7 @@ trustdb.gpg
 *.rev
 *private-key-backup*
 *secret-key-backup*
+VaultKind-Recovery.vhdx
 # Public-key exports and detached .asc/.sig signatures may be tracked deliberately.
 
 # Generated Windows packages and binaries

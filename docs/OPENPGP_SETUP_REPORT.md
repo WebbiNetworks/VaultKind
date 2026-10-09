@@ -9,12 +9,14 @@ VaultKind's optional signing identity is operational. Offline recovery copies st
 | Approved identity | Webbi Networks `<security@vaultkind.dev>`; Ed25519 signing/certification; expires October 8, 2028. |
 | Fingerprint | `0012D24994ABFAD13986A366CDA480EEB7B5EE3B` |
 | Private storage | Dedicated access-restricted local profile folder outside the repository and website. Passphrase entered through Pinentry; no private export or passphrase captured. |
-| Signing test | A disposable file received an armored detached signature. Verification in a fresh public-only keyring returned exit 0 and the expected `VALIDSIG`. |
+| Signing test | A disposable file received an armored detached signature. Verification in a fresh public-only keyring returned exit 0 and the expected `VALIDSIG`. The same test passed with the public key downloaded from the pushed GitHub branch. |
 | Tamper test | A modified copy returned exit 1 and `BADSIG` using the original signature. |
 | Manual guards | Wrong expected fingerprint rejected; existing-output guard triggered and the original signature remained unchanged. |
 | Recovery | Revocation certificate generated in the private home. Two encrypted offline copies and a supervised restore test remain pending. |
 
 The [public key](keys/webbi-networks-vaultkind.asc), [fingerprint](keys/webbi-networks-vaultkind.fingerprint.txt), and [signing, verification, backup, and publication instructions](OPENPGP_SIGNING.md) are ready. These are development-machine tools: no application code, dependencies, packaging, Windows minimum version, or CI signing secrets changed. GPG verification remains optional for users.
+
+GitHub update: [pull request #13](https://github.com/WebbiNetworks/VaultKind/pull/13), branch `codex/openpgp-signing`. The public materials are available on that branch; merging and website deployment have not occurred.
 
 ESET FILEGUARD prevented validation of proposed helper scripts. They were not executed and were removed; the documented workflow uses the installed GnuPG commands directly. No antivirus or Windows protection was disabled.
 

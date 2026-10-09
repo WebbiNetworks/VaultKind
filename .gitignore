@@ -38,6 +38,19 @@ VAULTKIND_PROJECT_HANDOFF.md
 *.p12
 *.snk
 
+# OpenPGP private homes, revocation certificates, and offline-backup material
+.gnupg/
+gnupg/
+private-keys-v1.d/
+openpgp-revocs.d/
+secring.gpg
+pubring.kbx
+trustdb.gpg
+*.rev
+*private-key-backup*
+*secret-key-backup*
+# Public-key exports and detached .asc/.sig signatures may be tracked deliberately.
+
 # Generated Windows packages and binaries
 *.appx
 *.appxupload

@@ -79,6 +79,52 @@ finally {
 }
 ```
 
+## GitHub commit and tag signing
+
+GitHub's **Verified** label concerns the signature on a Git commit or tag. Detached archive signatures continue to authenticate downloadable files separately. A Verified label does not establish independent code review, owner approval of the changes, successful CI, or Windows package trust. GitHub requires the committer or tagger email to match a user ID on the registered public certificate and a verified email on the GitHub account. See [GitHub's email requirements](https://docs.github.com/en/authentication/troubleshooting-commit-signature-verification/using-a-verified-email-address-in-your-gpg-key) and [signature verification documentation](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification).
+
+The owner authorized registering only this key's public certificate with the WebbiNetworks GitHub account and testing one harmless signed commit on a temporary branch. The public certificate is registered as **Webbi Networks — VaultKind signing**, key ID `CDA480EEB7B5EE3B`, registration ID `5383063`. With owner authorization, `security@webbi.ca` was added to the GitHub account; the owner completed verification and GitHub's API confirmed it is verified.
+
+The authorized [test commit `83c20fd1a050900ba4be189610b81f9e445c3aaf`](https://github.com/WebbiNetworks/VaultKind/commit/83c20fd1a050900ba4be189610b81f9e445c3aaf) on `codex/gpg-verified-test-20261009` is an empty commit with the same tree as its parent, `4835857437fda46b2946b45d7673465554415a64`. Local signature verification passed. GitHub returned `verified: true`, reason `valid`, and `verified_at: 2026-10-09T07:08:54Z`; the commit page displayed the green **Verified** label. Repository-local signing defaults were enabled only after those checks passed. Existing local and remote `main`, `v1.0.2`, and the working branch's HEAD were unchanged by the test.
+
+**Owner approval is required before an agent uses the private signing key for production commits or release tags.** Approval must cover the reviewed change or exact release/tag target; permission to develop code, publish documentation, or push a branch alone is not permission to sign it. The authorized harmless setup test is the exception for this setup task. A cached passphrase or enabled Git signing default never substitutes for approval. Present the final diff, tests, intended commit message, and tag target when applicable before requesting approval. Preserve existing commits, tags, and the `v1.0.2` release. Do not rewrite history, replace existing tags, or force-push to add signatures retrospectively.
+
+These **repository-local** settings are enabled for this checkout after successful email and test-commit verification:
+
+| Setting | Value |
+| --- | --- |
+| `user.name` | `Webbi Networks` |
+| `user.email` | `security@webbi.ca` |
+| `user.signingkey` | `0012D24994ABFAD13986A366CDA480EEB7B5EE3B!` |
+| `gpg.format` | `openpgp` |
+| `gpg.program` | `C:/Program Files/GnuPG/bin/gpg.exe` |
+| `commit.gpgsign` | `true` |
+| `tag.gpgsign` | `true` |
+
+Git's [configuration documentation](https://git-scm.com/docs/git-config) describes these settings. `tag.gpgsign` signs newly created tags; use explicit `git tag -s` with an annotation for future owner-approved release tags. New clones need their own local setup. These settings do not change global Git configuration, existing Git objects, application packaging, or release contents.
+
+Use the installed `gpg.exe` directly. No wrapper script is needed: GnuPG reads the [process-scoped `GNUPGHOME` environment variable](https://www.gnupg.org/documentation/manuals/gnupg/GPG-Configuration.html). Git inherits it from the interactive signing session. The dedicated home's existing Pinentry and key-discovery settings remain in effect. A GUI launched without that environment may not find the key; do not copy the private key to a default keyring to work around this.
+
+Only after approval for the specific production commit, use a short interactive session like this, with reviewed files already staged and an approved message:
+
+```powershell
+$previousGnuPGHome = $env:GNUPGHOME
+try {
+    $env:GNUPGHOME = Join-Path $env:LOCALAPPDATA 'Webbi Networks\VaultKind Signing\gnupg'
+    git diff --cached --check
+    if ($LASTEXITCODE -ne 0) { throw 'Resolve staged-diff errors before signing.' }
+    git commit -S -m 'Replace with the approved commit message'
+    if ($LASTEXITCODE -ne 0) { throw 'Commit signing failed; stop and investigate.' }
+    git verify-commit HEAD
+    if ($LASTEXITCODE -ne 0) { throw 'Local commit verification failed; do not push.' }
+}
+finally {
+    $env:GNUPGHOME = $previousGnuPGHome
+}
+```
+
+For a new release tag, obtain separate approval for its exact new name, target commit, and annotation; inspect that commit, set the same process-scoped home, and use `git tag -s <new-tag> <approved-commit> -m <approved-annotation>`. Stop if the tag exists. Run `git verify-tag <new-tag>` before publishing it. Do not use `-f`. Check the published commit or tag on GitHub after an authorized push. Local verification alone does not prove GitHub has accepted the account association. Retain separate public-only verification for each detached release or press-kit signature.
+
 ## Sign and verify a file
 
 Use native `gpg.exe` interactively, with the explicit executable, private home, and full fingerprint established above. The approved identity is a single Ed25519 primary key with `[SC]` capability. The `!` selector requires that exact primary key; moving to a signing subkey requires a reviewed workflow change. Enter the passphrase only in secure Pinentry. Never supply passphrase arguments or use loopback entry.

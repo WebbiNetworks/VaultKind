@@ -1,6 +1,6 @@
 # OpenPGP setup report — October 9, 2026
 
-VaultKind's optional signing identity, public verification page, and detached press-kit signature are operational. Both owner-approved encrypted recovery copies passed independent restoration and signing tests and are locked and detached. The only remaining owner step is to disconnect their physical drives and store them separately.
+VaultKind's optional signing identity, public verification page, and detached press-kit signature are operational. Both owner-approved encrypted recovery copies passed independent restoration and signing tests and are locked and detached. The owner still needs to disconnect their physical drives and store them separately. GitHub accepted the authorized signed test commit as Verified, and repository-local signing defaults are enabled for future owner-approved commits and release tags.
 
 The owner subsequently requested `Webbi Networks <security@webbi.ca>` as an additional identity on the same key. The update and publication passed: fresh HTTPS downloads confirmed both identities have valid self-certifications, and `Webbi Networks <security@vaultkind.dev>` remains primary. The fingerprint, Ed25519 key, expiry, private-key material, passphrase, and existing press-kit signature are unchanged. An isolated public-only test successfully merged the updated certificate into the original one. The unchanged press-kit signature also verified with the updated published certificate.
 
@@ -41,7 +41,21 @@ These are bounded, pattern-based checks, not a guarantee about uninspected serve
 
 Final public HTTPS readback matched all seven published or preserved files, including the key, fingerprint, archive, checksum, signature, verification page, and press-kit page. Static HTML, link, and documented PowerShell syntax checks passed. Browser-based visual QA was unavailable; no visual-review result is claimed.
 
-## Remaining owner step
+## GitHub signing setup
+
+On October 9, 2026, the owner authorized adding only the existing public GPG certificate to WebbiNetworks on GitHub, using `security@webbi.ca` for future commits after verifying it, and testing one harmless signed commit on a temporary branch. The public certificate is registered on that account as **Webbi Networks — VaultKind signing**, key ID `CDA480EEB7B5EE3B`, registration ID `5383063`. The owner authorized adding `security@webbi.ca` to the GitHub account, completed email verification, and GitHub's API confirmed its verified status.
+
+The authorized empty [test commit `83c20fd1a050900ba4be189610b81f9e445c3aaf`](https://github.com/WebbiNetworks/VaultKind/commit/83c20fd1a050900ba4be189610b81f9e445c3aaf) is on `codex/gpg-verified-test-20261009`. Its tree matches parent `4835857437fda46b2946b45d7673465554415a64` exactly, with no file changes. Local signature verification passed. GitHub's API returned `verified: true`, reason `valid`, and `verified_at: 2026-10-09T07:08:54Z`. Browser inspection confirmed the green **Verified** label on the commit page.
+
+Only after the successful test, repository-local settings were enabled: `user.name=Webbi Networks`, `user.email=security@webbi.ca`, the existing full fingerprint with the `!` primary-key selector, `gpg.format=openpgp`, `gpg.program=C:/Program Files/GnuPG/bin/gpg.exe`, `commit.gpgsign=true`, and `tag.gpgsign=true`. Each signing session still needs a process-scoped `GNUPGHOME` pointing to the dedicated local signing home. Global Git configuration is unchanged. No private material or passphrase was uploaded, and no wrapper script or CI signing secret was added.
+
+Local and remote `main` and `v1.0.2`, plus the working branch's HEAD, remained unchanged by setup and testing. The original press-kit archive and detached signature also remain unchanged. The root `AGENTS.md` records the owner's approval requirement for agent signing; the workflow documentation explains how to use the configured signing home.
+
+Every subsequent agent use of the private key for a production commit or release tag requires explicit owner approval for that reviewed change or target. GitHub Verified establishes signature verification; it does not establish independent code review or owner approval. Existing commits, tags, and the `v1.0.2` release remain untouched: no history rewrite, replacement tag, or force-push is authorized. See the [GitHub signing procedure](OPENPGP_SIGNING.md#github-commit-and-tag-signing).
+
+## Remaining owner steps
+
+Future production commits and release tags each need explicit owner approval for their concrete changes or target before an agent signs them.
 
 Disconnect the two selected physical backup drives and keep them in separate secure locations, with recovery credentials stored separately. Locking and detaching the containers does not make connected physical drives offline.
 

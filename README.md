@@ -41,6 +41,8 @@ VaultKind 1.0.2 is publicly discoverable through Microsoft Store. [Get VaultKind
 
 The supported public distribution target is an x64 Microsoft Store MSIX. Microsoft Store certification supplies the public package signature. An unsigned portable archive may be offered as a fallback with clear Windows security-warning guidance. VaultKind does not publish macOS or Linux packages.
 
+The optional [OpenPGP signing workflow](docs/OPENPGP_SIGNING.md) covers release files, press kits, and verification manifests. GnuPG runs on the maintainer's development machine; users do not need it to install or run VaultKind, and it does not change the application's Windows compatibility or Microsoft Store signing.
+
 ## Building
 
 ### Requirements

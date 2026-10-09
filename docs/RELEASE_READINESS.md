@@ -2,6 +2,8 @@
 
 VaultKind is a Windows-only, permanently English-only product. Development builds are not release candidates and must not be distributed as the only way to access important data.
 
+Optional detached signatures for release files, press kits, and verification manifests use the separate [OpenPGP signing workflow](OPENPGP_SIGNING.md). This maintainer tooling adds no runtime dependency, changes no package contents or Windows minimum version, and is not required to install or run VaultKind. Existing release and press-kit artifacts require explicit owner authorization before alteration or republication.
+
 ## Deterministic release layout
 
 Run `scripts/build-native-release.ps1` from a reviewed checkout to stage:
